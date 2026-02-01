@@ -1,29 +1,32 @@
-import { getCurveState, executeTrade, getTokenPrice } from '../../utils/bondingCurve';
+import { getCurveState, executeTrade, getTokenPrice, getAllCurveStates } from '../../utils/bondingCurve';
 
 export default async function handler(req, res) {
+  // GET /api/bonding-curve - Get all curve states or specific token
   if (req.method === 'GET') {
-    // Return current bonding curve state
-    const state = getCurveState();
-    const price = getTokenPrice(state.supply);
+    const { token } = req.query;
     
-    return res.status(200).json({
-      ...state,
-      currentPrice: price,
-      token: 'ARYA',
-      curveType: 'linear',
-      formula: 'price = 0.00001 * supply + 0.5 ETH'
-    });
+    if (token) {
+      const state = getCurveState(token);
+      if (!state) {
+        return res.status(404).json({ error: 'Token not found' });
+      }
+      return res.status(200).json(state);
+    }
+    
+    // Return all tokens
+    return res.status(200).json(getAllCurveStates());
   }
   
+  // POST /api/bonding-curve - Execute a trade
   if (req.method === 'POST') {
     const { type, amount, token } = req.body;
     
-    if (!type || !amount) {
-      return res.status(400).json({ error: 'Missing type or amount' });
+    if (!type || !amount || !token) {
+      return res.status(400).json({ error: 'Missing type, amount, or token' });
     }
     
     try {
-      const result = executeTrade(type, amount, token || 'ARYA');
+      const result = executeTrade(type, amount, token);
       return res.status(200).json(result);
     } catch (e) {
       return res.status(500).json({ error: e.message });

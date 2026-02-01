@@ -1,94 +1,176 @@
-// Bonding Curve for ARYA Token
-// Implements a constant product bonding curve: x * y = k
-// Price increases as more tokens are bought
+// Bonding Curve for Multiple Tokens
+// Implements linear bonding curves for ARYA, OPENWORK, and other tokens
 
-const INITIAL_SUPPLY = 1000000; // 1M ARYA tokens
-const INITIAL_RESERVE = 10; // 10 ETH initial reserve
-const K = INITIAL_SUPPLY * INITIAL_RESERVE;
+// Token configurations
+const TOKENS = {
+  ARYA: {
+    name: 'ARYA',
+    symbol: 'ARYA',
+    initialSupply: 1000000,
+    initialReserve: 10, // ETH
+    a: 0.00001, // Slope
+    b: 0.5, // Base price (ETH)
+    maxSupply: 10000000
+  },
+  OPENWORK: {
+    name: 'OPENWORK',
+    symbol: 'OPENWORK', 
+    initialSupply: 5000000,
+    initialReserve: 5, // ETH
+    a: 0.000001, // Gentler slope for larger supply
+    b: 0.0001, // Lower base price
+    maxSupply: 50000000
+  }
+};
 
-// Linear bonding curve parameters
-const A = 0.00001; // Slope
-const B = 0.5; // Base price in ETH
+// Get token configuration
+export function getTokenConfig(token) {
+  return TOKENS[token.toUpperCase()] || null;
+}
 
-export function getTokenPrice(supply) {
+// Get current price for a token
+export function getTokenPrice(token, supply) {
+  const config = getTokenConfig(token);
+  if (!config) return 0;
+  
   // Linear bonding curve: price = a * supply + b
-  return A * supply + B;
+  return config.a * supply + config.b;
 }
 
-export function getBuyAmount(ethAmount, currentSupply) {
-  // Calculate tokens received for ETH input
-  // Using linear curve: p = a*s + b
-  // integral from s to s+ds of p(s)ds = a*(s+ds)^2/2 + b*(s+ds) - (a*s^2/2 + b*s)
-  // ≈ ethAmount
+// Calculate buy amount (ETH -> Tokens)
+export function getBuyAmount(ethAmount, token, currentSupply) {
+  const config = getTokenConfig(token);
+  if (!config) return 0;
   
-  // Simplified: tokens = (sqrt(a) * ethAmount) for constant product
-  // For linear: solve quadratic
+  const startPrice = getTokenPrice(token, currentSupply);
+  const endPrice = getTokenPrice(token, currentSupply + 1000000); // Approximation
   
-  // Using approximation for small trades relative to supply
-  const price = getTokenPrice(currentSupply + ethAmount / getTokenPrice(currentSupply));
-  return ethAmount / price;
+  // Simple linear approximation
+  return ethAmount / ((startPrice + endPrice) / 2);
 }
 
-export function getSellAmount(tokenAmount, currentSupply) {
-  // Calculate ETH received for token output
-  const price = getTokenPrice(currentSupply - tokenAmount);
-  return tokenAmount * (getTokenPrice(currentSupply) + price) / 2;
+// Calculate sell amount (Tokens -> ETH)  
+export function getSellAmount(tokenAmount, token, currentSupply) {
+  const config = getTokenConfig(token);
+  if (!config) return 0;
+  
+  const startPrice = getTokenPrice(token, currentSupply);
+  const endPrice = getTokenPrice(token, currentSupply - tokenAmount);
+  
+  return tokenAmount * ((startPrice + endPrice) / 2);
 }
 
-export function getSlippage(amount, supply, isBuy) {
-  const midPrice = getTokenPrice(supply);
+// Calculate slippage percentage
+export function getSlippage(amount, supply, token, isBuy) {
+  const midPrice = getTokenPrice(token, supply);
   const avgPrice = isBuy 
-    ? getTokenPrice(supply + amount)
-    : getTokenPrice(supply - amount);
+    ? getTokenPrice(token, supply + amount)
+    : getTokenPrice(token, supply - amount);
+  
+  if (midPrice === 0) return 0;
   return Math.abs((avgPrice - midPrice) / midPrice * 100);
 }
 
-// Bonding Curve State
-let curveState = {
-  supply: INITIAL_SUPPLY,
-  reserve: INITIAL_RESERVE,
-  totalTrades: 0,
-  totalVolume: 0
+// Global curve state
+const curveStates = {
+  ARYA: {
+    supply: TOKENS.ARYA.initialSupply,
+    reserve: TOKENS.ARYA.initialReserve,
+    totalTrades: 0,
+    totalVolume: 0
+  },
+  OPENWORK: {
+    supply: TOKENS.OPENWORK.initialSupply,
+    reserve: TOKENS.OPENWORK.initialReserve,
+    totalTrades: 0,
+    totalVolume: 0
+  }
 };
 
-export function getCurveState() {
-  return { ...curveState };
-}
-
-export function executeTrade(type, amount, token) {
-  // type: 'BUY' | 'SELL'
-  // amount: ETH amount for BUY, token amount for SELL
+// Get curve state for a token
+export function getCurveState(token) {
+  const config = getTokenConfig(token);
+  if (!config) return null;
   
-  const price = getTokenPrice(curveState.supply);
-  let tokens, eth, slippage;
-  
-  if (type === 'BUY') {
-    tokens = getBuyAmount(amount, curveState.supply);
-    eth = amount;
-    slippage = getSlippage(tokens, curveState.supply, true);
-    
-    curveState.supply += tokens;
-    curveState.reserve += eth;
-  } else {
-    // SELL
-    eth = getSellAmount(amount, curveState.supply);
-    tokens = amount;
-    slippage = getSlippage(tokens, curveState.supply, false);
-    
-    curveState.supply -= tokens;
-    curveState.reserve -= eth;
-  }
-  
-  curveState.totalTrades++;
-  curveState.totalVolume += eth;
+  const state = curveStates[token.toUpperCase()];
+  const price = getTokenPrice(token, state.supply);
   
   return {
-    type,
-    inputAmount: type === 'BUY' ? eth : tokens,
-    outputAmount: type === 'BUY' ? tokens : eth,
-    price: price,
-    slippage: slippage.toFixed(2),
-    newSupply: curveState.supply,
-    timestamp: new Date().toISOString()
+    ...state,
+    currentPrice: price,
+    token: config.symbol,
+    curveType: 'linear',
+    formula: `price = ${config.a} * supply + ${config.b} ETH`,
+    maxSupply: config.maxSupply
+  };
+}
+
+// Execute a trade on the bonding curve
+export function executeTrade(type, amount, token) {
+  const config = getTokenConfig(token);
+  if (!config) throw new Error('Unknown token');
+  
+  const stateKey = token.toUpperCase();
+  const state = curveStates[stateKey];
+  
+  if (type === 'BUY') {
+    const tokens = getBuyAmount(amount, token, state.supply);
+    
+    if (state.supply + tokens > config.maxSupply) {
+      throw new Error('Max supply reached');
+    }
+    
+    const slippage = getSlippage(tokens, state.supply, token, true);
+    
+    state.supply += tokens;
+    state.reserve += amount;
+    state.totalTrades++;
+    state.totalVolume += amount;
+    
+    return {
+      type: 'BUY',
+      inputAmount: amount,
+      outputAmount: tokens,
+      price: getTokenPrice(token, state.supply - tokens),
+      newPrice: getTokenPrice(token, state.supply),
+      slippage: slippage.toFixed(2),
+      newSupply: state.supply,
+      timestamp: new Date().toISOString()
+    };
+  } 
+  else if (type === 'SELL') {
+    const eth = getSellAmount(amount, token, state.supply);
+    
+    if (eth > state.reserve) {
+      throw new Error('Insufficient reserve');
+    }
+    
+    const slippage = getSlippage(amount, state.supply, token, false);
+    
+    state.supply -= amount;
+    state.reserve -= eth;
+    state.totalTrades++;
+    state.totalVolume += eth;
+    
+    return {
+      type: 'SELL',
+      inputAmount: amount,
+      outputAmount: eth,
+      price: getTokenPrice(token, state.supply + amount),
+      newPrice: getTokenPrice(token, state.supply),
+      slippage: slippage.toFixed(2),
+      newSupply: state.supply,
+      timestamp: new Date().toISOString()
+    };
+  }
+  
+  throw new Error('Invalid trade type');
+}
+
+// Get all token stats
+export function getAllCurveStates() {
+  return {
+    ARYA: getCurveState('ARYA'),
+    OPENWORK: getCurveState('OPENWORK')
   };
 }

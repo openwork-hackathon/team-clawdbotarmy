@@ -8,13 +8,18 @@ export default function TradingPanel() {
   const [loading, setLoading] = useState(false);
   const [curveData, setCurveData] = useState(null);
 
+  const tokens = [
+    { id: 'ARYA', name: '🦞 ARYA', emoji: '🦞' },
+    { id: 'OPENWORK', name: '⚡ OPENWORK', emoji: '⚡' }
+  ];
+
   // Fetch bonding curve state
   useEffect(() => {
     const fetchCurve = async () => {
       try {
         const r = await fetch('/api/bonding-curve');
         const data = await r.json();
-        setCurveData(data);
+        setCurveData(data[symbol] || data);
       } catch (e) {
         console.error('Error fetching curve:', e);
       }
@@ -22,7 +27,7 @@ export default function TradingPanel() {
     fetchCurve();
     const interval = setInterval(fetchCurve, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [symbol]);
 
   const executeTrade = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
@@ -53,6 +58,10 @@ export default function TradingPanel() {
   };
 
   const currentPrice = curveData?.currentPrice || 0.00001;
+  const tokenConfig = symbol === 'ARYA' 
+    ? { a: 0.00001, b: 0.5, max: 10000000 }
+    : { a: 0.000001, b: 0.0001, max: 50000000 };
+  
   const estimatedOutput = side === 'BUY' 
     ? (parseFloat(amount) / currentPrice).toFixed(0)
     : (parseFloat(amount) * currentPrice).toFixed(6);
@@ -65,11 +74,11 @@ export default function TradingPanel() {
         <div className="curve-info">
           <div className="curve-stat">
             <span className="label">Supply</span>
-            <span className="value">{curveData.supply?.toLocaleString()} ARYA</span>
+            <span className="value">{curveData.supply?.toLocaleString()} {symbol}</span>
           </div>
           <div className="curve-stat">
             <span className="label">Price</span>
-            <span className="value">Ξ {currentPrice.toFixed(6)}</span>
+            <span className="value">Ξ {currentPrice.toFixed(8)}</span>
           </div>
           <div className="curve-stat">
             <span className="label">Trades</span>
@@ -81,10 +90,9 @@ export default function TradingPanel() {
       <div className="trade-form">
         <div className="form-row">
           <select value={symbol} onChange={e => setSymbol(e.target.value)}>
-            <option value="ARYA">🦞 ARYA Token</option>
-            <option value="BTC">₿ Bitcoin</option>
-            <option value="ETH">Ξ Ethereum</option>
-            <option value="SOL">◎ Solana</option>
+            {tokens.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
           </select>
           
           <div className="side-buttons">
@@ -105,7 +113,7 @@ export default function TradingPanel() {
         
         <div className="form-row">
           <div className="input-wrapper">
-            <label>{side === 'BUY' ? 'ETH Amount' : 'Token Amount'}</label>
+            <label>{side === 'BUY' ? 'ETH Amount' : `${symbol} Amount`}</label>
             <input
               type="number"
               placeholder="0.00"
@@ -117,7 +125,7 @@ export default function TradingPanel() {
           </div>
           
           <div className="input-wrapper">
-            <label>{side === 'BUY' ? 'Est. ARYA' : 'Est. ETH'}</label>
+            <label>{side === 'BUY' ? `Est. ${symbol}` : 'Est. ETH'}</label>
             <input
               type="text"
               value={amount ? estimatedOutput : '0'}
@@ -137,7 +145,7 @@ export default function TradingPanel() {
           onClick={executeTrade}
           disabled={loading || !amount}
         >
-          {loading ? '⏳ Processing...' : `${side} ${amount ? (side === 'BUY' ? 'ETH' : 'ARYA') + ' ' + parseFloat(amount).toFixed(4) : ''}`}
+          {loading ? '⏳ Processing...' : `${side} ${amount ? (side === 'BUY' ? 'ETH' : symbol) + ' ' + parseFloat(amount).toFixed(4) : ''}`}
         </button>
       </div>
 
@@ -152,7 +160,7 @@ export default function TradingPanel() {
           <div className="success-icon">✅</div>
           <div className="success-details">
             <strong>Order Submitted!</strong>
-            <p>{result.type} {parseFloat(result.outputAmount).toFixed(0)} ARYA</p>
+            <p>{result.type} {parseFloat(result.outputAmount).toFixed(0)} {symbol}</p>
             <small>Price: Ξ {result.price?.toFixed(8)}</small>
             {result.slippage && <small>Slippage: {result.slippage}%</small>}
           </div>
@@ -160,7 +168,7 @@ export default function TradingPanel() {
       )}
       
       <div className="trade-disclaimer">
-        <small>🤖 Powered by Bonding Curve | OpenWork Hackathon 2026</small>
+        <small>🤖 Bonding Curve: price = a×supply + b | OpenWork Hackathon 2026</small>
       </div>
     </div>
   );
