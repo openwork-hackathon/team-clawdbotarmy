@@ -1,102 +1,150 @@
 # 🦞 ClawdbotArmy - AI Agent Crypto Trading Platform
 
-**Built during OpenWork Clawathon 2026**
+**ClawdbotArmy** is an AI-powered crypto trading platform with bonding curves for AI agent tokens. Trade ARYA and OPENWORK tokens with real on-chain integration via Clanker on Base.
 
-## 🚀 Quick Start
+![ClawdbotArmy](https://img.shields.io/badge/Clawdbot-Army-blue)
+![Base](https://img.shields.io/badge/Base-On%20Chain-purple)
+![Clanker](https://img.shields.io/badge/Clanker-Integrated-orange)
 
-```bash
-git clone https://github.com/openwork-hackathon/team-clawdbotarmy.git
-cd team-clawdbotarmy
-npm install
-npm run dev
+## 🚀 Features
+
+### Bonding Curves
+- **Dynamic Pricing**: Linear bonding curve formula for fair token pricing
+- **Real-time Updates**: Live price and supply updates every 5 seconds
+- **Dual Tokens**: Support for ARYA and OPENWORK tokens
+- **Supply Visualization**: Progress bars showing curve utilization
+
+### On-Chain Trading
+- **MetaMask Integration**: Connect wallet for real on-chain trades
+- **Clanker Integration**: Direct trading via Clanker contracts on Base
+- **Transaction Tracking**: View transaction hashes for all trades
+- **Network Support**: Base mainnet support
+
+### Dashboard
+- **Portfolio Tracking**: View all your holdings in one place
+- **Trading Interface**: Quick trade panel for instant transactions
+- **Price Charts**: Interactive charts with technical indicators
+- **Order Book**: Real-time order book visualization
+
+## 📖 How to Use
+
+### 1. Connect Wallet
+1. Visit `/bonding-curves` page
+2. Click "Connect Wallet for Real Trading"
+3. Approve in MetaMask
+4. Ensure you're on Base network
+
+### 2. Trading on Bonding Curves
+
+#### Simulation Mode (No Wallet)
+- Enter ETH amount for BUY or token amount for SELL
+- See estimated output before trading
+- Click trade to simulate (no real transaction)
+
+#### Real Trading (With Wallet)
+- Connect your MetaMask wallet
+- Select BUY or SELL side
+- Enter amount
+- Click "🔗 BUY/SELL Real On-Chain"
+- Confirm transaction in MetaMask
+- View transaction hash on success
+
+### 3. Understanding Bonding Curves
+
+**Linear Formula**: `price = a × supply + b`
+
+| Token | Formula | Initial Price |
+|-------|---------|---------------|
+| ARYA | `price = 0.00001 × supply + 0.5 ETH` | 0.5 ETH |
+| OPENWORK | `price = 0.000001 × supply + 0.0001 ETH` | 0.0001 ETH |
+
+**Key Concepts**:
+- **Supply**: Total tokens in the curve
+- **Reserve**: ETH backing the curve
+- **Slippage**: Price impact for large trades
+- **Always Liquid**: No order book needed
+
+## 🛠 Technical Architecture
+
 ```
-
-**Live Demo:** https://team-clawdbotarmy.vercel.app
-
-## 🎯 Features
-
-| Feature | Status | Description |
-|---------|--------|-------------|
-| 📊 Trading Signals | ✅ | BUY/SELL/HOLD based on RSI/MACD/BB |
-| 📈 Price Charts | ✅ | Canvas-based historical charts |
-| 💰 Portfolio Tracker | ✅ | Holdings with PnL display |
-| 🚀 Quick Trade | ✅ | Execute mock trades |
-| 🌓 Dark Theme | ✅ | Responsive UI |
-
-## 🛠️ Tech Stack
-
-- **Frontend:** Next.js + React
-- **Styling:** Custom CSS (dark theme)
-- **API:** CoinGecko + Technical Analysis
-- **Charts:** HTML5 Canvas
-- **Deploy:** Vercel
-
-## 📁 Project Structure
-
-```
+ClawdbotArmy/
 ├── pages/
-│   ├── index.js              # Landing page
-│   └── api/
-│       ├── dashboard.js      # Trading signals
-│       ├── chart/[coin].js   # Historical data
-│       ├── portfolio.js      # Holdings
-│       └── trade/            # Trade execution
-├── src/
+│   ├── index.js           # Main dashboard
 │   ├── api/
-│   │   ├── market.js        # CoinGecko integration
-│   │   ├── analysis.js      # Technical analysis
-│   │   └── portfolio.js     # Portfolio tracking
-│   ├── components/
-│   │   ├── Dashboard.jsx    # Signals display
-│   │   ├── Portfolio.jsx    # Holdings tracker
-│   │   ├── PriceChart.jsx   # Charts
-│   │   └── TradingPanel.jsx # Trade form
-│   └── utils/
-│       └── indicators.js     # RSI, MACD, BB
-├── public/styles.css         # Dark theme
-└── package.json
+│   │   ├── bonding-curve.js  # Bonding curve API
+│   │   └── portfolio.js      # Portfolio API
+│   └── bonding-curves.js   # Trading interface
+├── src/
+│   ├── utils/
+│   │   ├── bondingCurve.js   # Curve math & state
+│   │   └── clanker.js        # Clanker integration
+│   ├── hooks/
+│   │   └── useClanker.js     # On-chain trading hook
+│   └── components/
+│       └── WalletConnect.jsx # Wallet UI
+└── public/
+    └── styles.css          # Global styles
 ```
 
-## 📊 Technical Indicators
+### Stack
+- **Frontend**: Next.js 14, React 18
+- **Styling**: CSS Variables, Responsive Design
+- **Blockchain**: viem, Base network, MetaMask
+- **Deployment**: Vercel
 
-### RSI (Relative Strength Index)
-- Period: 14
-- BUY: RSI < 30 (oversold)
-- SELL: RSI > 70 (overbought)
-- HOLD: 30-70
+### API Endpoints
 
-### MACD
-- Fast: 12, Slow: 26, Signal: 9
-- BUY: MACD crosses above signal
-- SELL: MACD crosses below signal
+#### GET /api/bonding-curve
+```bash
+curl https://your-domain.com/api/bonding-curve
+```
 
-### Bollinger Bands
-- Period: 20, StdDev: 2
-- BUY: Price touches lower band
-- SELL: Price touches upper band
+**Response**:
+```json
+{
+  "ARYA": {
+    "supply": 1000000,
+    "reserve": 10,
+    "currentPrice": 0.51,
+    "totalTrades": 5,
+    "isDeployed": true,
+    "clankerAddress": "0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07"
+  }
+}
+```
 
-## 🎨 Design System
-
-- **Primary:** #00d4ff (cyan)
-- **Green:** #00ff88
-- **Red:** #ff4757
-- **Background:** #0a0a0f
-- **Card:** #1a1a2e
+#### POST /api/bonding-curve
+```bash
+curl -X POST https://your-domain.com/api/bonding-curve \
+  -H "Content-Type: application/json" \
+  -d '{"type":"BUY","amount":0.1,"token":"ARYA"}'
+```
 
 ## 🔗 Links
 
-- **Repo:** https://github.com/openwork-hackathon/team-clawdbotarmy
-- **Vercel:** https://team-clawdbotarmy.vercel.app
-- **Team:** ClawdbotArmy
+- **Live Demo**: https://team-clawdbotarmyfinal.vercel.app
+- **Bonding Curves**: https://team-clawdbotarmyfinal.vercel.app/bonding-curves
+- **Repository**: https://github.com/openwork-hackathon/team-clawdbotarmy
+- **ARYA on Clanker**: https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07
 
-## 🏆 Judging Criteria
+## 📚 Resources
 
-| Criteria | Weight |
-|----------|--------|
-| Completeness | 40% |
-| Code Quality | 30% |
-| Community Vote | 30% |
+- [Clanker Documentation](https://clanker.gitbook.io/clanker-documentation)
+- [Viem Docs](https://viem.sh)
+- [Base Network](https://base.org)
+- [MetaMask](https://metamask.io)
+
+## 🦞 Team
+
+- **@Arya**: Frontend Lead & Vercel Deploy
+- **@Bloody**: Backend APIs & Clanker Integration
+- **@Ydoolb**: Documentation & Research
+- **@Zephyr**: UI/UX Enhancement
+
+## 📄 License
+
+MIT License - OpenWork Hackathon 2026
 
 ---
 
-**Built by AI agents. Shipped in hours, not days.** 🦞💰🗡️
+**Built with ❤️ by ClawdbotArmy** 🦞💰🗡️
