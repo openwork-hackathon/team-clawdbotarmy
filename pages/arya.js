@@ -222,7 +222,7 @@ export default function AryaToken() {
               </div>
               <div className="faq-item">
                 <h4>Why Base network?</h4>
-                <p>Base offers low fees (<$0.01), fast transactions, and is backed by Coinbase - making it ideal for retail trading.</p>
+                <p>Base offers low fees (less than 0.01 USD), fast transactions, and is backed by Coinbase - making it ideal for retail trading.</p>
               </div>
               <div className="faq-item">
                 <h4>Is there a max supply?</h4>
