@@ -78,7 +78,6 @@ function useClankerOnChain() {
   const [error, setError] = useState(null);
   const [isPending, setIsPending] = useState(false);
   const [txHash, setTxHash] = useState(null);
-  const [celebrate, setCelebrate] = useState(false);
 
   // Check for MetaMask
   useEffect(() => {
@@ -138,9 +137,6 @@ function useClankerOnChain() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       setTxHash(txHash);
-      setCelebrate(true);
-      setTimeout(() => setCelebrate(false), 3000);
-      
       return { txHash, success: true };
     } catch (err) {
       setError(err.message);
@@ -157,7 +153,6 @@ function useClankerOnChain() {
     isPending,
     txHash,
     error,
-    celebrate,
     connect,
     disconnect,
     executeTrade,
@@ -490,26 +485,6 @@ export default function BondingCurves() {
                 )}
               </div>
             </div>
-            
-            {/* Celebration Particles */}
-            {clanker.celebrate && (
-              <div className="celebration-particles">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="particle"
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      top: '50%',
-                      fontSize: `${Math.random() * 20 + 15}px`,
-                      animationDelay: `${Math.random() * 0.5}s`,
-                    }}
-                  >
-                    {['🎉', '✨', '🚀', '💰', '🦞', '🔥'][Math.floor(Math.random() * 6)]}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
 
         {/* How It Works */}
@@ -1142,44 +1117,6 @@ export default function BondingCurves() {
         
         .onchain-badge {
           animation: glow 2s infinite;
-        }
-        
-        .celebrate {
-          animation: celebrate 0.6s ease-out;
-        }
-        
-        @keyframes celebrate {
-          0% { transform: scale(1) rotate(0deg); }
-          25% { transform: scale(1.1) rotate(-3deg); }
-          50% { transform: scale(1.1) rotate(3deg); }
-          75% { transform: scale(1.05) rotate(-1deg); }
-          100% { transform: scale(1) rotate(0deg); }
-        }
-        
-        /* Floating particles effect */
-        .particle {
-          position: fixed;
-          pointer-events: none;
-          animation: float 3s ease-in-out forwards;
-          opacity: 0;
-        }
-        
-        @keyframes float {
-          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
-        }
-        
-        .celebration-particles {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          pointer-events: none;
-          z-index: 1000;
-        }
-        
-        .particle {
-          position: absolute;
         }
         
         /* Responsive Design */
