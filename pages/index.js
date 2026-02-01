@@ -8,6 +8,37 @@ import Positions from '../src/components/Positions';
 import OrderBook from '../src/components/OrderBook';
 import TradeHistory from '../src/components/TradeHistory';
 import WalletConnect from '../src/components/WalletConnect';
+import { useState, useEffect } from 'react';
+
+// Live prices component
+function LivePrices() {
+  const [prices, setPrices] = useState(null);
+  
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
+        const data = await r.json();
+        setPrices(data);
+      } catch (e) {
+        console.error('Error fetching prices:', e);
+      }
+    };
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!prices) return <span style={{fontSize: '0.75em', color: 'var(--text-secondary)'}}>Loading prices...</span>;
+  
+  return (
+    <div style={{display: 'flex', gap: '15px', fontSize: '0.85em', marginTop: '5px'}}>
+      <span style={{color: '#f7931a'}}>BTC ${prices.bitcoin?.usd?.toLocaleString()}</span>
+      <span style={{color: '#627eea'}}>ETH ${prices.ethereum?.usd?.toLocaleString()}</span>
+      <span style={{color: '#9945ff'}}>SOL ${prices.solana?.usd?.toLocaleString()}</span>
+    </div>
+  );
+}
 
 // Disable static pre-rendering for wallet-dependent page
 export const dynamic = 'force-dynamic';
@@ -29,20 +60,27 @@ export default function Home() {
           padding: '15px 30px',
           background: 'var(--bg-secondary)',
           borderRadius: '12px',
-          marginBottom: '24px'
+          marginBottom: '24px',
+          flexWrap: 'wrap',
+          gap: '15px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.5em' }}>🦞</span>
-            <span style={{ 
-              fontWeight: 'bold', 
-              fontSize: '1.2em',
-              background: 'linear-gradient(135deg, var(--accent), var(--accent-green))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>ClawdbotArmy</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <span style={{ fontSize: '1.8em' }}>🦞</span>
+            <div>
+              <span style={{ 
+                fontWeight: 'bold', 
+                fontSize: '1.3em',
+                background: 'linear-gradient(135deg, var(--accent), var(--accent-green))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                display: 'block'
+              }}>ClawdbotArmy</span>
+              <LivePrices />
+            </div>
           </div>
-          <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-            <a href="/bonding-curves" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Bonding Curves</a>
+          <nav style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <a href="/bonding-curves" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📈 Bonding Curves</a>
+            <a href="/arya" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Trade</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Dashboard</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Portfolio</a>

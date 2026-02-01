@@ -2217,3 +2217,67 @@ button.execute.sell {
 .retry-btn:hover {
   transform: scale(1.05);
 }
+
+/* Live Prices Header */
+.main-header .live-prices {
+  display: flex;
+  gap: 15px;
+  font-size: 0.85em;
+  margin-top: 5px;
+}
+
+.main-header .live-prices span {
+  font-weight: 500;
+}
+
+/* Responsive header */
+@media (max-width: 768px) {
+  .main-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .main-header nav {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .live-prices {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+/* Wallet Connect button visibility */
+.wallet-connect .connect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--accent), #0099ff);
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wallet-connect .connect-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.wallet-connect .connect-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Navigation links hover */
+.main-header nav a {
+  transition: color 0.2s;
+}
+
+.main-header nav a:hover {
+  color: var(--accent) !important;
+}
