@@ -8,22 +8,16 @@ const SUPPORTED_CHAINS = [
 ];
 
 export default function WalletConnect() {
-  const [mounted, setMounted] = useState(false);
   const [connected, setConnected] = useState(false);
   const [address, setAddress] = useState('');
   const [balance, setBalance] = useState('0');
   const [chainId, setChainId] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
-  // Hydration check
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
     // Check if already connected
     if (typeof window !== 'undefined' && window.ethereum) {
       checkConnection();
@@ -34,18 +28,11 @@ export default function WalletConnect() {
         setChainId(parseInt(newChainId, 16));
         if (connected) fetchBalance(address);
       });
-
-      return () => {
-        window.ethereum.removeAllListeners('accountsChanged');
-        window.ethereum.removeAllListeners('chainChanged');
-      };
     }
-  }, [mounted, address, connected]);
+  }, []);
 
   const checkConnection = async () => {
     try {
-      if (typeof window === 'undefined' || !window.ethereum) return;
-      
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       if (accounts.length > 0) {
         setAddress(accounts[0]);
@@ -89,7 +76,7 @@ export default function WalletConnect() {
     setError(null);
 
     try {
-      if (typeof window === 'undefined' || !window.ethereum) {
+      if (!window.ethereum) {
         throw new Error('No crypto wallet found. Please install MetaMask or another wallet.');
       }
 
@@ -120,10 +107,16 @@ export default function WalletConnect() {
   };
 
   if (!mounted) {
-    return <div className="wallet-connect"><div className="wallet-loading">Loading...</div></div>;
+    return (
+      <div className="wallet-connect">
+        <button className="connect-btn" disabled>
+          ⏳ Loading...
+        </button>
+      </div>
+    );
   }
 
-  if (typeof window === 'undefined' || !window.ethereum) {
+  if (!window.ethereum) {
     return (
       <div className="wallet-connect">
         <div className="wallet-warning">

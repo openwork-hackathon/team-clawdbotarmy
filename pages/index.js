@@ -8,15 +8,9 @@ import Positions from '../src/components/Positions';
 import OrderBook from '../src/components/OrderBook';
 import TradeHistory from '../src/components/TradeHistory';
 import WalletConnect from '../src/components/WalletConnect';
-import { WalletProvider } from '../src/hooks/useWallet';
 
-function WalletWrapper({ children }) {
-  return (
-    <WalletProvider>
-      {children}
-    </WalletProvider>
-  );
-}
+// Disable static pre-rendering for wallet-dependent page
+export const dynamic = 'force-dynamic';
 
 export default function Home() {
   return (
@@ -28,8 +22,7 @@ export default function Home() {
       </Head>
       
       <div className="container">
-        <WalletWrapper>
-          <header className="main-header" style={{ 
+        <header className="main-header" style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
@@ -133,7 +126,6 @@ export default function Home() {
             Powered by CoinGecko API + Technical Analysis
           </p>
         </footer>
-        </WalletWrapper>
       </div>
     </>
   );

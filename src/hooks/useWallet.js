@@ -32,7 +32,7 @@ export function WalletProvider({ children }) {
   const connect = useCallback(async () => {
     setError(null);
     
-    if (typeof window === 'undefined' || !window.ethereum) {
+    if (!window.ethereum) {
       setError('No crypto wallet found. Please install MetaMask.');
       return false;
     }
@@ -62,41 +62,44 @@ export function WalletProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      const checkConnection = async () => {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts.length > 0) {
-            setAddress(accounts[0]);
-            setConnected(true);
-            await fetchBalance(accounts[0]);
-          }
-        } catch (e) {
-          console.error('Error checking connection:', e);
-        }
-      };
-      
-      checkConnection();
-      
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length === 0) {
-          disconnect();
-        } else {
+    // Only run on client-side
+    if (typeof window === 'undefined') return;
+    
+    if (!window.ethereum) return;
+    
+    const checkConnection = async () => {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
           setAddress(accounts[0]);
-          fetchBalance(accounts[0]);
+          setConnected(true);
+          await fetchBalance(accounts[0]);
         }
-      });
+      } catch (e) {
+        console.error('Error checking connection:', e);
+      }
+    };
+    
+    checkConnection();
+    
+    window.ethereum.on('accountsChanged', (accounts) => {
+      if (accounts.length === 0) {
+        disconnect();
+      } else {
+        setAddress(accounts[0]);
+        fetchBalance(accounts[0]);
+      }
+    });
 
-      window.ethereum.on('chainChanged', (newChainId) => {
-        setChainId(parseInt(newChainId, 16));
-        if (connected) fetchBalance(address);
-      });
+    window.ethereum.on('chainChanged', (newChainId) => {
+      setChainId(parseInt(newChainId, 16));
+      if (connected) fetchBalance(address);
+    });
 
-      return () => {
-        window.ethereum.removeAllListeners('accountsChanged');
-        window.ethereum.removeAllListeners('chainChanged');
-      };
-    }
+    return () => {
+      window.ethereum.removeAllListeners('accountsChanged');
+      window.ethereum.removeAllListeners('chainChanged');
+    };
   }, [address, connected, disconnect, fetchBalance]);
 
   return (
