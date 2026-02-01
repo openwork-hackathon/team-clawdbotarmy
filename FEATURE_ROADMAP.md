@@ -12,8 +12,8 @@
 ## Next Features (2h rotation)
 
 ### Next Ship: 22:30 UTC
-- [ ] Price alerts (notify when target reached)
-- [ ] Mobile responsive improvements
+- [x] Price alerts (notify when target reached)
+- [x] Mobile responsive improvements
 - [ ] Multi-timeframe charts (1m, 5m, 15m, 1H, 4H)
 
 ### Next Ship: 00:30 UTC
