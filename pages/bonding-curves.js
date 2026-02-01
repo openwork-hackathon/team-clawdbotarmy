@@ -441,7 +441,7 @@ export default function BondingCurves() {
           {result && result.outputAmount && (
             <div className="trade-success">
               <div className="success-header">
-                <span>✅</span> Order Submitted!
+                <span>✅</span> {result.isOnChain ? 'On-Chain Transaction Submitted!' : 'Order Submitted!'}
               </div>
               <div className="success-details">
                 <div className="detail-row">
@@ -462,16 +462,23 @@ export default function BondingCurves() {
                     <strong>{result.slippage}%</strong>
                   </div>
                 )}
-                <div className="detail-row">
-                  <span>New Supply:</span>
-                  <strong>{result.newSupply?.toLocaleString()}</strong>
-                </div>
-                {result.isSimulated && (
+                {result.txHash && (
+                  <div className="detail-row tx-hash">
+                    <span>Tx Hash:</span>
+                    <code>{result.txHash.slice(0,10)}...{result.txHash.slice(-8)}</code>
+                  </div>
+                )}
+                {result.isSimulated && !result.isOnChain && (
                   <div className="simulation-warning">
                     <span>🎮</span> Simulation mode - Token not yet deployed on Clanker
                   </div>
                 )}
-                {!result.isSimulated && selectedCurve?.tradingUrl && (
+                {result.isOnChain && (
+                  <div className="onchain-badge">
+                    <span>🔗</span> Executed via Clanker Contracts
+                  </div>
+                )}
+                {!result.isSimulated && selectedCurve?.tradingUrl && !result.isOnChain && (
                   <a href={selectedCurve.tradingUrl} target="_blank" rel="noopener noreferrer" className="trade-on-clanker">
                     🔗 Trade for Real on Clanker
                   </a>
@@ -910,6 +917,27 @@ export default function BondingCurves() {
         
         .trade-on-clanker:hover {
           opacity: 0.9;
+        }
+        
+        .tx-hash code {
+          background: var(--bg-secondary);
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 0.85em;
+        }
+        
+        .onchain-badge {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 15px;
+          padding: 10px;
+          background: rgba(99, 102, 241, 0.1);
+          border: 1px solid #6366f1;
+          border-radius: 8px;
+          font-size: 0.9em;
+          color: #6366f1;
+          font-weight: 500;
         }
         
         .info-section {
