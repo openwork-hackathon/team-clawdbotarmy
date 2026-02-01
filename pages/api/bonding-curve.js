@@ -1,4 +1,4 @@
-import { getCurveState, executeTrade, getTokenPrice, getAllCurveStates, getTokenInfo, getAllTokens } from '../../utils/bondingCurve';
+import { getCurveState, executeTrade, getTokenPrice, getAllCurveStates, getTokenInfo, getAllTokens } from '../../src/utils/bondingCurve';
 
 export default async function handler(req, res) {
   // GET /api/bonding-curve - Get all curve states or specific token
