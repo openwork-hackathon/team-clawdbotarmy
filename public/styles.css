@@ -1879,3 +1879,115 @@ button.execute.sell {
   padding: 60px;
   color: var(--text-secondary);
 }
+
+/* ARYA Token Section */
+.aries-token {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.aries-token h4 {
+  color: var(--accent);
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.token-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.token-address {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+}
+
+.token-address .label {
+  color: var(--text-secondary);
+}
+
+.token-address code {
+  background: var(--bg-secondary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.token-address a {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.token-details {
+  display: flex;
+  gap: 20px;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+.clanker-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--accent), #0099ff);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 500;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.clanker-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+/* Quick Stats Grid Fix */
+.quick-stats .stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+.stat-item .value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stat-item .value.up {
+  color: var(--accent-green);
+}
+
+.stat-item .value.down {
+  color: var(--accent-red);
+}
+
+.stat-item .value.neutral {
+  color: var(--accent);
+}
+
+/* Market Sections - Fixed Layout */
+.market-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .market-sections {
+    grid-template-columns: 1fr;
+  }
+}

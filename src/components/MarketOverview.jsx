@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
 
+const ARYA_TOKEN = {
+  address: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
+  name: 'ARYA',
+  symbol: 'ARYA',
+  supply: '100B',
+  deployedAt: '2026-02-01'
+};
+
 export default function MarketOverview() {
   const [marketData, setMarketData] = useState(null);
   const [gainers, setGainers] = useState([]);
@@ -129,6 +137,29 @@ export default function MarketOverview() {
               <span>Long/Short</span>
               <span className="value up">52% / 48%</span>
             </div>
+          </div>
+        </div>
+
+        <div className="section aries-token">
+          <h4>🦞 ARYA Token</h4>
+          <div className="token-info">
+            <div className="token-address">
+              <span className="label">Contract:</span>
+              <code>{ARYA_TOKEN.address.slice(0, 6)}...{ARYA_TOKEN.address.slice(-4)}</code>
+              <a href={`https://basescan.org/token/${ARYA_TOKEN.address}`} target="_blank" rel="noopener noreferrer">📋</a>
+            </div>
+            <div className="token-details">
+              <span>Supply: {ARYA_TOKEN.supply}</span>
+              <span>Network: Base</span>
+            </div>
+            <a 
+              href={`https://www.clanker.world/clanker/${ARYA_TOKEN.address}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="clanker-link"
+            >
+              View on Clanker 🌐
+            </a>
           </div>
         </div>
       </div>

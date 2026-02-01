@@ -7,7 +7,13 @@ export default function TradingPanel() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const prices = { BTC: 78000, ETH: 2400, SOL: 105 };
+  const prices = { 
+    BTC: 78000, 
+    ETH: 2400, 
+    SOL: 105,
+    ARYA: 0.000001 // Placeholder for new token
+  };
+  const aryaAddress = '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
   const estimatedAmount = amount ? (parseFloat(amount) / prices[symbol]).toFixed(6) : '0';
 
   const executeTrade = async () => {
@@ -44,6 +50,7 @@ export default function TradingPanel() {
             <option value="BTC">🟠 Bitcoin</option>
             <option value="ETH">🔵 Ethereum</option>
             <option value="SOL">🟣 Solana</option>
+            <option value="ARYA">🦞 ARYA (NEW!)</option>
           </select>
           
           <div className="side-buttons">
