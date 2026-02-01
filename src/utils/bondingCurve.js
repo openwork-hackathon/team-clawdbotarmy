@@ -1,8 +1,18 @@
 // Bonding Curve for Multiple Tokens
-// Implements linear bonding curves for ARYA, OPENWORK, and other tokens
+// Integrated with Clanker for real on-chain trading
 
-// Token configurations
-const TOKENS = {
+import { 
+  getTokenInfo, 
+  getAllTokens, 
+  isTokenDeployed, 
+  getTokenClankerUrl,
+  getTradingUrl,
+  estimateTrade,
+  CLANKER_TOKENS
+} from './clanker';
+
+// Token configurations (mirrors Clanker deployment params)
+const TOKEN_CONFIGS = {
   ARYA: {
     name: 'ARYA',
     symbol: 'ARYA',
@@ -10,25 +20,43 @@ const TOKENS = {
     initialReserve: 10, // ETH
     a: 0.00001, // Slope
     b: 0.5, // Base price (ETH)
-    maxSupply: 10000000
+    maxSupply: 10000000,
+    clankerAddress: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
   },
   OPENWORK: {
-    name: 'OPENWORK',
-    symbol: 'OPENWORK', 
+    name: 'OpenWork Protocol',
+    symbol: 'OPENWORK',
     initialSupply: 5000000,
     initialReserve: 5, // ETH
     a: 0.000001, // Gentler slope for larger supply
     b: 0.0001, // Lower base price
-    maxSupply: 50000000
+    maxSupply: 50000000,
+    clankerAddress: null // Not yet deployed
+  }
+};
+
+// Global curve state (in-memory for demo)
+const curveStates = {
+  ARYA: {
+    supply: TOKEN_CONFIGS.ARYA.initialSupply,
+    reserve: TOKEN_CONFIGS.ARYA.initialReserve,
+    totalTrades: 0,
+    totalVolume: 0
+  },
+  OPENWORK: {
+    supply: TOKEN_CONFIGS.OPENWORK.initialSupply,
+    reserve: TOKEN_CONFIGS.OPENWORK.initialReserve,
+    totalTrades: 0,
+    totalVolume: 0
   }
 };
 
 // Get token configuration
 export function getTokenConfig(token) {
-  return TOKENS[token.toUpperCase()] || null;
+  return TOKEN_CONFIGS[token.toUpperCase()] || null;
 }
 
-// Get current price for a token
+// Get current price for a token (linear bonding curve)
 export function getTokenPrice(token, supply) {
   const config = getTokenConfig(token);
   if (!config) return 0;
@@ -43,7 +71,7 @@ export function getBuyAmount(ethAmount, token, currentSupply) {
   if (!config) return 0;
   
   const startPrice = getTokenPrice(token, currentSupply);
-  const endPrice = getTokenPrice(token, currentSupply + 1000000); // Approximation
+  const endPrice = getTokenPrice(token, currentSupply + 1000000);
   
   // Simple linear approximation
   return ethAmount / ((startPrice + endPrice) / 2);
@@ -71,29 +99,24 @@ export function getSlippage(amount, supply, token, isBuy) {
   return Math.abs((avgPrice - midPrice) / midPrice * 100);
 }
 
-// Global curve state
-const curveStates = {
-  ARYA: {
-    supply: TOKENS.ARYA.initialSupply,
-    reserve: TOKENS.ARYA.initialReserve,
-    totalTrades: 0,
-    totalVolume: 0
-  },
-  OPENWORK: {
-    supply: TOKENS.OPENWORK.initialSupply,
-    reserve: TOKENS.OPENWORK.initialReserve,
-    totalTrades: 0,
-    totalVolume: 0
-  }
-};
-
 // Get curve state for a token
 export function getCurveState(token) {
   const config = getTokenConfig(token);
   if (!config) return null;
   
-  const state = curveStates[token.toUpperCase()];
+  const stateKey = token.toUpperCase();
+  const state = curveStates[stateKey] || {
+    supply: config.initialSupply,
+    reserve: config.initialReserve,
+    totalTrades: 0,
+    totalVolume: 0
+  };
   const price = getTokenPrice(token, state.supply);
+  
+  // Check if token is deployed on Clanker
+  const isDeployed = isTokenDeployed(token);
+  const clankerUrl = getTokenClankerUrl(token);
+  const tradingUrl = getTradingUrl(token);
   
   return {
     ...state,
@@ -101,17 +124,38 @@ export function getCurveState(token) {
     token: config.symbol,
     curveType: 'linear',
     formula: `price = ${config.a} * supply + ${config.b} ETH`,
-    maxSupply: config.maxSupply
+    maxSupply: config.maxSupply,
+    // Clanker integration
+    isDeployed,
+    clankerAddress: config.clankerAddress,
+    clankerUrl,
+    tradingUrl,
+    // Token info
+    tokenInfo: getTokenInfo(token)
   };
 }
 
-// Execute a trade on the bonding curve
+// Execute a trade (simulation mode - for real trades, use on-chain)
 export function executeTrade(type, amount, token) {
   const config = getTokenConfig(token);
   if (!config) throw new Error('Unknown token');
   
   const stateKey = token.toUpperCase();
+  
+  // Initialize state if needed
+  if (!curveStates[stateKey]) {
+    curveStates[stateKey] = {
+      supply: config.initialSupply,
+      reserve: config.initialReserve,
+      totalTrades: 0,
+      totalVolume: 0
+    };
+  }
+  
   const state = curveStates[stateKey];
+  
+  // Check if token is deployed on Clanker
+  const isDeployed = isTokenDeployed(token);
   
   if (type === 'BUY') {
     const tokens = getBuyAmount(amount, token, state.supply);
@@ -121,6 +165,7 @@ export function executeTrade(type, amount, token) {
     }
     
     const slippage = getSlippage(tokens, state.supply, token, true);
+    const oldPrice = getTokenPrice(token, state.supply);
     
     state.supply += tokens;
     state.reserve += amount;
@@ -131,10 +176,14 @@ export function executeTrade(type, amount, token) {
       type: 'BUY',
       inputAmount: amount,
       outputAmount: tokens,
-      price: getTokenPrice(token, state.supply - tokens),
+      price: oldPrice,
       newPrice: getTokenPrice(token, state.supply),
       slippage: slippage.toFixed(2),
       newSupply: state.supply,
+      isSimulated: !isDeployed,
+      message: isDeployed 
+        ? 'Ready for on-chain execution via Clanker'
+        : 'Simulation mode - Token not yet deployed on Clanker',
       timestamp: new Date().toISOString()
     };
   } 
@@ -146,6 +195,7 @@ export function executeTrade(type, amount, token) {
     }
     
     const slippage = getSlippage(amount, state.supply, token, false);
+    const oldPrice = getTokenPrice(token, state.supply);
     
     state.supply -= amount;
     state.reserve -= eth;
@@ -156,10 +206,14 @@ export function executeTrade(type, amount, token) {
       type: 'SELL',
       inputAmount: amount,
       outputAmount: eth,
-      price: getTokenPrice(token, state.supply + amount),
+      price: oldPrice,
       newPrice: getTokenPrice(token, state.supply),
       slippage: slippage.toFixed(2),
       newSupply: state.supply,
+      isSimulated: !isDeployed,
+      message: isDeployed
+        ? 'Ready for on-chain execution via Clanker'
+        : 'Simulation mode - Token not yet deployed on Clanker',
       timestamp: new Date().toISOString()
     };
   }
@@ -173,4 +227,13 @@ export function getAllCurveStates() {
     ARYA: getCurveState('ARYA'),
     OPENWORK: getCurveState('OPENWORK')
   };
+}
+
+// Get token info from Clanker module
+export { getTokenInfo, getAllTokens, isTokenDeployed, getTokenClankerUrl, getTradingUrl };
+
+// Estimate trade with Clanker integration
+export function estimateTradeWithClanker(tokenSymbol, side, inputAmount) {
+  const state = getCurveState(tokenSymbol);
+  return estimateTrade(tokenSymbol, side, inputAmount, state.supply);
 }

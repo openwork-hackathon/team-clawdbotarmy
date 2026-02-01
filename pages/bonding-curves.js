@@ -131,7 +131,21 @@ export default function BondingCurves() {
                   <div className="curve-header">
                     <span className="curve-emoji">{token.emoji}</span>
                     <h2>{token.id}</h2>
+                    {curve?.isDeployed ? (
+                      <a href={curve.clankerUrl} target="_blank" rel="noopener noreferrer" className="clanker-badge">
+                        🔗 On Clanker
+                      </a>
+                    ) : (
+                      <span className="simulation-badge">🎮 Simulation</span>
+                    )}
                   </div>
+                  
+                  {curve?.clankerAddress && (
+                    <div className="clanker-address">
+                      <span className="address-label">Contract:</span>
+                      <code>{curve.clankerAddress.slice(0,6)}...{curve.clankerAddress.slice(-4)}</code>
+                    </div>
+                  )}
                   
                   <div className="curve-stats">
                     <div className="stat">
@@ -278,6 +292,16 @@ export default function BondingCurves() {
                   <span>New Supply:</span>
                   <strong>{result.newSupply?.toLocaleString()}</strong>
                 </div>
+                {result.isSimulated && (
+                  <div className="simulation-warning">
+                    <span>🎮</span> Simulation mode - Token not yet deployed on Clanker
+                  </div>
+                )}
+                {!result.isSimulated && selectedCurve?.tradingUrl && (
+                  <a href={selectedCurve.tradingUrl} target="_blank" rel="noopener noreferrer" className="trade-on-clanker">
+                    🔗 Trade for Real on Clanker
+                  </a>
+                )}
               </div>
             </div>
           )}
@@ -403,6 +427,42 @@ export default function BondingCurves() {
         
         .curve-header h2 {
           margin: 0;
+        }
+        
+        .clanker-badge {
+          font-size: 0.7em;
+          padding: 4px 8px;
+          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          border-radius: 12px;
+          color: #fff;
+          text-decoration: none;
+          margin-left: auto;
+        }
+        
+        .simulation-badge {
+          font-size: 0.7em;
+          padding: 4px 8px;
+          background: rgba(251, 191, 36, 0.2);
+          border: 1px solid #fbbf24;
+          border-radius: 12px;
+          color: #fbbf24;
+          margin-left: auto;
+        }
+        
+        .clanker-address {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.8em;
+          margin-bottom: 15px;
+          color: var(--text-secondary);
+        }
+        
+        .clanker-address code {
+          background: var(--bg-secondary);
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 0.9em;
         }
         
         .curve-stats {
@@ -646,6 +706,36 @@ export default function BondingCurves() {
         .detail-row {
           display: flex;
           justify-content: space-between;
+        }
+        
+        .simulation-warning {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 15px;
+          padding: 10px;
+          background: rgba(251, 191, 36, 0.1);
+          border: 1px solid #fbbf24;
+          border-radius: 8px;
+          font-size: 0.9em;
+          color: #fbbf24;
+        }
+        
+        .trade-on-clanker {
+          display: block;
+          margin-top: 15px;
+          padding: 12px;
+          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          border-radius: 8px;
+          color: #fff;
+          text-align: center;
+          text-decoration: none;
+          font-weight: bold;
+          transition: opacity 0.3s;
+        }
+        
+        .trade-on-clanker:hover {
+          opacity: 0.9;
         }
         
         .info-section {

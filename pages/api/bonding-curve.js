@@ -1,4 +1,4 @@
-import { getCurveState, executeTrade, getTokenPrice, getAllCurveStates } from '../../utils/bondingCurve';
+import { getCurveState, executeTrade, getTokenPrice, getAllCurveStates, getTokenInfo, getAllTokens } from '../../utils/bondingCurve';
 
 export default async function handler(req, res) {
   // GET /api/bonding-curve - Get all curve states or specific token
@@ -31,6 +31,11 @@ export default async function handler(req, res) {
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
+  }
+  
+  // GET /api/bonding-curve/tokens - Get all supported tokens
+  if (req.method === 'GET' && req.query.tokens !== undefined) {
+    return res.status(200).json(getAllTokens());
   }
   
   return res.status(405).json({ error: 'Method not allowed' });
