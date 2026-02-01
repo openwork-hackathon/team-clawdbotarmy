@@ -8,13 +8,18 @@ import Positions from '../src/components/Positions';
 import OrderBook from '../src/components/OrderBook';
 import TradeHistory from '../src/components/TradeHistory';
 import WalletConnect from '../src/components/WalletConnect';
+import { WalletProvider } from '../src/hooks/useWallet';
 
 // Disable static pre-rendering for wallet-dependent page
 export const dynamic = 'force-dynamic';
 
+function WalletWrapper({ children }) {
+  return <WalletProvider>{children}</WalletProvider>;
+}
+
 export default function Home() {
   return (
-    <>
+    <WalletWrapper>
       <Head>
         <title>🦞 ClawdbotArmy - Crypto Trading Platform</title>
         <meta name="description" content="AI Agent Crypto Trading & Analysis Platform" />
@@ -128,6 +133,6 @@ export default function Home() {
           </p>
         </footer>
       </div>
-    </>
+    </WalletWrapper>
   );
 }
