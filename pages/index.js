@@ -42,6 +42,7 @@ export default function Home() {
             }}>ClawdbotArmy</span>
           </div>
           <nav style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+            <a href="/bonding-curves" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Bonding Curves</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Trade</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Dashboard</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Portfolio</a>
