@@ -11,6 +11,9 @@ export default function BondingCurves() {
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [txHash, setTxHash] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [alertPrice, setAlertPrice] = useState('');
+  const [alertCondition, setAlertCondition] = useState('above');
 
   useEffect(() => {
     fetchCurves();
@@ -93,6 +96,27 @@ export default function BondingCurves() {
     }
     
     setLoading(false);
+  };
+
+  // Add price alert
+  const addAlert = () => {
+    if (!alertPrice || parseFloat(alertPrice) <= 0) return;
+    
+    const newAlert = {
+      id: Date.now(),
+      token: selectedToken,
+      price: parseFloat(alertPrice),
+      condition: alertCondition,
+      created: new Date().toISOString()
+    };
+    
+    setAlerts([...alerts, newAlert]);
+    setAlertPrice('');
+  };
+  
+  // Remove alert
+  const removeAlert = (id) => {
+    setAlerts(alerts.filter(a => a.id !== id));
   };
 
   const arya = curves?.ARYA || {};
@@ -340,6 +364,49 @@ export default function BondingCurves() {
                 )}
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Price Alerts Section */}
+        <div className="alerts-section">
+          <h3>🔔 Price Alerts</h3>
+          <div className="alert-form">
+            <select value={alertCondition} onChange={(e) => setAlertCondition(e.target.value)}>
+              <option value="above">Price goes above</option>
+              <option value="below">Price goes below</option>
+            </select>
+            <input
+              type="number"
+              placeholder={`Target price (${curves?.[selectedToken]?.currentPrice?.toFixed(8) || '0.00000000'} ETH)`}
+              value={alertPrice}
+              onChange={(e) => setAlertPrice(e.target.value)}
+              step="0.00000001"
+            />
+            <button onClick={addAlert}>Create Alert</button>
+          </div>
+          
+          {alerts.length > 0 && (
+            <div className="alerts-list">
+              {alerts.map(alert => (
+                <div key={alert.id} className="alert-item">
+                  <div className="alert-info">
+                    <span style={{ fontWeight: 'bold' }}>{alert.token}</span>
+                    <span className={`alert-condition ${alert.condition}`}>
+                      {alert.condition === 'above' ? '↑' : '↓'} {alert.price.toFixed(8)} ETH
+                    </span>
+                  </div>
+                  <button className="alert-remove" onClick={() => removeAlert(alert.id)}>
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {alerts.length === 0 && (
+            <p style={{ color: '#9ca3af', textAlign: 'center' }}>
+              No active alerts. Create one above!
+            </p>
           )}
         </div>
 
@@ -738,6 +805,111 @@ export default function BondingCurves() {
           text-align: center;
         }
         
+        /* Alerts Section */
+        .alerts-section {
+          background: #1e1e1e;
+          border-radius: 16px;
+          padding: 25px;
+          margin-bottom: 40px;
+        }
+        
+        .alerts-section h3 {
+          margin-bottom: 20px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        
+        .alert-form {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+        
+        .alert-form select,
+        .alert-form input {
+          padding: 12px 15px;
+          background: #2a2a2a;
+          border: 2px solid #333;
+          border-radius: 10px;
+          color: #fff;
+          font-size: 1em;
+        }
+        
+        .alert-form input {
+          flex: 1;
+          min-width: 150px;
+        }
+        
+        .alert-form button {
+          padding: 12px 25px;
+          background: #6366f1;
+          border: none;
+          border-radius: 10px;
+          color: #fff;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        
+        .alert-form button:hover {
+          background: #4f46e5;
+        }
+        
+        .alerts-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        
+        .alert-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 15px;
+          background: #2a2a2a;
+          border-radius: 10px;
+        }
+        
+        .alert-info {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        
+        .alert-condition {
+          padding: 4px 10px;
+          border-radius: 6px;
+          font-size: 0.8em;
+          font-weight: bold;
+        }
+        
+        .alert-condition.above {
+          background: rgba(16, 185, 129, 0.2);
+          color: #10b981;
+        }
+        
+        .alert-condition.below {
+          background: rgba(239, 68, 68, 0.2);
+          color: #ef4444;
+        }
+        
+        .alert-remove {
+          padding: 8px 15px;
+          background: transparent;
+          border: 1px solid #ef4444;
+          border-radius: 8px;
+          color: #ef4444;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        
+        .alert-remove:hover {
+          background: #ef4444;
+          color: #fff;
+        }
+        
         .info-section {
           margin-bottom: 40px;
         }
@@ -774,6 +946,105 @@ export default function BondingCurves() {
           color: #9ca3af;
           font-size: 0.9em;
           line-height: 1.6;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .curves-page {
+            padding: 15px;
+          }
+          
+          .curves-header h1 {
+            font-size: 1.8em;
+          }
+          
+          .token-tabs {
+            flex-direction: column;
+            gap: 10px;
+          }
+          
+          .token-tab {
+            padding: 15px 25px;
+            flex-direction: row;
+            gap: 10px;
+          }
+          
+          .tab-desc {
+            display: none;
+          }
+          
+          .curves-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .curve-stats {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          
+          .trade-section {
+            padding: 20px;
+          }
+          
+          .trade-controls {
+            padding: 15px;
+          }
+          
+          .side-selector {
+            flex-direction: row;
+          }
+          
+          .amount-inputs {
+            grid-template-columns: 1fr;
+          }
+          
+          .wallet-section {
+            flex-direction: column;
+            gap: 10px;
+          }
+          
+          .info-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .alert-form {
+            flex-direction: column;
+          }
+          
+          .alert-form select,
+          .alert-form input,
+          .alert-form button {
+            width: 100%;
+          }
+          
+          .alerts-section {
+            padding: 20px;
+          }
+          
+          .alert-item {
+            flex-direction: column;
+            gap: 10px;
+            text-align: center;
+          }
+          
+          .alert-info {
+            flex-direction: column;
+            gap: 5px;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .curves-header h1 {
+            font-size: 1.5em;
+          }
+          
+          .curve-stats {
+            grid-template-columns: 1fr 1fr;
+          }
+          
+          .execute-btn {
+            padding: 15px;
+            font-size: 1em;
+          }
         }
       `}</style>
     </>
