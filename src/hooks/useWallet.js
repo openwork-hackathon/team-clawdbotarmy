@@ -32,7 +32,7 @@ export function WalletProvider({ children }) {
   const connect = useCallback(async () => {
     setError(null);
     
-    if (!window.ethereum) {
+    if (typeof window === 'undefined' || !window.ethereum) {
       setError('No crypto wallet found. Please install MetaMask.');
       return false;
     }
