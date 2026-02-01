@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+import Chart from 'chart.js/auto';
 
 export default function PriceChart({ coinId, days = 7 }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef(null);
+  const chartRef = useRef(null);
 
   useEffect(() => {
     fetch(`/api/chart/${coinId}?days=${days}`)
@@ -11,39 +13,62 @@ export default function PriceChart({ coinId, days = 7 }) {
       .then(d => {
         setData(d.prices || []);
         setLoading(false);
-        drawChart(d.prices || []);
       });
   }, [coinId, days]);
 
-  const drawChart = (prices) => {
-    if (!canvasRef.current || prices.length === 0) return;
-    const ctx = canvasRef.current.getContext('2d');
-    const w = canvasRef.current.width;
-    const h = canvasRef.current.height;
-    
-    // Clear
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, w, h);
-    
-    if (prices.length < 2) return;
-    
-    const min = Math.min(...prices.map(p => p[1]));
-    const max = Math.max(...prices.map(p => p[1]));
-    const range = max - min || 1;
-    
-    ctx.strokeStyle = '#00d4ff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    
-    prices.forEach((p, i) => {
-      const x = (i / (prices.length - 1)) * w;
-      const y = h - ((p[1] - min) / range) * h;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    
-    ctx.stroke();
-  };
+  useEffect(() => {
+    if (data.length > 0 && canvasRef.current) {
+      // Destroy old chart if exists
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+
+      const ctx = canvasRef.current.getContext('2d');
+      const labels = data.map(p => new Date(p[0]).toLocaleDateString());
+      const prices = data.map(p => p[1]);
+
+      chartRef.current = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `${coinId.toUpperCase()} Price (USD)`,
+            data: prices,
+            borderColor: '#00d4ff',
+            backgroundColor: 'rgba(0, 212, 255, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#ffffff' }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#a0a0b0', maxTicksLimit: 10 },
+              grid: { color: 'rgba(255,255,255,0.1)' }
+            },
+            y: {
+              ticks: { color: '#a0a0b0' },
+              grid: { color: 'rgba(255,255,255,0.1)' }
+            }
+          }
+        }
+      });
+    }
+
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+    };
+  }, [data, coinId]);
 
   return (
     <div className="price-chart">
@@ -51,12 +76,9 @@ export default function PriceChart({ coinId, days = 7 }) {
       {loading ? (
         <p>Loading chart...</p>
       ) : (
-        <canvas 
-          ref={canvasRef} 
-          width={600} 
-          height={300}
-          style={{ maxWidth: '100%' }}
-        />
+        <div style={{ height: '300px' }}>
+          <canvas ref={canvasRef} />
+        </div>
       )}
       {data.length > 0 && (
         <p className="price-range">

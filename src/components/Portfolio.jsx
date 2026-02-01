@@ -1,56 +1,110 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useWallet } from '../hooks/useWallet';
 
 export default function Portfolio({ holdings = [] }) {
-  const [address, setAddress] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { connected, address, connect, error: walletError } = useWallet();
   const [portfolio, setPortfolio] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const fetchPortfolio = async () => {
-    if (!address) return;
-    setLoading(true);
-    try {
-      const r = await fetch(`/api/portfolio?address=${address}`);
-      const data = await r.json();
-      setPortfolio(data);
-    } catch (e) {
-      console.error(e);
+  useEffect(() => {
+    if (connected && address) {
+      fetchPortfolio(address);
     }
+  }, [connected, address]);
+
+  const fetchPortfolio = async (addr) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const r = await fetch(`/api/portfolio?address=${addr}`);
+      const data = await r.json();
+      
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setPortfolio(data);
+      }
+    } catch (e) {
+      setError('Failed to fetch portfolio');
+    }
+    
     setLoading(false);
   };
 
+  if (!connected) {
+    return (
+      <div className="portfolio-tracker">
+        <div className="portfolio-header">
+          <h2>💰 Portfolio</h2>
+          <span className="portfolio-subtitle">Connect your wallet to view holdings</span>
+        </div>
+        
+        <div className="portfolio-placeholder wallet-prompt">
+          <span className="placeholder-icon">🔗</span>
+          <p>Connect your crypto wallet to track your portfolio</p>
+          <small>Supports MetaMask and other Ethereum wallets</small>
+          <button className="connect-wallet-btn" onClick={connect}>
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="portfolio-tracker">
-      <h2>💰 Portfolio Tracker</h2>
-      
-      <div className="input-group">
-        <input
-          type="text"
-          placeholder="Wallet address (0x...)"
-          value={address}
-          onChange={e => setAddress(e.target.value)}
-        />
-        <button onClick={fetchPortfolio} disabled={loading}>
-          {loading ? 'Loading...' : 'Fetch'}
-        </button>
+      <div className="portfolio-header">
+        <h2>💰 Portfolio</h2>
+        <span className="portfolio-subtitle">
+          {address.slice(0, 6)}...{address.slice(-4)}
+        </span>
       </div>
 
-      {portfolio && (
+      {(walletError || error) && (
+        <div className="portfolio-error">
+          <span>⚠️</span> {walletError || error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="portfolio-loading">
+          <div className="spinner"></div>
+          <span>Loading portfolio...</span>
+        </div>
+      ) : portfolio ? (
         <div className="portfolio-details">
           <div className="total-value">
-            <h3>Total Value</h3>
-            <p className="big">${portfolio.totalValue?.toFixed(2)}</p>
+            <span className="label">Total Value</span>
+            <span className="big">${portfolio.totalValue?.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            <span className="updated">
+              Last updated: {new Date(portfolio.lastUpdated).toLocaleTimeString()}
+            </span>
           </div>
           
-          {portfolio.holdings?.map((h, i) => (
-            <div key={i} className="holding-item">
-              <span className="token">{h.symbol}</span>
-              <span className="amount">{h.amount?.toFixed(4)}</span>
-              <span className="value">${h.value?.toFixed(2)}</span>
-              <span className={`change ${h.change24h >= 0 ? 'green' : 'red'}`}>
-                {h.change24h >= 0 ? '+' : ''}{h.change24h?.toFixed(2)}%
-              </span>
-            </div>
-          ))}
+          <div className="holdings-list">
+            {portfolio.holdings?.map((h, i) => (
+              <div key={i} className="holding-item">
+                <div className="holding-main">
+                  <span className="token">{h.symbol}</span>
+                  <span className="amount">{h.amount?.toLocaleString(undefined, {maximumFractionDigits: 6})}</span>
+                </div>
+                <div className="holding-value">
+                  <span className="value">${h.value?.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                  <span className={`change ${h.change24h >= 0 ? 'up' : 'down'}`}>
+                    {h.change24h >= 0 ? '↑' : '↓'} {Math.abs(h.change24h || 0).toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="portfolio-placeholder">
+          <span className="placeholder-icon">📊</span>
+          <p>No holdings found for this wallet</p>
+          <small>Your portfolio will appear here once you have tokens</small>
         </div>
       )}
     </div>
