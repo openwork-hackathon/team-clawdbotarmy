@@ -9,6 +9,9 @@ import OrderBook from '../src/components/OrderBook';
 import TradeHistory from '../src/components/TradeHistory';
 import WalletConnect from '../src/components/WalletConnect';
 
+// Disable static pre-rendering for wallet-dependent page
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   return (
     <>

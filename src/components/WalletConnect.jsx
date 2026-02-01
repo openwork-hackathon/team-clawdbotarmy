@@ -14,8 +14,10 @@ export default function WalletConnect() {
   const [chainId, setChainId] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // Check if already connected
     if (typeof window !== 'undefined' && window.ethereum) {
       checkConnection();
@@ -103,6 +105,16 @@ export default function WalletConnect() {
   const formatAddress = (addr) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
+
+  if (!mounted) {
+    return (
+      <div className="wallet-connect">
+        <button className="connect-btn" disabled>
+          ⏳ Loading...
+        </button>
+      </div>
+    );
+  }
 
   if (!window.ethereum) {
     return (
