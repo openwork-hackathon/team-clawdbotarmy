@@ -80,6 +80,7 @@ export default function Home() {
           </div>
           <nav style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
             <a href="/bonding-curves" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📈 Bonding Curves</a>
+            <a href="/staking" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🔒 Staking</a>
             <a href="/arya" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Trade</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Dashboard</a>

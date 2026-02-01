@@ -8,6 +8,9 @@
 - [x] Trading Panel
 - [x] Order Book
 - [x] Technical Analysis (RSI, MACD, BB)
+- [x] Price alerts (notify when target reached)
+- [x] Mobile responsive improvements
+- [x] Staking for ARYA and OPENWORK
 
 ## Next Features (2h rotation)
 
