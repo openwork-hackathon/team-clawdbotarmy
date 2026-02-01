@@ -45,6 +45,7 @@ export default function Home() {
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Trade</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Dashboard</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Portfolio</a>
+            <a href="/arya" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
             <div style={{ marginLeft: '10px' }}>
               <WalletConnect />
             </div>

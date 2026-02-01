@@ -1991,3 +1991,96 @@ button.execute.sell {
     grid-template-columns: 1fr;
   }
 }
+
+/* Token Link in MarketOverview */
+.token-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--accent), #0099ff);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 500;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 8px;
+}
+
+.token-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+/* ARYA Page Specific Styles */
+.token-hero {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.token-hero h2 {
+  font-size: 2em;
+  margin-bottom: 15px;
+}
+
+.token-hero p {
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto 30px;
+  line-height: 1.6;
+}
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+
+.hero-stats .stat {
+  text-align: center;
+}
+
+.hero-stats .stat .label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.85em;
+  margin-bottom: 5px;
+}
+
+.hero-stats .stat .value {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.hero-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.hero-actions .btn {
+  padding: 12px 24px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.hero-actions .btn.primary {
+  background: linear-gradient(135deg, var(--accent), #0099ff);
+  color: #fff;
+}
+
+.hero-actions .btn.secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--text-secondary);
+}
+
+.hero-actions .btn:hover {
+  transform: translateY(-2px);
+}

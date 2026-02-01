@@ -153,12 +153,10 @@ export default function MarketOverview() {
               <span>Network: Base</span>
             </div>
             <a 
-              href={`https://www.clanker.world/clanker/${ARYA_TOKEN.address}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="clanker-link"
+              href="/arya" 
+              className="token-link"
             >
-              View on Clanker 🌐
+              View Token Page →
             </a>
           </div>
         </div>
