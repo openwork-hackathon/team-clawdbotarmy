@@ -494,7 +494,7 @@ export default function BondingCurves() {
             {/* Celebration Particles */}
             {clanker.celebrate && (
               <div className="celebration-particles">
-                {[...Array(12)].map((_, i) => (
+                {Array.from({ length: 12 }).map((_, i) => (
                   <span
                     key={i}
                     className="particle"
