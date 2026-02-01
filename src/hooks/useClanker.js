@@ -1,6 +1,6 @@
 // useClanker - Hook for on-chain trading via Clanker
 import { useState, useCallback, useEffect } from 'react';
-import { createPublicClient, createWalletClient, http, parseEther, formatEther } from 'viem';
+import { createPublicClient, createWalletClient, http, parseEther, formatEther, custom } from 'viem';
 import { base } from 'viem/chains';
 
 // Clanker contracts on Base
@@ -260,15 +260,6 @@ const ERC20_ABI = [
     outputs: [{ name: '', type: 'string' }],
   },
 ];
-
-// Custom transport for MetaMask
-function custom(provider) {
-  return {
-    request({ method, params }) {
-      return provider.request({ method, params });
-    },
-  };
-}
 
 // Export token info
 export { ARYA_TOKEN, CLANKER_ADDRESSES };
