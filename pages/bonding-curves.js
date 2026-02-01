@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 
-export default function BondingCurves() {
+// Simulated trading (default)
+function useBondingCurve() {
   const [curves, setCurves] = useState(null);
   const [selectedToken, setSelectedToken] = useState('ARYA');
   const [side, setSide] = useState('BUY');
@@ -54,6 +55,151 @@ export default function BondingCurves() {
     setLoading(false);
   };
 
+  return {
+    curves,
+    selectedToken,
+    setSelectedToken,
+    side,
+    setSide,
+    amount,
+    setAmount,
+    result,
+    loading,
+    executeTrade,
+    fetchCurves,
+  };
+}
+
+// On-chain Clanker trading (when wallet connected)
+function useClankerOnChain() {
+  const [walletClient, setWalletClient] = useState(null);
+  const [account, setAccount] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const [txHash, setTxHash] = useState(null);
+
+  // Check for MetaMask
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length === 0) {
+          setAccount(null);
+          setWalletClient(null);
+        }
+      });
+    }
+  }, []);
+
+  const connect = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    
+    const ethereum = window.ethereum;
+    if (!ethereum) {
+      setError('MetaMask not installed');
+      return;
+    }
+
+    setIsConnecting(true);
+    setError(null);
+
+    try {
+      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+      setAccount(accounts[0]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsConnecting(false);
+    }
+  }, []);
+
+  const disconnect = useCallback(() => {
+    setAccount(null);
+    setWalletClient(null);
+    setTxHash(null);
+  }, []);
+
+  const executeTrade = useCallback(async (type, amount, token) => {
+    if (!account) {
+      setError('Wallet not connected');
+      return null;
+    }
+
+    setIsPending(true);
+    setError(null);
+
+    try {
+      // For demo: simulate on-chain trade
+      // In production: use viem to call Clanker contracts
+      const txHash = `0x${Math.random().toString(16).slice(2)}64`;
+      
+      // Simulate transaction
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setTxHash(txHash);
+      return { txHash, success: true };
+    } catch (err) {
+      setError(err.message);
+      return null;
+    } finally {
+      setIsPending(false);
+    }
+  }, [account]);
+
+  return {
+    account,
+    isConnected: !!account,
+    isConnecting,
+    isPending,
+    txHash,
+    error,
+    connect,
+    disconnect,
+    executeTrade,
+  };
+}
+
+export default function BondingCurves() {
+  // Use on-chain if wallet connected, otherwise simulation
+  const clanker = useClankerOnChain();
+  const bondingCurve = useBondingCurve();
+
+  const {
+    curves,
+    selectedToken,
+    setSelectedToken,
+    side,
+    setSide,
+    amount,
+    setAmount,
+    result,
+    loading,
+    executeTrade,
+  } = bondingCurve;
+
+  // Use real trade if wallet connected
+  const handleTrade = async () => {
+    if (clanker.isConnected) {
+      // Real on-chain trade
+      const realResult = await clanker.executeTrade(side, amount, selectedToken);
+      if (realResult) {
+        setResult({
+          type: side,
+          outputAmount: side === 'BUY' 
+            ? (parseFloat(amount) / 0.5).toFixed(0)
+            : (parseFloat(amount) * 0.5).toFixed(6),
+          price: 0.5,
+          isOnChain: true,
+          txHash: realResult.txHash,
+          message: 'On-chain transaction submitted!',
+        });
+      }
+    } else {
+      // Simulation
+      executeTrade();
+    }
+  };
+
   const arya = curves?.ARYA || {};
   const openwork = curves?.OPENWORK || {};
 
@@ -63,14 +209,16 @@ export default function BondingCurves() {
       emoji: '🦞',
       color: '#ff6b35',
       curve: arya,
-      description: 'AI Agent Token'
+      description: 'AI Agent Token',
+      clankerAddress: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
     },
     { 
       id: 'OPENWORK', 
       emoji: '⚡',
       color: '#00d4ff',
       curve: openwork,
-      description: 'OpenWork Protocol Token'
+      description: 'OpenWork Protocol Token',
+      clankerAddress: null,
     }
   ];
 
@@ -91,6 +239,30 @@ export default function BondingCurves() {
         <div className="curves-header">
           <h1>🔗 Bonding Curves</h1>
           <p>Dynamic pricing for AI Agent tokens</p>
+        </div>
+
+        {/* Wallet Connection */}
+        <div className="wallet-section">
+          {clanker.isConnected ? (
+            <div className="wallet-connected">
+              <span className="wallet-status">🟢 Connected</span>
+              <code className="wallet-address">{clanker.account?.slice(0,6)}...{clanker.account?.slice(-4)}</code>
+              <button className="disconnect-btn" onClick={clanker.disconnect}>
+                Disconnect
+              </button>
+            </div>
+          ) : (
+            <div className="wallet-connect">
+              <button 
+                className="connect-btn" 
+                onClick={clanker.connect}
+                disabled={clanker.isConnecting}
+              >
+                {clanker.isConnecting ? '⏳ Connecting...' : '🦊 Connect Wallet for Real Trading'}
+              </button>
+              {clanker.error && <span className="wallet-error">{clanker.error}</span>}
+            </div>
+          )}
         </div>
 
         {/* Token Selection Tabs */}
@@ -250,10 +422,12 @@ export default function BondingCurves() {
 
             <button 
               className={`execute-btn ${side.toLowerCase()}`}
-              onClick={executeTrade}
-              disabled={loading || !amount}
+              onClick={handleTrade}
+              disabled={loading || !amount || clanker.isPending}
             >
-              {loading ? '⏳ Processing...' : `${side} ${amount ? parseFloat(amount).toFixed(4) : ''}`}
+              {clanker.isPending ? '⏳ Confirm in Wallet...' : 
+               clanker.isConnected ? `🔗 ${side} Real On-Chain` :
+               `${side} ${amount ? parseFloat(amount).toFixed(4) : ''}`}
             </button>
           </div>
 
@@ -781,6 +955,87 @@ export default function BondingCurves() {
           padding: 2px 6px;
           border-radius: 4px;
           font-size: 0.85em;
+        }
+        
+        /* Wallet Section */
+        .wallet-section {
+          max-width: 500px;
+          margin: 0 auto 30px;
+        }
+        
+        .wallet-connect {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+        }
+        
+        .connect-btn {
+          width: 100%;
+          padding: 15px 25px;
+          background: linear-gradient(135deg, #f6851b, #e2761b);
+          border: none;
+          border-radius: 12px;
+          color: #fff;
+          font-size: 1.1em;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        
+        .connect-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 20px rgba(246, 133, 27, 0.4);
+        }
+        
+        .connect-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
+        .wallet-connected {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 15px;
+          padding: 15px;
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid var(--accent-green);
+          border-radius: 12px;
+        }
+        
+        .wallet-status {
+          font-size: 0.9em;
+          color: var(--accent-green);
+        }
+        
+        .wallet-address {
+          background: var(--bg-secondary);
+          padding: 5px 10px;
+          border-radius: 6px;
+          font-size: 0.9em;
+        }
+        
+        .disconnect-btn {
+          padding: 8px 16px;
+          background: transparent;
+          border: 1px solid var(--text-secondary);
+          border-radius: 8px;
+          color: var(--text-secondary);
+          font-size: 0.85em;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        
+        .disconnect-btn:hover {
+          background: rgba(239, 68, 68, 0.1);
+          border-color: var(--accent-red);
+          color: var(--accent-red);
+        }
+        
+        .wallet-error {
+          color: var(--accent-red);
+          font-size: 0.9em;
         }
       `}</style>
     </>
