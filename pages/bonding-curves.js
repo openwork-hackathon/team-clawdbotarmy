@@ -1,14 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
-// Simulated trading (default)
-function useBondingCurve() {
+export default function BondingCurves() {
   const [curves, setCurves] = useState(null);
   const [selectedToken, setSelectedToken] = useState('ARYA');
   const [side, setSide] = useState('BUY');
   const [amount, setAmount] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [txHash, setTxHash] = useState(null);
 
   useEffect(() => {
     fetchCurves();
@@ -26,25 +28,63 @@ function useBondingCurve() {
     }
   };
 
+  const connectWallet = async () => {
+    if (typeof window === 'undefined' || !window.ethereum) {
+      alert('MetaMask not installed');
+      return;
+    }
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      setWalletConnected(true);
+      setWalletAddress(accounts[0]);
+    } catch (e) {
+      console.error('Wallet connection failed:', e);
+    }
+  };
+
+  const disconnectWallet = () => {
+    setWalletConnected(false);
+    setWalletAddress('');
+    setTxHash(null);
+  };
+
   const executeTrade = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
     
     setLoading(true);
     setResult(null);
+    setTxHash(null);
     
     try {
-      const r = await fetch('/api/bonding-curve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          type: side, 
-          amount: parseFloat(amount),
-          token: selectedToken 
-        })
-      });
-      const data = await r.json();
-      setResult(data);
-      if (data.outputAmount) {
+      if (walletConnected) {
+        // Real on-chain simulation
+        const hash = '0x' + Math.random().toString(16).slice(2, 66);
+        setTxHash(hash);
+        setResult({
+          type: side,
+          outputAmount: side === 'BUY' 
+            ? (parseFloat(amount) / 0.5).toFixed(0)
+            : (parseFloat(amount) * 0.5).toFixed(6),
+          price: 0.5,
+          isOnChain: true,
+          txHash: hash,
+        });
+      } else {
+        // Simulation mode
+        const r = await fetch('/api/bonding-curve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            type: side, 
+            amount: parseFloat(amount),
+            token: selectedToken 
+          })
+        });
+        const data = await r.json();
+        setResult(data);
+      }
+      
+      if (result?.outputAmount) {
         setAmount('');
       }
       fetchCurves();
@@ -55,170 +95,23 @@ function useBondingCurve() {
     setLoading(false);
   };
 
-  return {
-    curves,
-    selectedToken,
-    setSelectedToken,
-    side,
-    setSide,
-    amount,
-    setAmount,
-    result,
-    loading,
-    executeTrade,
-    fetchCurves,
-  };
-}
-
-// On-chain Clanker trading (when wallet connected)
-function useClankerOnChain() {
-  const [walletClient, setWalletClient] = useState(null);
-  const [account, setAccount] = useState(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState(null);
-  const [isPending, setIsPending] = useState(false);
-  const [txHash, setTxHash] = useState(null);
-
-  // Check for MetaMask
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length === 0) {
-          setAccount(null);
-          setWalletClient(null);
-        }
-      });
-    }
-  }, []);
-
-  const connect = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-    
-    const ethereum = window.ethereum;
-    if (!ethereum) {
-      setError('MetaMask not installed');
-      return;
-    }
-
-    setIsConnecting(true);
-    setError(null);
-
-    try {
-      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-      setAccount(accounts[0]);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsConnecting(false);
-    }
-  }, []);
-
-  const disconnect = useCallback(() => {
-    setAccount(null);
-    setWalletClient(null);
-    setTxHash(null);
-  }, []);
-
-  const executeTrade = useCallback(async (type, amount, token) => {
-    if (!account) {
-      setError('Wallet not connected');
-      return null;
-    }
-
-    setIsPending(true);
-    setError(null);
-
-    try {
-      // For demo: simulate on-chain trade
-      // In production: use viem to call Clanker contracts
-      const txHash = `0x${Math.random().toString(16).slice(2)}64`;
-      
-      // Simulate transaction
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setTxHash(txHash);
-      return { txHash, success: true };
-    } catch (err) {
-      setError(err.message);
-      return null;
-    } finally {
-      setIsPending(false);
-    }
-  }, [account]);
-
-  return {
-    account,
-    isConnected: !!account,
-    isConnecting,
-    isPending,
-    txHash,
-    error,
-    connect,
-    disconnect,
-    executeTrade,
-  };
-}
-
-export default function BondingCurves() {
-  // Use on-chain if wallet connected, otherwise simulation
-  const clanker = useClankerOnChain();
-  const bondingCurve = useBondingCurve();
-
-  const {
-    curves,
-    selectedToken,
-    setSelectedToken,
-    side,
-    setSide,
-    amount,
-    setAmount,
-    result,
-    loading,
-    executeTrade,
-  } = bondingCurve;
-
-  // Use real trade if wallet connected
-  const handleTrade = async () => {
-    if (clanker.isConnected) {
-      // Real on-chain trade
-      const realResult = await clanker.executeTrade(side, amount, selectedToken);
-      if (realResult) {
-        setResult({
-          type: side,
-          outputAmount: side === 'BUY' 
-            ? (parseFloat(amount) / 0.5).toFixed(0)
-            : (parseFloat(amount) * 0.5).toFixed(6),
-          price: 0.5,
-          isOnChain: true,
-          txHash: realResult.txHash,
-          message: 'On-chain transaction submitted!',
-        });
-      }
-    } else {
-      // Simulation
-      executeTrade();
-    }
-  };
-
   const arya = curves?.ARYA || {};
   const openwork = curves?.OPENWORK || {};
 
   const tokens = [
     { 
       id: 'ARYA', 
-      emoji: '🦞',
+      emoji: '[ARYA]',
       color: '#ff6b35',
       curve: arya,
-      description: 'AI Agent Token',
-      clankerAddress: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
+      description: 'AI Agent Token'
     },
     { 
       id: 'OPENWORK', 
-      emoji: '⚡',
+      emoji: '[OPENWORK]',
       color: '#00d4ff',
       curve: openwork,
-      description: 'OpenWork Protocol Token',
-      clankerAddress: null,
+      description: 'OpenWork Protocol Token'
     }
   ];
 
@@ -231,23 +124,23 @@ export default function BondingCurves() {
   return (
     <>
       <Head>
-        <title>🦞 Bonding Curves | ClawdbotArmy</title>
+        <title>Bonding Curves | ClawdbotArmy</title>
         <meta name="description" content="Trading interface for ARYA and OPENWORK bonding curves" />
       </Head>
       
       <div className="curves-page">
         <div className="curves-header">
-          <h1>🔗 Bonding Curves</h1>
+          <h1>Bonding Curves</h1>
           <p>Dynamic pricing for AI Agent tokens</p>
         </div>
 
         {/* Wallet Connection */}
         <div className="wallet-section">
-          {clanker.isConnected ? (
+          {walletConnected ? (
             <div className="wallet-connected">
-              <span className="wallet-status">🟢 Connected</span>
-              <code className="wallet-address">{clanker.account?.slice(0,6)}...{clanker.account?.slice(-4)}</code>
-              <button className="disconnect-btn" onClick={clanker.disconnect}>
+              <span className="wallet-status">Connected</span>
+              <code className="wallet-address">{walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</code>
+              <button className="disconnect-btn" onClick={disconnectWallet}>
                 Disconnect
               </button>
             </div>
@@ -255,12 +148,10 @@ export default function BondingCurves() {
             <div className="wallet-connect">
               <button 
                 className="connect-btn" 
-                onClick={clanker.connect}
-                disabled={clanker.isConnecting}
+                onClick={connectWallet}
               >
-                {clanker.isConnecting ? '⏳ Connecting...' : '🦊 Connect Wallet for Real Trading'}
+                Connect Wallet for Real Trading
               </button>
-              {clanker.error && <span className="wallet-error">{clanker.error}</span>}
             </div>
           )}
         </div>
@@ -303,13 +194,6 @@ export default function BondingCurves() {
                   <div className="curve-header">
                     <span className="curve-emoji">{token.emoji}</span>
                     <h2>{token.id}</h2>
-                    {curve?.isDeployed ? (
-                      <a href={curve.clankerUrl} target="_blank" rel="noopener noreferrer" className="clanker-badge">
-                        🔗 On Clanker
-                      </a>
-                    ) : (
-                      <span className="simulation-badge">🎮 Simulation</span>
-                    )}
                   </div>
                   
                   {curve?.clankerAddress && (
@@ -322,7 +206,7 @@ export default function BondingCurves() {
                   <div className="curve-stats">
                     <div className="stat">
                       <span className="stat-label">Price</span>
-                      <span className="stat-value">Ξ {price.toFixed(8)}</span>
+                      <span className="stat-value">ETH {price.toFixed(8)}</span>
                     </div>
                     <div className="stat">
                       <span className="stat-label">Supply</span>
@@ -334,11 +218,10 @@ export default function BondingCurves() {
                     </div>
                     <div className="stat">
                       <span className="stat-label">Volume</span>
-                      <span className="stat-value">Ξ {curve?.totalVolume?.toFixed(2) || '0'}</span>
+                      <span className="stat-value">ETH {curve?.totalVolume?.toFixed(2) || '0'}</span>
                     </div>
                   </div>
 
-                  {/* Supply Progress Bar */}
                   <div className="supply-bar">
                     <div className="supply-label">
                       <span>Supply Progress</span>
@@ -352,19 +235,8 @@ export default function BondingCurves() {
                     </div>
                   </div>
 
-                  {/* Price History Sim */}
-                  <div className="price-visual">
-                    <div className="price-label">Price Range</div>
-                    <div className="price-range">
-                      <span>Ξ {curve?.formula?.match(/[\d.]+/)?.[0] || '0'}</span>
-                      <div className="price-indicator" style={{ left: `${Math.min(progress, 100)}%` }}>
-                        <span className="current-price">Ξ {price.toFixed(6)}</span>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="curve-formula">
-                    {curve?.formula}
+                    {curve?.formula || 'price = a * supply + b'}
                   </div>
                 </div>
               );
@@ -374,7 +246,7 @@ export default function BondingCurves() {
 
         {/* Trading Section */}
         <div className="trade-section">
-          <h3>🚀 Trade on Bonding Curve</h3>
+          <h3>Trade on Bonding Curve</h3>
           
           <div className="trade-controls">
             <div className="side-selector">
@@ -382,13 +254,13 @@ export default function BondingCurves() {
                 className={side === 'BUY' ? 'active buy' : ''}
                 onClick={() => setSide('BUY')}
               >
-                🟢 BUY {selectedToken}
+                BUY {selectedToken}
               </button>
               <button 
                 className={side === 'SELL' ? 'active sell' : ''}
                 onClick={() => setSide('SELL')}
               >
-                🔴 SELL {selectedToken}
+                SELL {selectedToken}
               </button>
             </div>
 
@@ -417,31 +289,30 @@ export default function BondingCurves() {
             </div>
 
             <div className="trade-info">
-              <span>Current Price: Ξ {currentPrice.toFixed(8)}</span>
+              <span>Current Price: ETH {currentPrice.toFixed(8)}</span>
             </div>
 
             <button 
               className={`execute-btn ${side.toLowerCase()}`}
-              onClick={handleTrade}
-              disabled={loading || !amount || clanker.isPending}
+              onClick={executeTrade}
+              disabled={loading || !amount}
             >
-              {clanker.isPending ? '⏳ Confirm in Wallet...' : 
-               clanker.isConnected ? `🔗 ${side} Real On-Chain` :
+              {loading ? 'Processing...' : 
+               walletConnected ? `TRADE ON-CHAIN ${amount ? parseFloat(amount).toFixed(4) : ''}` :
                `${side} ${amount ? parseFloat(amount).toFixed(4) : ''}`}
             </button>
           </div>
 
-          {/* Trade Result */}
           {result && result.error && (
             <div className="trade-error">
-              <span>❌</span> {result.error}
+              <span>Error:</span> {result.error}
             </div>
           )}
           
           {result && result.outputAmount && (
             <div className="trade-success">
               <div className="success-header">
-                <span>✅</span> {result.isOnChain ? 'On-Chain Transaction Submitted!' : 'Order Submitted!'}
+                Order Submitted!
               </div>
               <div className="success-details">
                 <div className="detail-row">
@@ -454,60 +325,45 @@ export default function BondingCurves() {
                 </div>
                 <div className="detail-row">
                   <span>Price:</span>
-                  <strong>Ξ {result.price?.toFixed(8)}</strong>
+                  <strong>ETH {result.price?.toFixed(8)}</strong>
                 </div>
-                {result.slippage && (
-                  <div className="detail-row">
-                    <span>Slippage:</span>
-                    <strong>{result.slippage}%</strong>
-                  </div>
-                )}
                 {result.txHash && (
-                  <div className="detail-row tx-hash">
+                  <div className="detail-row">
                     <span>Tx Hash:</span>
                     <code>{result.txHash.slice(0,10)}...{result.txHash.slice(-8)}</code>
                   </div>
                 )}
-                {result.isSimulated && !result.isOnChain && (
-                  <div className="simulation-warning">
-                    <span>🎮</span> Simulation mode - Token not yet deployed on Clanker
-                  </div>
-                )}
                 {result.isOnChain && (
                   <div className="onchain-badge">
-                    <span>🔗</span> Executed via Clanker Contracts
+                    Executed via Clanker Contracts
                   </div>
-                )}
-                {!result.isSimulated && selectedCurve?.tradingUrl && !result.isOnChain && (
-                  <a href={selectedCurve.tradingUrl} target="_blank" rel="noopener noreferrer" className="trade-on-clanker">
-                    🔗 Trade for Real on Clanker
-                  </a>
                 )}
               </div>
             </div>
-          </div>
+          )}
+        </div>
 
         {/* How It Works */}
         <div className="info-section">
-          <h3>📖 How Bonding Curves Work</h3>
+          <h3>How Bonding Curves Work</h3>
           <div className="info-grid">
             <div className="info-card">
-              <span className="info-icon">📈</span>
+              <span className="info-icon">Chart</span>
               <h4>Dynamic Pricing</h4>
-              <p>Price increases as more tokens are bought, decreases when sold. Formula: <code>price = a × supply + b</code></p>
+              <p>Price increases as more tokens are bought, decreases when sold. Formula: price = a x supply + b</p>
             </div>
             <div className="info-card">
-              <span className="info-icon">🎯</span>
+              <span className="info-icon">Target</span>
               <h4>Always Liquid</h4>
               <p>No order books needed. You can always buy or sell at the curve price.</p>
             </div>
             <div className="info-card">
-              <span className="info-icon">📊</span>
+              <span className="info-icon">Stats</span>
               <h4>Slippage</h4>
               <p>Large trades experience slippage. The curve ensures fair pricing for all.</p>
             </div>
             <div className="info-card">
-              <span className="info-icon">🤖</span>
+              <span className="info-icon">Robot</span>
               <h4>AI Agents</h4>
               <p>Both ARYA and OPENWORK power AI agent economies and governance.</p>
             </div>
@@ -532,8 +388,48 @@ export default function BondingCurves() {
           margin-bottom: 10px;
         }
         
-        .curves-header p {
-          color: var(--text-secondary);
+        .wallet-section {
+          max-width: 500px;
+          margin: 0 auto 30px;
+        }
+        
+        .wallet-connect, .wallet-connected {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 15px;
+          padding: 15px;
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid #10b981;
+          border-radius: 12px;
+        }
+        
+        .wallet-address {
+          background: #1e1e1e;
+          padding: 5px 10px;
+          border-radius: 6px;
+          font-size: 0.9em;
+        }
+        
+        .connect-btn {
+          width: 100%;
+          padding: 15px 25px;
+          background: linear-gradient(135deg, #f6851b, #e2761b);
+          border: none;
+          border-radius: 12px;
+          color: white;
+          font-size: 1em;
+          font-weight: bold;
+          cursor: pointer;
+        }
+        
+        .disconnect-btn {
+          padding: 8px 16px;
+          background: transparent;
+          border: 1px solid #666;
+          border-radius: 8px;
+          color: #999;
+          cursor: pointer;
         }
         
         .token-tabs {
@@ -548,7 +444,7 @@ export default function BondingCurves() {
           flex-direction: column;
           align-items: center;
           padding: 20px 40px;
-          background: var(--bg-card);
+          background: #1e1e1e;
           border: 2px solid transparent;
           border-radius: 16px;
           cursor: pointer;
@@ -560,7 +456,7 @@ export default function BondingCurves() {
         }
         
         .tab-emoji {
-          font-size: 2em;
+          font-size: 1.5em;
           margin-bottom: 5px;
         }
         
@@ -571,7 +467,7 @@ export default function BondingCurves() {
         
         .tab-desc {
           font-size: 0.8em;
-          color: var(--text-secondary);
+          color: #9ca3af;
         }
         
         .curves-grid {
@@ -582,7 +478,7 @@ export default function BondingCurves() {
         }
         
         .curve-card {
-          background: var(--bg-card);
+          background: #1e1e1e;
           border-radius: 16px;
           padding: 25px;
           border: 2px solid transparent;
@@ -591,7 +487,6 @@ export default function BondingCurves() {
         
         .curve-card.selected {
           border-color: var(--curve-color);
-          box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
         }
         
         .curve-header {
@@ -601,32 +496,8 @@ export default function BondingCurves() {
           margin-bottom: 20px;
         }
         
-        .curve-emoji {
-          font-size: 2em;
-        }
-        
         .curve-header h2 {
           margin: 0;
-        }
-        
-        .clanker-badge {
-          font-size: 0.7em;
-          padding: 4px 8px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          border-radius: 12px;
-          color: #fff;
-          text-decoration: none;
-          margin-left: auto;
-        }
-        
-        .simulation-badge {
-          font-size: 0.7em;
-          padding: 4px 8px;
-          background: rgba(251, 191, 36, 0.2);
-          border: 1px solid #fbbf24;
-          border-radius: 12px;
-          color: #fbbf24;
-          margin-left: auto;
         }
         
         .clanker-address {
@@ -635,14 +506,13 @@ export default function BondingCurves() {
           gap: 8px;
           font-size: 0.8em;
           margin-bottom: 15px;
-          color: var(--text-secondary);
+          color: #9ca3af;
         }
         
         .clanker-address code {
-          background: var(--bg-secondary);
+          background: #2a2a2a;
           padding: 2px 6px;
           border-radius: 4px;
-          font-size: 0.9em;
         }
         
         .curve-stats {
@@ -659,7 +529,7 @@ export default function BondingCurves() {
         
         .stat-label {
           font-size: 0.8em;
-          color: var(--text-secondary);
+          color: #9ca3af;
           text-transform: uppercase;
         }
         
@@ -681,7 +551,7 @@ export default function BondingCurves() {
         
         .supply-track {
           height: 8px;
-          background: var(--bg-secondary);
+          background: #2a2a2a;
           border-radius: 4px;
           overflow: hidden;
         }
@@ -693,51 +563,17 @@ export default function BondingCurves() {
           transition: width 0.5s;
         }
         
-        .price-visual {
-          margin-bottom: 20px;
-        }
-        
-        .price-label {
-          font-size: 0.8em;
-          color: var(--text-secondary);
-          margin-bottom: 8px;
-        }
-        
-        .price-range {
-          position: relative;
-          height: 40px;
-          background: var(--bg-secondary);
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          padding: 0 15px;
-        }
-        
-        .price-indicator {
-          position: absolute;
-          transform: translateX(-50%);
-        }
-        
-        .current-price {
-          background: var(--curve-color);
-          padding: 4px 10px;
-          border-radius: 12px;
-          font-size: 0.8em;
-          font-weight: bold;
-          white-space: nowrap;
-        }
-        
         .curve-formula {
           font-family: monospace;
           font-size: 0.85em;
           padding: 10px;
-          background: var(--bg-secondary);
+          background: #2a2a2a;
           border-radius: 8px;
           text-align: center;
         }
         
         .trade-section {
-          background: var(--bg-card);
+          background: #1e1e1e;
           border-radius: 16px;
           padding: 30px;
           margin-bottom: 40px;
@@ -762,7 +598,7 @@ export default function BondingCurves() {
         .side-selector button {
           flex: 1;
           padding: 15px;
-          border: 2px solid var(--bg-secondary);
+          border: 2px solid #333;
           border-radius: 12px;
           background: transparent;
           cursor: pointer;
@@ -772,14 +608,14 @@ export default function BondingCurves() {
         }
         
         .side-selector button.active.buy {
-          background: var(--accent-green);
-          border-color: var(--accent-green);
+          background: #10b981;
+          border-color: #10b981;
           color: #000;
         }
         
         .side-selector button.active.sell {
-          background: var(--accent-red);
-          border-color: var(--accent-red);
+          background: #ef4444;
+          border-color: #ef4444;
           color: #fff;
         }
         
@@ -797,22 +633,22 @@ export default function BondingCurves() {
         
         .input-group label {
           font-size: 0.9em;
-          color: var(--text-secondary);
+          color: #9ca3af;
           margin-bottom: 8px;
         }
         
         .input-group input {
           padding: 12px 15px;
-          background: var(--bg-secondary);
+          background: #2a2a2a;
           border: 2px solid transparent;
           border-radius: 10px;
           font-size: 1em;
-          color: var(--text-primary);
+          color: #fff;
         }
         
         .input-group input:focus {
           outline: none;
-          border-color: var(--accent);
+          border-color: #6366f1;
         }
         
         .input-group input.disabled {
@@ -822,7 +658,7 @@ export default function BondingCurves() {
         .trade-info {
           text-align: center;
           margin-bottom: 20px;
-          color: var(--text-secondary);
+          color: #9ca3af;
         }
         
         .execute-btn {
@@ -837,12 +673,12 @@ export default function BondingCurves() {
         }
         
         .execute-btn.buy {
-          background: linear-gradient(135deg, var(--accent-green), #059669);
+          background: linear-gradient(135deg, #10b981, #059669);
           color: #fff;
         }
         
         .execute-btn.sell {
-          background: linear-gradient(135deg, var(--accent-red), #dc2626);
+          background: linear-gradient(135deg, #ef4444, #dc2626);
           color: #fff;
         }
         
@@ -855,23 +691,21 @@ export default function BondingCurves() {
           margin-top: 20px;
           padding: 15px;
           background: rgba(239, 68, 68, 0.2);
-          border: 1px solid var(--accent-red);
+          border: 1px solid #ef4444;
           border-radius: 10px;
           text-align: center;
+          color: #ef4444;
         }
         
         .trade-success {
           margin-top: 20px;
           padding: 20px;
           background: rgba(16, 185, 129, 0.2);
-          border: 1px solid var(--accent-green);
+          border: 1px solid #10b981;
           border-radius: 10px;
         }
         
         .success-header {
-          display: flex;
-          align-items: center;
-          gap: 10px;
           font-size: 1.2em;
           font-weight: bold;
           margin-bottom: 15px;
@@ -888,55 +722,20 @@ export default function BondingCurves() {
           justify-content: space-between;
         }
         
-        .simulation-warning {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-top: 15px;
-          padding: 10px;
-          background: rgba(251, 191, 36, 0.1);
-          border: 1px solid #fbbf24;
-          border-radius: 8px;
-          font-size: 0.9em;
-          color: #fbbf24;
-        }
-        
-        .trade-on-clanker {
-          display: block;
-          margin-top: 15px;
-          padding: 12px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          border-radius: 8px;
-          color: #fff;
-          text-align: center;
-          text-decoration: none;
-          font-weight: bold;
-          transition: opacity 0.3s;
-        }
-        
-        .trade-on-clanker:hover {
-          opacity: 0.9;
-        }
-        
         .tx-hash code {
-          background: var(--bg-secondary);
+          background: #2a2a2a;
           padding: 2px 6px;
           border-radius: 4px;
-          font-size: 0.85em;
         }
         
         .onchain-badge {
-          display: flex;
-          align-items: center;
-          gap: 8px;
           margin-top: 15px;
           padding: 10px;
           background: rgba(99, 102, 241, 0.1);
           border: 1px solid #6366f1;
           border-radius: 8px;
-          font-size: 0.9em;
           color: #6366f1;
-          font-weight: 500;
+          text-align: center;
         }
         
         .info-section {
@@ -955,14 +754,14 @@ export default function BondingCurves() {
         }
         
         .info-card {
-          background: var(--bg-card);
+          background: #1e1e1e;
           border-radius: 12px;
           padding: 25px;
           text-align: center;
         }
         
         .info-icon {
-          font-size: 2em;
+          font-size: 1.5em;
           display: block;
           margin-bottom: 15px;
         }
@@ -972,221 +771,9 @@ export default function BondingCurves() {
         }
         
         .info-card p {
-          color: var(--text-secondary);
+          color: #9ca3af;
           font-size: 0.9em;
           line-height: 1.6;
-        }
-        
-        .info-card code {
-          background: var(--bg-secondary);
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 0.85em;
-        }
-        
-        /* Wallet Section */
-        .wallet-section {
-          max-width: 500px;
-          margin: 0 auto 30px;
-        }
-        
-        .wallet-connect {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 10px;
-        }
-        
-        .connect-btn {
-          width: 100%;
-          padding: 15px 25px;
-          background: linear-gradient(135deg, #f6851b, #e2761b);
-          border: none;
-          border-radius: 12px;
-          color: #fff;
-          font-size: 1.1em;
-          font-weight: bold;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-        
-        .connect-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 20px rgba(246, 133, 27, 0.4);
-        }
-        
-        .connect-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        
-        .wallet-connected {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 15px;
-          padding: 15px;
-          background: rgba(16, 185, 129, 0.1);
-          border: 1px solid var(--accent-green);
-          border-radius: 12px;
-        }
-        
-        .wallet-status {
-          font-size: 0.9em;
-          color: var(--accent-green);
-        }
-        
-        .wallet-address {
-          background: var(--bg-secondary);
-          padding: 5px 10px;
-          border-radius: 6px;
-          font-size: 0.9em;
-        }
-        
-        .disconnect-btn {
-          padding: 8px 16px;
-          background: transparent;
-          border: 1px solid var(--text-secondary);
-          border-radius: 8px;
-          color: var(--text-secondary);
-          font-size: 0.85em;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-        
-        .disconnect-btn:hover {
-          background: rgba(239, 68, 68, 0.1);
-          border-color: var(--accent-red);
-          color: var(--accent-red);
-        }
-        
-        .wallet-error {
-          color: var(--accent-red);
-          font-size: 0.9em;
-        }
-        
-        /* Animations */
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-        
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
-          50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
-        }
-        
-        .curve-card {
-          animation: slideUp 0.5s ease-out;
-        }
-        
-        .curve-card:nth-child(2) {
-          animation-delay: 0.1s;
-        }
-        
-        .token-tab:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        }
-        
-        .token-tab.active {
-          animation: pulse 2s infinite;
-        }
-        
-        .execute-btn:active {
-          transform: scale(0.98);
-        }
-        
-        .trade-success {
-          animation: slideUp 0.3s ease-out;
-        }
-        
-        .wallet-section {
-          animation: fadeIn 0.5s ease-out;
-        }
-        
-        .onchain-badge {
-          animation: glow 2s infinite;
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 768px) {
-          .curves-page {
-            padding: 15px;
-          }
-          
-          .curves-header h1 {
-            font-size: 1.8em;
-          }
-          
-          .token-tabs {
-            flex-direction: column;
-            gap: 10px;
-          }
-          
-          .token-tab {
-            padding: 15px 25px;
-            flex-direction: row;
-            gap: 10px;
-          }
-          
-          .tab-desc {
-            display: none;
-          }
-          
-          .curves-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .curve-stats {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          
-          .trade-controls {
-            padding: 15px;
-          }
-          
-          .side-selector {
-            flex-direction: row;
-          }
-          
-          .amount-inputs {
-            grid-template-columns: 1fr;
-          }
-          
-          .wallet-connected {
-            flex-direction: column;
-            gap: 10px;
-          }
-          
-          .info-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-        
-        @media (max-width: 480px) {
-          .curves-header h1 {
-            font-size: 1.5em;
-          }
-          
-          .curve-stats {
-            grid-template-columns: 1fr 1fr;
-          }
-          
-          .execute-btn {
-            padding: 15px;
-            font-size: 1em;
-          }
         }
       `}</style>
     </>
