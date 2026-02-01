@@ -1,14 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function TradingPanel() {
-  const [symbol, setSymbol] = useState('BTC');
+  const [symbol, setSymbol] = useState('ARYA');
   const [side, setSide] = useState('BUY');
   const [amount, setAmount] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [curveData, setCurveData] = useState(null);
 
-  const prices = { BTC: 78000, ETH: 2400, SOL: 105 };
-  const estimatedAmount = amount ? (parseFloat(amount) / prices[symbol]).toFixed(6) : '0';
+  // Fetch bonding curve state
+  useEffect(() => {
+    const fetchCurve = async () => {
+      try {
+        const r = await fetch('/api/bonding-curve');
+        const data = await r.json();
+        setCurveData(data);
+      } catch (e) {
+        console.error('Error fetching curve:', e);
+      }
+    };
+    fetchCurve();
+    const interval = setInterval(fetchCurve, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const executeTrade = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
@@ -17,14 +31,18 @@ export default function TradingPanel() {
     setResult(null);
     
     try {
-      const r = await fetch('/api/trade', {
+      const r = await fetch('/api/bonding-curve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol, side, amount })
+        body: JSON.stringify({ 
+          type: side, 
+          amount: parseFloat(amount),
+          token: symbol 
+        })
       });
       const data = await r.json();
       setResult(data);
-      if (data.orderId) {
+      if (data.outputAmount) {
         setAmount('');
       }
     } catch (e) {
@@ -34,16 +52,39 @@ export default function TradingPanel() {
     setLoading(false);
   };
 
+  const currentPrice = curveData?.currentPrice || 0.00001;
+  const estimatedOutput = side === 'BUY' 
+    ? (parseFloat(amount) / currentPrice).toFixed(0)
+    : (parseFloat(amount) * currentPrice).toFixed(6);
+
   return (
     <div className="trading-panel">
-      <h2>🚀 Quick Trade</h2>
+      <h2>🚀 Quick Trade (Bonding Curve)</h2>
+      
+      {curveData && (
+        <div className="curve-info">
+          <div className="curve-stat">
+            <span className="label">Supply</span>
+            <span className="value">{curveData.supply?.toLocaleString()} ARYA</span>
+          </div>
+          <div className="curve-stat">
+            <span className="label">Price</span>
+            <span className="value">Ξ {currentPrice.toFixed(6)}</span>
+          </div>
+          <div className="curve-stat">
+            <span className="label">Trades</span>
+            <span className="value">{curveData.totalTrades}</span>
+          </div>
+        </div>
+      )}
       
       <div className="trade-form">
         <div className="form-row">
           <select value={symbol} onChange={e => setSymbol(e.target.value)}>
-            <option value="BTC">🟠 Bitcoin</option>
-            <option value="ETH">🔵 Ethereum</option>
-            <option value="SOL">🟣 Solana</option>
+            <option value="ARYA">🦞 ARYA Token</option>
+            <option value="BTC">₿ Bitcoin</option>
+            <option value="ETH">Ξ Ethereum</option>
+            <option value="SOL">◎ Solana</option>
           </select>
           
           <div className="side-buttons">
@@ -64,22 +105,22 @@ export default function TradingPanel() {
         
         <div className="form-row">
           <div className="input-wrapper">
-            <label>Amount (USD)</label>
+            <label>{side === 'BUY' ? 'ETH Amount' : 'Token Amount'}</label>
             <input
               type="number"
               placeholder="0.00"
               value={amount}
               onChange={e => setAmount(e.target.value)}
               min="0"
-              step="0.01"
+              step={side === 'BUY' ? "0.001" : "1"}
             />
           </div>
           
           <div className="input-wrapper">
-            <label>Est. {symbol}</label>
+            <label>{side === 'BUY' ? 'Est. ARYA' : 'Est. ETH'}</label>
             <input
               type="text"
-              value={estimatedAmount}
+              value={amount ? estimatedOutput : '0'}
               disabled
               className="disabled"
             />
@@ -88,7 +129,7 @@ export default function TradingPanel() {
         
         <div className="price-info">
           <span>Current Price:</span>
-          <span>${prices[symbol]?.toLocaleString()}</span>
+          <span>Ξ {currentPrice.toFixed(8)}</span>
         </div>
         
         <button 
@@ -96,36 +137,30 @@ export default function TradingPanel() {
           onClick={executeTrade}
           disabled={loading || !amount}
         >
-          {loading ? '⏳ Processing...' : `${side} ${amount ? '$' + parseFloat(amount).toFixed(2) : ''} ${symbol}`}
+          {loading ? '⏳ Processing...' : `${side} ${amount ? (side === 'BUY' ? 'ETH' : 'ARYA') + ' ' + parseFloat(amount).toFixed(4) : ''}`}
         </button>
       </div>
 
-      {result && result.status === 'loading' && (
-        <div className="loading">
-          <div className="spinner-small"></div>
-          Processing your trade...
-        </div>
-      )}
-      
-      {result && result.orderId && (
-        <div className="success">
-          <div className="success-icon">✅</div>
-          <div className="success-details">
-            <strong>Order Submitted!</strong>
-            <p>#{result.orderId}</p>
-            <small>{result.side} {result.amount} {result.symbol} @ ${result.price}</small>
-          </div>
-        </div>
-      )}
-      
       {result && result.error && (
         <div className="error">
           <span>❌</span> {result.error}
         </div>
       )}
       
+      {result && result.outputAmount && (
+        <div className="success">
+          <div className="success-icon">✅</div>
+          <div className="success-details">
+            <strong>Order Submitted!</strong>
+            <p>{result.type} {parseFloat(result.outputAmount).toFixed(0)} ARYA</p>
+            <small>Price: Ξ {result.price?.toFixed(8)}</small>
+            {result.slippage && <small>Slippage: {result.slippage}%</small>}
+          </div>
+        </div>
+      )}
+      
       <div className="trade-disclaimer">
-        <small>⚠️ Demo mode - Connect Bankr for real trading</small>
+        <small>🤖 Powered by Bonding Curve | OpenWork Hackathon 2026</small>
       </div>
     </div>
   );

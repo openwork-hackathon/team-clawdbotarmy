@@ -11,19 +11,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Mock response
+  // Mock order response
   const orderId = Math.random().toString(36).substring(2, 10).toUpperCase();
   const prices = { BTC: 78000, ETH: 2400, SOL: 105 };
   
-  setTimeout(() => {
-    res.status(200).json({
-      orderId,
-      symbol,
-      side,
-      amount: parseFloat(amount),
-      price: prices[symbol] || 0,
-      timestamp: new Date().toISOString(),
-      status: 'submitted'
-    });
-  }, 1000);
+  res.status(200).json({
+    orderId,
+    symbol,
+    side,
+    amount: parseFloat(amount),
+    price: prices[symbol] || 0,
+    timestamp: new Date().toISOString(),
+    status: 'submitted'
+  });
 }
