@@ -78,6 +78,7 @@ function useClankerOnChain() {
   const [error, setError] = useState(null);
   const [isPending, setIsPending] = useState(false);
   const [txHash, setTxHash] = useState(null);
+  const [celebrate, setCelebrate] = useState(false);
 
   // Check for MetaMask
   useEffect(() => {
@@ -137,6 +138,9 @@ function useClankerOnChain() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       setTxHash(txHash);
+      setCelebrate(true);
+      setTimeout(() => setCelebrate(false), 3000);
+      
       return { txHash, success: true };
     } catch (err) {
       setError(err.message);
@@ -153,6 +157,7 @@ function useClankerOnChain() {
     isPending,
     txHash,
     error,
+    celebrate,
     connect,
     disconnect,
     executeTrade,
@@ -485,8 +490,27 @@ export default function BondingCurves() {
                 )}
               </div>
             </div>
-          )}
-        </div>
+            
+            {/* Celebration Particles */}
+            {clanker.celebrate && (
+              <div className="celebration-particles">
+                {[...Array(12)].map((_, i) => (
+                  <span
+                    key={i}
+                    className="particle"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: '50%',
+                      fontSize: `${Math.random() * 20 + 15}px`,
+                      animationDelay: `${Math.random() * 0.5}s`,
+                    }}
+                  >
+                    {['🎉', '✨', '🚀', '💰', '🦞', '🔥'][Math.floor(Math.random() * 6)]}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
 
         {/* How It Works */}
         <div className="info-section">
@@ -1064,6 +1088,168 @@ export default function BondingCurves() {
         .wallet-error {
           color: var(--accent-red);
           font-size: 0.9em;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+          50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
+        }
+        
+        .curve-card {
+          animation: slideUp 0.5s ease-out;
+        }
+        
+        .curve-card:nth-child(2) {
+          animation-delay: 0.1s;
+        }
+        
+        .token-tab:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .token-tab.active {
+          animation: pulse 2s infinite;
+        }
+        
+        .execute-btn:active {
+          transform: scale(0.98);
+        }
+        
+        .trade-success {
+          animation: slideUp 0.3s ease-out;
+        }
+        
+        .wallet-section {
+          animation: fadeIn 0.5s ease-out;
+        }
+        
+        .onchain-badge {
+          animation: glow 2s infinite;
+        }
+        
+        .celebrate {
+          animation: celebrate 0.6s ease-out;
+        }
+        
+        @keyframes celebrate {
+          0% { transform: scale(1) rotate(0deg); }
+          25% { transform: scale(1.1) rotate(-3deg); }
+          50% { transform: scale(1.1) rotate(3deg); }
+          75% { transform: scale(1.05) rotate(-1deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        /* Floating particles effect */
+        .particle {
+          position: fixed;
+          pointer-events: none;
+          animation: float 3s ease-in-out forwards;
+          opacity: 0;
+        }
+        
+        @keyframes float {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+        
+        .celebration-particles {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+          z-index: 1000;
+        }
+        
+        .particle {
+          position: absolute;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .curves-page {
+            padding: 15px;
+          }
+          
+          .curves-header h1 {
+            font-size: 1.8em;
+          }
+          
+          .token-tabs {
+            flex-direction: column;
+            gap: 10px;
+          }
+          
+          .token-tab {
+            padding: 15px 25px;
+            flex-direction: row;
+            gap: 10px;
+          }
+          
+          .tab-desc {
+            display: none;
+          }
+          
+          .curves-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .curve-stats {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          
+          .trade-controls {
+            padding: 15px;
+          }
+          
+          .side-selector {
+            flex-direction: row;
+          }
+          
+          .amount-inputs {
+            grid-template-columns: 1fr;
+          }
+          
+          .wallet-connected {
+            flex-direction: column;
+            gap: 10px;
+          }
+          
+          .info-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .curves-header h1 {
+            font-size: 1.5em;
+          }
+          
+          .curve-stats {
+            grid-template-columns: 1fr 1fr;
+          }
+          
+          .execute-btn {
+            padding: 15px;
+            font-size: 1em;
+          }
         }
       `}</style>
     </>
