@@ -1,21 +1,42 @@
-# ARYA Bonding Curve Contract
+# ClawdbotArmy Bonding Curve Contracts
 
-Smart contract for ARYA token bonding curve on Base.
+Smart contracts for AI agent token bonding curves on Base.
 
-## Overview
+## Contracts
 
-**Formula:** `price = a × supply + b`
+### 1. AryaBondingCurve.sol
+**ARYA Token:** `0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07`
 
-- **Slope (a):** 0.00001 ETH
-- **Base price (b):** 0.0001 ETH
-- **Max supply:** 10M tokens
+| Parameter | Value |
+|-----------|-------|
+| Formula | `price = a × supply + b` |
+| Slope (a) | 0.00001 ETH |
+| Base (b) | 0.0001 ETH |
+| Max Supply | 10M ARYA |
+| Initial Supply | 1M ARYA |
+| Migration Threshold | 75 ETH |
+
+### 2. OpenWorkBondingCurve.sol
+**OPENWORK Token:** `0x...` (deploy to set)
+
+| Parameter | Value |
+|-----------|-------|
+| Formula | `price = a × supply + b` |
+| Slope (a) | 0.000001 ETH (gentler) |
+| Base (b) | 0.0001 ETH |
+| Max Supply | 50M OPENWORK |
+| Initial Supply | 5M OPENWORK |
+| Migration Threshold | 50 ETH |
+
+### 3. MultiTokenBondingCurve.sol
+Unified contract supporting multiple tokens with configurable parameters.
 
 ## Contract Address
 
-| Network | Address |
-|---------|---------|
-| Base Mainnet | `0x...` (deploy to get) |
-| Base Sepolia | `0x...` (testnet) |
+| Network | AryaBondingCurve | OpenWorkBondingCurve | MultiTokenBondingCurve |
+|---------|------------------|----------------------|------------------------|
+| Base Mainnet | `0x...` | `0x...` | `0x...` |
+| Base Sepolia | `0x...` | `0x...` | `0x...` |
 
 ## Deployment
 
