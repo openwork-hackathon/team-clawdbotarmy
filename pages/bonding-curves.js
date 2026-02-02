@@ -238,9 +238,13 @@ export default function BondingCurves() {
 
   const selectedCurve = curves?.[selectedToken] || {};
   const currentPrice = selectedCurve.currentPrice || 0.00001;
+  const isTokenDeployed = selectedCurve.isDeployed;
   const estimatedOutput = side === 'BUY' 
     ? (parseFloat(amount) / currentPrice).toFixed(0)
     : (parseFloat(amount) * currentPrice).toFixed(6);
+
+  // OpenWork deployment URL
+  const openworkDeployUrl = 'https://www.clanker.world/deploy?name=OpenWork%20Protocol&symbol=OPENWORK&initialSupply=5000000&initialEth=0.05';
 
   return (
     <>
@@ -323,6 +327,43 @@ export default function BondingCurves() {
             </button>
           ))}
         </div>
+
+        {/* OpenWork Deployment Banner */}
+        {selectedToken === 'OPENWORK' && !isTokenDeployed && (
+          <div style={{
+            background: 'rgba(0, 212, 255, 0.1)',
+            border: '1px solid #00d4ff',
+            borderRadius: '12px',
+            padding: '20px',
+            marginBottom: '20px',
+            textAlign: 'center'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#00d4ff' }}>
+              ⚡ OPENWORK Not Yet Deployed
+            </h4>
+            <p style={{ margin: '0 0 15px 0', color: '#9ca3af', fontSize: '0.9em' }}>
+              Deploy the OpenWork Protocol token to enable on-chain trading.
+              Cost: ~0.0001 ETH
+            </p>
+            <a 
+              href={openworkDeployUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                padding: '12px 24px',
+                background: '#00d4ff',
+                color: '#000',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              Deploy with Clanker →
+            </a>
+          </div>
+        )}
 
         {/* Curve Visualization */}
         {curves && (
@@ -519,6 +560,11 @@ export default function BondingCurves() {
 
             <div className="trade-info">
               <span>Current Price: ETH {currentPrice.toFixed(8)}</span>
+              {!isTokenDeployed && (
+                <span style={{ display: 'block', marginTop: '5px', color: '#f6851b', fontSize: '0.85em' }}>
+                  ⚠️ Simulation Mode - Token not deployed
+                </span>
+              )}
             </div>
 
             <button 
