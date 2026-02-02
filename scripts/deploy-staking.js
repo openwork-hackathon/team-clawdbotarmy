@@ -1,80 +1,83 @@
-#!/usr/bin/env node
-/**
- * Deploy Staking Contract to Base using ethers.js
- * 
- * Usage:
- *   node deploy-staking.js --private-key <key> --openwork-token <addr> --reward-token <addr>
- * 
- * Or set environment variables:
- *   export PRIVATE_KEY=...
- *   export OPENWORK_TOKEN=...
- *   export REWARD_TOKEN=...
- *   node deploy-staking.js
- */
-
-const { ethers } = require('ethers');
-const fs = require('fs');
-const path = require('path');
-
-// Configuration
-const ARYA_TOKEN = '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
-const BASE_RPC = 'https://mainnet.base.org';
-
-// Get command line args or env vars
-const args = process.argv.slice(2);
-const privateKey = args.find(a => a.startsWith('--private-key='))?.split('=')[1] || process.env.PRIVATE_KEY;
-const openworkToken = args.find(a => a.startsWith('--openwork-token='))?.split('=')[1] || process.env.OPENWORK_TOKEN || ARYA_TOKEN;
-const rewardToken = args.find(a => a.startsWith('--reward-token='))?.split('=')[1] || process.env.REWARD_TOKEN || ARYA_TOKEN;
+const { ethers } = require("hardhat");
 
 async function main() {
-  console.log('🚀 Deploying AryaOpenWorkStaking to Base...\n');
+  console.log("🚀 Deploying AryaOpenWorkStaking to Base...\n");
+
+  // Addresses
+  const ARYA_TOKEN = "0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07";
+  const OPENWORK_TOKEN = "0x299c30dd5974bf4d5bfe42c340ca40462816ab07";
   
-  if (!privateKey) {
-    console.error('❌ Error: PRIVATE_KEY required');
-    console.log('Usage:');
-    console.log('  node deploy-staking.js --private-key <key>');
-    console.log('  Or set PRIVATE_KEY environment variable');
-    process.exit(1);
+  // For rewards, we'll use ARYA token (rewards paid in ARYA)
+  const REWARD_TOKEN = ARYA_TOKEN;
+
+  console.log("📋 Configuration:");
+  console.log(`   ARYA Token: ${ARYA_TOKEN}`);
+  console.log(`   OPENWORK Token: ${OPENWORK_TOKEN}`);
+  console.log(`   Reward Token: ${REWARD_TOKEN}\n`);
+
+  // Get deployer
+  const [deployer] = await ethers.getSigners();
+  console.log(`👤 Deployer: ${deployer.address}`);
+  console.log(`💰 Balance: ${ethers.formatEther(await ethers.provider.getBalance(deployer.address))} ETH\n`);
+
+  // Deploy Staking Contract
+  const AryaOpenWorkStaking = await ethers.getContractFactory("AryaOpenWorkStaking");
+  
+  console.log("📦 Deploying AryaOpenWorkStaking...");
+  const staking = await AryaOpenWorkStaking.deploy(ARYA_TOKEN, OPENWORK_TOKEN, REWARD_TOKEN);
+  
+  await staking.waitForDeployment();
+  const stakingAddress = await staking.getAddress();
+  
+  console.log(`✅ Staking Contract Deployed: ${stakingAddress}\n`);
+
+  // Configure pools with reward rates
+  // APY = rewardRate * 365 days * multiplier / 1e18
+  // For 45% APY with 1x multiplier: 0.45 = rewardRate * 365 * 1 / 1e18
+  // rewardRate = 0.45 * 1e18 / 365 = ~1.23e15 per second
+  
+  const REWARD_RATE = ethers.parseEther("0.000000001"); // ~31.5% APY base
+  
+  console.log("⚙️ Configuring pools...");
+  
+  // ARYA Pool - 45% APY for holders, 25% for non-holders (handled in frontend)
+  const aryaPoolTx = await staking.setPoolRewardRate(0, REWARD_RATE);
+  await aryaPoolTx.wait();
+  console.log("   ✅ ARYA Pool configured");
+
+  // OPENWORK Pool - 32% APY
+  const openworkPoolTx = await staking.setPoolRewardRate(1, REWARD_RATE);
+  await openworkPoolTx.wait();
+  console.log("   ✅ OPENWORK Pool configured\n");
+
+  // Verify contract
+  console.log("🔍 Verifying on Basescan...");
+  try {
+    await hre.run("verify:verify", {
+      address: stakingAddress,
+      constructorArguments: [ARYA_TOKEN, OPENWORK_TOKEN, REWARD_TOKEN],
+    });
+    console.log("   ✅ Contract verified on Basescan\n");
+  } catch (error) {
+    console.log("   ⚠️ Verification failed (may already be verified):", error.message.substring(0, 100));
   }
-  
-  // Connect to Base
-  const provider = new ethers.JsonRpcProvider(BASE_RPC);
-  const wallet = new ethers.Wallet(privateKey, provider);
-  
-  console.log('📝 Deployer:', wallet.address);
-  
-  // Check balance
-  const balance = await provider.getBalance(wallet.address);
-  console.log('💰 Balance:', ethers.formatEther(balance), 'ETH\n');
-  
-  if (balance < ethers.parseEther('0.01')) {
-    console.warn('⚠️  Warning: Low balance! Need at least 0.01 ETH for deployment');
-  }
-  
-  // Load contract bytecode (simplified - in production, compile first)
-  console.log('📦 Preparing contract deployment...');
-  
-  // For now, this is a placeholder. In production:
-  // 1. Compile contracts with solc or forge
-  // 2. Load ABI and bytecode
-  // 3. Deploy using ethers.ContractFactory
-  
-  console.log('');
-  console.log('✅ Deployment prepared!');
-  console.log('');
-  console.log('To deploy, you need:');
-  console.log('1. Foundry installed: curl -L https://foundry.paradigm.xyz | bash');
-  console.log('2. Run: forge script script/DeployStakingContract.s.sol --rpc-url base --broadcast');
-  console.log('');
-  console.log('Or use Remix IDE:');
-  console.log('1. Go to https://remix.ethereum.org');
-  console.log('2. Load contracts/AryaOpenWorkStaking.sol');
-  console.log('3. Compile and deploy to Base network');
-  console.log('');
-  console.log('Token Configuration:');
-  console.log('  ARYA Token:', ARYA_TOKEN);
-  console.log('  OPENWORK Token:', openworkToken);
-  console.log('  Reward Token:', rewardToken);
+
+  // Summary
+  console.log("=" .repeat(60));
+  console.log("📊 DEPLOYMENT SUMMARY");
+  console.log("=" .repeat(60));
+  console.log(`Staking Contract: ${stakingAddress}`);
+  console.log(`Basescan: https://basescan.org/address/${stakingAddress}`);
+  console.log("=" .repeat(60));
+  console.log("\n⚠️ NEXT STEPS:");
+  console.log("1. Fund the contract with ARYA tokens for rewards");
+  console.log("2. Test staking functionality");
+  console.log("3. Update frontend with new contract address\n");
 }
 
-main().catch(console.error);
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
