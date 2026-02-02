@@ -21,8 +21,8 @@ async function getPrices(coinIds) {
 /**
  * Get historical market data for charts
  */
-async function getMarketChart(coinId, days = 7, timeframe = '1d') {
-  const cb = Date.now() + Math.random();
+async function getMarketChart(coinId, days = 7, timeframe = '1d', nonce = '') {
+  const cb = nonce || (Date.now() + Math.random());
   
   try {
     let prices = [];
