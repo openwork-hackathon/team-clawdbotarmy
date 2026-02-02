@@ -664,6 +664,7 @@ export default function Staking() {
           display: flex;
           flex-direction: column;
           gap: 25px;
+          overflow: visible;
         }
         
         .staking-card-header {
@@ -745,6 +746,7 @@ export default function Staking() {
           display: flex;
           flex-direction: column;
           gap: 20px;
+          padding-bottom: 20px;
         }
         
         .form-group label {
@@ -821,6 +823,9 @@ export default function Staking() {
         .staking-actions {
           display: flex;
           gap: 15px;
+          margin-bottom: 20px;
+          position: relative;
+          z-index: 10;
         }
         
         .stake-btn, .connect-btn {
@@ -850,11 +855,12 @@ export default function Staking() {
         
         .boost-reminder {
           text-align: center;
-          padding: 12px;
+          padding: 14px;
           background: rgba(255, 107, 53, 0.1);
           border-radius: 10px;
           color: #ff6b35;
           font-size: 0.9em;
+          margin-top: 15px;
         }
         
         .info-panel h4 {
