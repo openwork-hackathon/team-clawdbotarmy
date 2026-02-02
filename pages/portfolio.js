@@ -234,7 +234,7 @@ export default function Portfolio() {
               <div className="wallet-icon">👛</div>
               <h3>Connect Your Wallet</h3>
               <p>Connect your MetaMask wallet to view your real portfolio</p>
-              <button className="connect-btn" onClick={connectWallet}>
+              <button className="connect-btn" onClick={handleConnect}>
                 <span>🦊</span>
                 <span>Connect Wallet</span>
               </button>

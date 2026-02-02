@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useWallet } from '../src/hooks/useWallet';
 
 export default function Openwork() {
+  const { account, isConnected, connect } = useWallet();
   const [marketData, setMarketData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
 
   useEffect(() => {
     fetchMarketData();
@@ -25,15 +25,9 @@ export default function Openwork() {
     setLoading(false);
   };
 
-  const connectWallet = async () => {
-    if (typeof window === 'undefined' || !window.ethereum) {
-      alert('MetaMask not installed!');
-      return;
-    }
+  const handleConnect = async () => {
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      setWalletConnected(true);
-      setWalletAddress(accounts[0]);
+      await connect();
     } catch (e) {
       console.error('Wallet connection failed:', e);
     }
@@ -140,10 +134,10 @@ export default function Openwork() {
           </a>
           <button 
             className="action-btn wallet"
-            onClick={connectWallet}
+            onClick={handleConnect}
           >
             <span>🦊</span>
-            <span>{walletConnected ? `${walletAddress.slice(0,4)}...${walletAddress.slice(-4)}` : 'Connect Wallet'}</span>
+            <span>{isConnected ? `${account.slice(0,4)}...${account.slice(-4)}` : 'Connect Wallet'}</span>
           </button>
         </section>
 
