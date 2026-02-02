@@ -16,22 +16,23 @@ const TOKEN_CONFIGS = {
   ARYA: {
     name: 'ARYA',
     symbol: 'ARYA',
-    initialSupply: 50000,  // Start with 50K for 0.001 ETH price
-    initialReserve: 0.05,  // Small reserve
-    a: 0.00000001, // Very gentle slope
-    b: 0.001, // Base price (ETH) - 0.001 ETH per token
+    initialSupply: 1000000,  // 1M supply
+    initialReserve: 0.01,    // 0.01 ETH reserve
+    a: 0.00000000001, // slope: very gentle (1e-11)
+    b: 0.00001, // Base price (ETH) - starts at 0.00001 ETH
     maxSupply: 10000000,
     clankerAddress: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
   },
   OPENWORK: {
     name: 'OpenWork Protocol',
     symbol: 'OPENWORK',
-    initialSupply: 5000000,
-    initialReserve: 5, // ETH
-    a: 0.000001, // Gentler slope for larger supply
-    b: 0.0001, // Lower base price
+    initialSupply: 5000000,  // 5M supply
+    initialReserve: 0.05,    // 0.05 ETH reserve
+    a: 0.00000000001, // Same gentle slope
+    b: 0.00001, // Same base price
     maxSupply: 50000000,
     clankerAddress: null // Not yet deployed
+  }
   }
 };
 
