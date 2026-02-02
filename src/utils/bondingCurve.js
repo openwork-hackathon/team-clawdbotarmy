@@ -33,7 +33,6 @@ const TOKEN_CONFIGS = {
     maxSupply: 50000000,
     clankerAddress: null // Not yet deployed
   }
-  }
 };
 
 // Global curve state (in-memory for demo)
