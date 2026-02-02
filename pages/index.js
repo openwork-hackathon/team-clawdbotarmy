@@ -111,7 +111,7 @@ export default function Home() {
               }}
             >
               <span>🦄</span>
-              <span>Buy ARYA</span>
+              <span>Buy 🦞 ARYA</span>
             </a>
             <div style={{ marginLeft: '10px' }}>
               <WalletConnect />
