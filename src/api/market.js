@@ -54,14 +54,16 @@ async function getMarketChart(coinId, days = 7, timeframe = '1d') {
         );
         
         const ohlcData = ohlcResponse.data || [];
-        const sampleRate = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '4h': 240 };
         
-        prices = ohlcData.filter((_, i) => i % (sampleRate[timeframe] || 1) === 0)
-          .map(d => [d[0], d[4]]);
+        // CoinGecko OHLC returns data at 5-minute intervals
+        // Use all data points for accurate chart
+        prices = ohlcData.map(d => [d[0], d[4]]); // Use close price
+        
       } catch (e) {
         console.error('OHLC error, falling back:', e.message);
+        // Fallback: use market_chart with small days for intraday data
         const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}/market_chart`, {
-          params: { vs_currency: 'usd', days: days }
+          params: { vs_currency: 'usd', days: daysMap[timeframe] || 1 }
         });
         prices = response.data.prices || [];
       }
