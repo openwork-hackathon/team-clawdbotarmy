@@ -20,7 +20,7 @@ contract DeployMultiTokenBondingCurve is Script {
     address constant OPENWORK_TOKEN = 0x0000000000000000000000000000000000000000; // Set later
     
     function run() external {
-        console2.log("🚀 Deploying MultiTokenBondingCurve to Base...");
+        console2.log(" Deploying MultiTokenBondingCurve to Base...");
         console2.log("");
         console2.log("This contract supports:");
         console2.log("  - ARYA:   0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07");
@@ -29,7 +29,7 @@ contract DeployMultiTokenBondingCurve is Script {
         // Get deployer from private key
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
-        console2.log("📝 Deployer:", deployer);
+        console2.log(" Deployer:", deployer);
         
         // Deploy contract
         vm.startBroadcast(deployerPrivateKey);
@@ -39,7 +39,7 @@ contract DeployMultiTokenBondingCurve is Script {
         vm.stopBroadcast();
         
         console2.log("");
-        console2.log("✅ MultiTokenBondingCurve deployed!");
+        console2.log(" MultiTokenBondingCurve deployed!");
         console2.log("📄 Contract:", address(curve));
         console2.log("");
         console2.log("Features:");

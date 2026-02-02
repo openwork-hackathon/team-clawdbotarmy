@@ -21,7 +21,7 @@ contract DeployOpenWorkBondingCurve is Script {
     address public openworkToken;
     
     function run() external {
-        console2.log("🚀 Deploying OpenWorkBondingCurve to Base...");
+        console2.log(" Deploying OpenWorkBondingCurve to Base...");
         
         // Get OPENWORK token from env or use placeholder
         openworkToken = vm.envAddress("OPENWORK_TOKEN", address(0));
@@ -31,13 +31,13 @@ contract DeployOpenWorkBondingCurve is Script {
             console2.log("   export OPENWORK_TOKEN=0x...");
             console2.log("   Using address(0) for now (will need to configure later)");
         } else {
-            console2.log("📝 OPENWORK Token:", openworkToken);
+            console2.log(" OPENWORK Token:", openworkToken);
         }
         
         // Get deployer from private key
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
-        console2.log("📝 Deployer:", deployer);
+        console2.log(" Deployer:", deployer);
         
         // Deploy contract
         vm.startBroadcast(deployerPrivateKey);
@@ -46,7 +46,7 @@ contract DeployOpenWorkBondingCurve is Script {
         
         vm.stopBroadcast();
         
-        console2.log("✅ OpenWorkBondingCurve deployed!");
+        console2.log(" OpenWorkBondingCurve deployed!");
         console2.log("📄 Contract:", address(curve));
         console2.log("🪙 OPENWORK Token:", openworkToken);
         console2.log("");

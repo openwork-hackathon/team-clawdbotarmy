@@ -11,8 +11,14 @@
 - [x] Price alerts (notify when target reached)
 - [x] Mobile responsive improvements
 - [x] Staking for ARYA and OPENWORK
+- [x] Portfolio page with PnL tracking
 
 ## Next Features (2h rotation)
+- [ ] Deploy contracts to Base
+- [ ] Connect frontend to on-chain contracts
+- [ ] Multi-timeframe charts
+- [ ] Twitter sentiment integration
+- [ ] Trading history export (CSV)
 
 ### Next Ship: 22:30 UTC
 - [x] Price alerts (notify when target reached)

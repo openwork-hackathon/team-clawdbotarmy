@@ -20,12 +20,12 @@ contract DeployAryaBondingCurve is Script {
     address constant ARYA_TOKEN = 0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07;
     
     function run() external {
-        console2.log("🚀 Deploying AryaBondingCurve to Base...");
+        console2.log(" Deploying AryaBondingCurve to Base...");
         
         // Get deployer from private key
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
-        console2.log("📝 Deployer:", deployer);
+        console2.log(" Deployer:", deployer);
         
         // Deploy contract
         vm.startBroadcast(deployerPrivateKey);
@@ -34,7 +34,7 @@ contract DeployAryaBondingCurve is Script {
         
         vm.stopBroadcast();
         
-        console2.log("✅ AryaBondingCurve deployed!");
+        console2.log(" AryaBondingCurve deployed!");
         console2.log("📄 Contract:", address(curve));
         console2.log("🪙 ARYA Token:", ARYA_TOKEN);
         console2.log("");
