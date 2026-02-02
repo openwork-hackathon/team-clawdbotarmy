@@ -96,19 +96,22 @@ export default function Home() {
               target="_blank" 
               rel="noopener noreferrer"
               style={{ 
-                padding: '8px 16px',
+                padding: '10px 18px',
                 background: 'linear-gradient(135deg, #ff0055, #ff00aa)',
                 color: '#fff',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 textDecoration: 'none',
                 fontWeight: 'bold',
-                fontSize: '0.9em',
+                fontSize: '0.85em',
+                boxShadow: '0 4px 15px rgba(255, 0, 85, 0.4)',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '8px',
+                marginLeft: '10px'
               }}
             >
-              🦄 Buy ARYA
+              <span>🦄</span>
+              <span>Buy ARYA</span>
             </a>
             <div style={{ marginLeft: '10px' }}>
               <WalletConnect />
