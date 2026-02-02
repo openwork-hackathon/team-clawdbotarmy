@@ -82,6 +82,12 @@ export default function Arya() {
     ? (side === 'BUY' ? (parseFloat(amount) / currentPrice).toFixed(0) : (parseFloat(amount) * currentPrice).toFixed(6))
     : '0';
 
+  // Uniswap URL for buying ARYA on Base
+  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07`;
+
+  // Check if MetaMask is installed
+  const isMetaMaskInstalled = typeof window !== 'undefined' && window.ethereum;
+
   return (
     <>
       <Head>
