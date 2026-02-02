@@ -60,23 +60,21 @@ export default function Home() {
       </Head>
       
       <div className="container">
-        <header className="main-header" style={{ 
+        <header className="main-header modern-card" style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          padding: '15px 30px',
-          background: 'var(--bg-secondary)',
-          borderRadius: '12px',
+          padding: '20px 30px',
           marginBottom: '24px',
           flexWrap: 'wrap',
-          gap: '15px'
+          gap: '20px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <span style={{ fontSize: '1.8em' }}>🦞</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+            <div className="token-icon-circle glow-blue" style={{ fontSize: '1.8em' }}>🦞</div>
             <div>
               <span style={{ 
                 fontWeight: 'bold', 
-                fontSize: '1.3em',
+                fontSize: '1.4em',
                 background: 'linear-gradient(135deg, var(--accent), var(--accent-green))',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -85,23 +83,34 @@ export default function Home() {
               <LivePrices />
             </div>
           </div>
-          <nav style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <a href="/bonding-curves" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📈 Bonding Curves</a>
-            <a href="/staking" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🔒 Staking</a>
-            <a href="/portfolio" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📊 Portfolio</a>
-            <a href="/arya" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
-            <a href="/openwork" style={{ color: '#00d4ff', textDecoration: 'none', fontWeight: '600' }}>⚡ OPENWORK</a>
+          <nav style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <a href="/bonding-curves" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: '600', padding: '8px 16px', borderRadius: '8px', transition: 'all 0.2s' }}>📈 Bonding Curves</a>
+            <a href="/staking" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: '600', padding: '8px 16px', borderRadius: '8px', transition: 'all 0.2s' }}>🔒 Staking</a>
+            <a href="/portfolio" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: '600', padding: '8px 16px', borderRadius: '8px', transition: 'all 0.2s' }}>📊 Portfolio</a>
+            <a href="/arya" style={{ color: '#ff6b35', textDecoration: 'none', fontWeight: '600', padding: '8px 16px', borderRadius: '8px', transition: 'all 0.2s' }}>🦞 ARYA</a>
+            <a href="/openwork" style={{ color: '#00d4ff', textDecoration: 'none', fontWeight: '600', padding: '8px 16px', borderRadius: '8px', transition: 'all 0.2s' }}>⚡ OPENWORK</a>
             <a 
               href="/bonding-curves"
               target="_blank" 
               rel="noopener noreferrer"
               style={{ 
-                padding: '10px 18px',
+                padding: '10px 20px',
                 background: 'linear-gradient(135deg, #ff0055, #ff00aa)',
                 color: '#fff',
-                borderRadius: '10px',
+                borderRadius: '25px',
                 textDecoration: 'none',
                 fontWeight: 'bold',
+                boxShadow: '0 4px 15px rgba(255, 0, 85, 0.4)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginLeft: '10px',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <span>🦄</span>
+              <span>Swap Tokens</span>
+            </a>
                 fontSize: '0.85em',
                 boxShadow: '0 4px 15px rgba(255, 0, 85, 0.4)',
                 display: 'inline-flex',
@@ -212,32 +221,50 @@ export default function Home() {
               gap: '20px' 
             }}>
               <div style={{ 
-                padding: '20px', 
-                background: 'var(--bg-card)', 
-                borderRadius: '12px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🦞</div>
-                <h3 style={{ margin: '0 0 5px' }}>Arya</h3>
-                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>PM & Trading</p>
+                padding: '24px', 
+                background: 'linear-gradient(145deg, var(--bg-card), var(--bg-secondary))', 
+                borderRadius: '20px',
+                textAlign: 'center',
+                border: '1px solid var(--border-color)',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
+              }} 
+              onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#ff6b35'; }}
+              onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+              >
+                <div style={{ fontSize: '2.8em', marginBottom: '12px' }}>🦞</div>
+                <h3 style={{ margin: '0 0 8px', fontSize: '1.2em' }}>Arya</h3>
+                <p style={{ color: '#ff6b35', margin: 0, fontSize: '0.9em', fontWeight: '500' }}>PM & Trading</p>
               </div>
               <div style={{ 
-                padding: '20px', 
-                background: 'var(--bg-card)', 
-                borderRadius: '12px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🩸</div>
-                <h3 style={{ margin: '0 0 5px' }}>Bloody</h3>
-                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Backend & APIs</p>
+                padding: '24px', 
+                background: 'linear-gradient(145deg, var(--bg-card), var(--bg-secondary))', 
+                borderRadius: '20px',
+                textAlign: 'center',
+                border: '1px solid var(--border-color)',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#ff4757'; }}
+              onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+              >
+                <div style={{ fontSize: '2.8em', marginBottom: '12px' }}>🩸</div>
+                <h3 style={{ margin: '0 0 8px', fontSize: '1.2em' }}>Bloody</h3>
+                <p style={{ color: '#ff4757', margin: 0, fontSize: '0.9em', fontWeight: '500' }}>Backend & APIs</p>
               </div>
               <div style={{ 
-                padding: '20px', 
-                background: 'var(--bg-card)', 
-                borderRadius: '12px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🧠</div>
+                padding: '24px', 
+                background: 'linear-gradient(145deg, var(--bg-card), var(--bg-secondary))', 
+                borderRadius: '20px',
+                textAlign: 'center',
+                border: '1px solid var(--border-color)',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = '#8b5cf6'; }}
+              onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+              >
+                <div style={{ fontSize: '2.8em', marginBottom: '12px' }}>🧠</div>
                 <h3 style={{ margin: '0 0 5px' }}>Ydoolb</h3>
                 <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Research & Docs</p>
               </div>
