@@ -38,8 +38,15 @@ export default function Openwork() {
     }
   };
 
-  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07`;
-  const clankerUrl = 'https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
+  // OPENWORK token address on Base
+  const OPENWORK_ADDRESS = '0x299c30dd5974bf4d5bfe42c340ca40462816ab07';
+  
+  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${OPENWORK_ADDRESS}`;
+  const clankerUrl = `https://www.clanker.world/clanker/${OPENWORK_ADDRESS}`;
+
+  const getUniswapEmbedUrl = (tokenAddress) => {
+    return `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${tokenAddress}&use=v2`;
+  };
 
   const formatPrice = (price, isUSD = false) => {
     if (!price) return '--';
@@ -52,16 +59,16 @@ export default function Openwork() {
   return (
     <>
       <Head>
-        <title>🦞 ARYA Token | OpenWork</title>
-        <meta name="description" content="ARYA AI Agent Token on Base" />
+        <title>⚡ OPENWORK Token | ClawdbotArmy</title>
+        <meta name="description" content="OPENWORK Protocol Token on Base" />
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       
       <div className="openwork-page">
         <header className="openwork-header">
-          <div className="openwork-logo">🦞</div>
-          <h1>ARYA</h1>
-          <p className="openwork-subtitle">AI Agent Token</p>
+          <div className="openwork-logo">⚡</div>
+          <h1>OPENWORK</h1>
+          <p className="openwork-subtitle">OpenWork Protocol Token</p>
         </header>
 
         {/* Price Card */}
@@ -90,7 +97,7 @@ export default function Openwork() {
             onClick={() => window.open(uniswapUrl, '_blank')}
           >
             <span>🦄</span>
-            <span>Buy on Uniswap</span>
+            <span>Trade on Uniswap</span>
           </button>
           
           <button 
@@ -107,8 +114,8 @@ export default function Openwork() {
           <a href={clankerUrl} target="_blank" rel="noopener noreferrer" className="openwork-link">
             📄 View on Clanker
           </a>
-          <a href="/arya" className="openwork-link">
-            🦞 Full ARYA Page
+          <a href="/bonding-curves" className="openwork-link">
+            🦞 All Tokens
           </a>
         </div>
 
@@ -117,7 +124,7 @@ export default function Openwork() {
           <h3>Token Info</h3>
           <div className="info-row">
             <span>Contract</span>
-            <code>0xcc78...5B6B07</code>
+            <code>0x299c...16ab07</code>
           </div>
           <div className="info-row">
             <span>Network</span>
@@ -125,8 +132,21 @@ export default function Openwork() {
           </div>
           <div className="info-row">
             <span>Symbol</span>
-            <span>ARYA</span>
+            <span>OPENWORK</span>
           </div>
+        </div>
+
+        {/* Uniswap Embed Widget */}
+        <div className="openwork-card embed-card">
+          <h3>Swap OPENWORK on Uniswap</h3>
+          <iframe
+            src={getUniswapEmbedUrl(OPENWORK_ADDRESS)}
+            width="100%"
+            height="500"
+            style={{ border: 'none', borderRadius: '12px' }}
+            title="Uniswap OPENWORK Swap"
+            allow="cross-origin-isolated"
+          />
         </div>
       </div>
 
@@ -154,7 +174,7 @@ export default function Openwork() {
         .openwork-header h1 {
           font-size: 3em;
           margin: 0 0 10px 0;
-          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          background: linear-gradient(135deg, #00d4ff, #00ff88);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -174,12 +194,12 @@ export default function Openwork() {
           margin-bottom: 20px;
           text-align: center;
           width: 100%;
-          max-width: 400px;
+          max-width: 450px;
         }
         
         .price-card {
-          background: linear-gradient(135deg, rgba(255,107,53,0.1) 0%, rgba(255,107,53,0.05) 100%);
-          border-color: rgba(255,107,53,0.3);
+          background: linear-gradient(135deg, rgba(0,212,255,0.1) 0%, rgba(0,212,255,0.05) 100%);
+          border-color: rgba(0,212,255,0.3);
         }
         
         .price-label {
@@ -199,7 +219,7 @@ export default function Openwork() {
         
         .price-eth {
           font-size: 1.2em;
-          color: #ff6b35;
+          color: #00d4ff;
           margin-bottom: 10px;
         }
         
@@ -311,8 +331,25 @@ export default function Openwork() {
         }
         
         .info-row code {
-          color: #ff6b35;
+          color: #00d4ff;
           font-family: monospace;
+        }
+        
+        .embed-card {
+          max-width: 500px;
+        }
+        
+        .embed-card h3 {
+          margin: 0 0 20px 0;
+          color: #888;
+          font-size: 1em;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+        }
+        
+        .embed-card iframe {
+          min-height: 450px;
+          border-radius: 12px;
         }
       `}</style>
     </>
