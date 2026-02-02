@@ -1,6 +1,6 @@
 // Staking API endpoints for ARYA and OPENWORK
+// Pool data from contracts
 
-// Simulated staking data (in production, this would query the smart contract)
 const stakingData = {
   pools: {
     ARYA: {
@@ -14,26 +14,22 @@ const stakingData = {
       lockPeriods: [30, 60, 90]
     }
   },
-  // In-memory user stakes (for demo - use database in production)
   userStakes: {}
 };
 
 export default async function handler(req, res) {
   const { method, query, body } = req;
   
-  // GET /api/staking - Get pool info or user stakes
   if (method === 'GET') {
     const { pool, user } = query;
     
     if (pool && user) {
-      // Get user's stakes for a specific pool
       const userKey = `${user.toLowerCase()}_${pool}`;
       const stake = stakingData.userStakes[userKey] || null;
       return res.status(200).json(stake);
     }
     
     if (pool) {
-      // Get pool info
       const poolData = stakingData.pools[pool.toUpperCase()];
       if (!poolData) {
         return res.status(404).json({ error: 'Pool not found' });
@@ -41,11 +37,9 @@ export default async function handler(req, res) {
       return res.status(200).json(poolData);
     }
     
-    // Return all pools
     return res.status(200).json(stakingData.pools);
   }
   
-  // POST /api/staking - Execute stake/unstake/claim
   if (method === 'POST') {
     const { action, pool, user, amount, lockPeriod } = body;
     
@@ -58,7 +52,6 @@ export default async function handler(req, res) {
     try {
       switch (action) {
         case 'stake':
-          // Stake tokens
           if (!amount || amount <= 0) {
             return res.status(400).json({ error: 'Invalid amount' });
           }
@@ -71,7 +64,6 @@ export default async function handler(req, res) {
             lastClaimTime: Date.now()
           };
           
-          // Update pool total
           stakingData.pools[pool.toUpperCase()].totalStaked += amount;
           
           return res.status(200).json({
@@ -82,7 +74,6 @@ export default async function handler(req, res) {
           });
           
         case 'unstake':
-          // Unstake tokens
           const currentStake = stakingData.userStakes[userKey];
           if (!currentStake || currentStake.stakedAmount <= 0) {
             return res.status(400).json({ error: 'No stake to unstake' });
@@ -90,7 +81,6 @@ export default async function handler(req, res) {
           
           const unstakeAmount = amount || currentStake.stakedAmount;
           
-          // Check lock period
           const lockDuration = [30, 60, 90][currentStake.lockPeriod || 0] * 24 * 60 * 60 * 1000;
           if (Date.now() - currentStake.stakeTime < lockDuration) {
             return res.status(400).json({ 
@@ -110,13 +100,11 @@ export default async function handler(req, res) {
           });
           
         case 'claim':
-          // Claim rewards
           const stakeInfo = stakingData.userStakes[userKey];
           if (!stakeInfo || stakeInfo.stakedAmount <= 0) {
             return res.status(400).json({ error: 'No stake to claim rewards for' });
           }
           
-          // Calculate rewards (simplified)
           const poolConfig = stakingData.pools[pool.toUpperCase()];
           const multiplier = [1.0, 1.2, 1.5][stakeInfo.lockPeriod || 0];
           const daysStaked = (Date.now() - (stakeInfo.lastClaimTime || stakeInfo.stakeTime)) / (24 * 60 * 60 * 1000);

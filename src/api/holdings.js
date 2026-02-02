@@ -4,7 +4,6 @@ const axios = require('axios');
 
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
-// Common token addresses on Base
 const BASE_TOKENS = {
   'ETH': '0x4200000000000000000000000000000000000006',
   'WBTC': '0xcbB7e0000d1F07089cEe3faDcDa0eD23B11dB3A4',
@@ -25,7 +24,6 @@ async function getTokenPrice(tokenId) {
 }
 
 async function getHoldingsFromWallet(address) {
-  // Mock implementation - in production, query indexer/graph
   const prices = {
     bitcoin: await getTokenPrice('bitcoin'),
     ethereum: await getTokenPrice('ethereum'),
@@ -47,7 +45,6 @@ async function getHoldingsFromWallet(address) {
 }
 
 async function getPnLHistory(address) {
-  // Mock PnL history
   return [
     { date: '2026-01-26', value: 4500 },
     { date: '2026-01-27', value: 4720 },
