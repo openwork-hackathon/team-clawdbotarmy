@@ -11,7 +11,8 @@ export default function PriceChart({ coinId, days = 7, timeframe = '1d', onTimef
   // Fetch chart data
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/chart/${coinId}?days=${days}&timeframe=${activeTimeframe}`)
+    // Add timestamp to bypass Vercel cache
+    fetch(`/api/chart/${coinId}?days=${days}&timeframe=${activeTimeframe}&_t=${Date.now()}`)
       .then(r => r.json())
       .then(d => {
         setData(d.prices || []);
