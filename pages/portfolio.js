@@ -129,85 +129,151 @@ export default function Portfolio() {
       <Head>
         <title>📊 Portfolio | ClawdbotArmy</title>
         <meta name="description" content="Track your portfolio performance and PnL" />
+        <link rel="stylesheet" href="/styles.css" />
       </Head>
       
       <div className="portfolio-page">
         <div className="portfolio-header">
           <h1>📊 Portfolio</h1>
-          <p>Track your holdings and performance</p>
+          <div className="time-range-selector">
+            {['24h', '7d', '30d', '90d'].map(range => (
+              <button
+                key={range}
+                className={`time-btn ${timeRange === range ? 'active' : ''}`}
+                onClick={() => setTimeRange(range)}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Portfolio Summary */}
         {portfolio && (
           <div className="portfolio-summary">
-            <div className="total-value">
-              <span className="label">Total Portfolio Value</span>
-              <span className="value">{formatCurrency(portfolio.totalValue)}</span>
-              <div className="changes">
-                <span className="pnl" style={{ color: getPnLColor(portfolio.pnlPercent) }}>
-                  {formatPercent(portfolio.pnlPercent)} all time
-                </span>
-                <span className="daily" style={{ color: getPnLColor(portfolio.dailyPercent) }}>
-                  {formatPercent(portfolio.dailyPercent)} today
-                </span>
+            <div className="summary-card total">
+              <div className="summary-label">Total Portfolio Value</div>
+              <div className="summary-value">{formatCurrency(portfolio.totalValue)}</div>
+              <div className="summary-change" style={{ color: getPnLColor(portfolio.dailyPercent) }}>
+                {formatPercent(portfolio.dailyPercent)} today
               </div>
             </div>
             
-            {/* Mini Chart */}
-            <div className="mini-chart">
-              {renderChart()}
+            <div className="summary-card">
+              <div className="summary-label">Total PnL</div>
+              <div className="summary-value" style={{ color: getPnLColor(portfolio.pnlPercent) }}>
+                {formatCurrency(portfolio.totalPnL)}
+              </div>
+              <div className="summary-change" style={{ color: getPnLColor(portfolio.pnlPercent) }}>
+                {formatPercent(portfolio.pnlPercent)}
+              </div>
+            </div>
+            
+            <div className="summary-card">
+              <div className="summary-label">Best Performer</div>
+              <div className="summary-value" style={{ color: '#10b981' }}>
+                {portfolio.bestPerformer.token}
+              </div>
+              <div className="summary-change positive">
+                +{portfolio.bestPerformer.pnl}%
+              </div>
+            </div>
+            
+            <div className="summary-card">
+              <div className="summary-label">Worst Performer</div>
+              <div className="summary-value" style={{ color: '#ef4444' }}>
+                {portfolio.worstPerformer.token}
+              </div>
+              <div className="summary-change negative">
+                {portfolio.worstPerformer.pnl}%
+              </div>
             </div>
           </div>
         )}
 
-        {/* Time Range Selector */}
-        <div className="time-selector">
-          {['24h', '7d', '30d', '90d'].map(range => (
-            <button
-              key={range}
-              className={timeRange === range ? 'active' : ''}
-              onClick={() => setTimeRange(range)}
-            >
-              {range}
-            </button>
-          ))}
-        </div>
-
         {/* Holdings Table */}
         <div className="holdings-section">
-          <h3>Holdings</h3>
-          <div className="holdings-table">
-            <div className="table-header">
-              <span>Asset</span>
-              <span>Price</span>
-              <span>Holdings</span>
-              <span>Value</span>
-              <span>PnL</span>
-              <span>Alloc</span>
-            </div>
-            {holdings.map(holding => (
-              <div key={holding.token} className="table-row">
-                <div className="asset">
-                  <span className="token-emoji">
-                    {holding.token === 'ARYA' ? '🦞' :
-                     holding.token === 'OPENWORK' ? '⚡' :
-                     holding.token === 'ETH' ? 'Ξ' :
-                     holding.token === 'BTC' ? '₿' :
-                     holding.token === 'SOL' ? '◎' : '$'}
-                  </span>
-                  <span className="token-name">{holding.token}</span>
-                </div>
-                <span className="price">{formatCurrency(holding.price)}</span>
-                <span className="amount">{holding.amount.toLocaleString()}</span>
-                <span className="value">{formatCurrency(holding.value)}</span>
-                <span className="pnl" style={{ color: getPnLColor(holding.pnl) }}>
-                  {formatPercent(holding.pnl)}
-                </span>
-                <span className="allocation">{holding.allocation}%</span>
-              </div>
+          <h2>Holdings</h2>
+          <table className="holdings-table">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Price</th>
+                <th>Holdings</th>
+                <th>Value</th>
+                <th>PnL</th>
+                <th>Alloc</th>
+              </tr>
+            </thead>
+            <tbody>
+              {holdings.map(holding => (
+                <tr key={holding.token}>
+                  <td>
+                    <span className="token-name">
+                      {holding.token === 'ARYA' ? '🦞' :
+                       holding.token === 'OPENWORK' ? '⚡' :
+                       holding.token === 'ETH' ? 'Ξ' :
+                       holding.token === 'BTC' ? '₿' :
+                       holding.token === 'SOL' ? '◎' : '$'}
+                    </span>
+                    <span style={{ marginLeft: '10px' }}>{holding.token}</span>
+                  </td>
+                  <td>{formatCurrency(holding.price)}</td>
+                  <td className="token-amount">{holding.amount.toLocaleString()}</td>
+                  <td>{formatCurrency(holding.value)}</td>
+                  <td className={`pnl ${holding.pnl >= 0 ? 'positive' : 'negative'}`}>
+                    {formatPercent(holding.pnl)}
+                  </td>
+                  <td>{holding.allocation}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {/* Allocation Bar */}
+          <div className="allocation-bar">
+            {holdings.map((h, i) => (
+              <div 
+                key={h.token}
+                className="allocation-segment"
+                style={{ 
+                  width: `${h.allocation}%`,
+                  background: h.token === 'ARYA' ? '#ff6b35' : 
+                             h.token === 'ETH' ? '#627eea' : 
+                             h.token === 'BTC' ? '#f7931a' : 
+                             h.token === 'SOL' ? '#9945ff' : 
+                             h.token === 'OPENWORK' ? '#00d4ff' : '#9ca3af'
+                }}
+              ></div>
             ))}
           </div>
         </div>
+
+        {/* PnL Chart */}
+        <div className="pnl-chart">
+          <h2>PnL History ({timeRange})</h2>
+          <div className="chart-container">
+            {history.map((point, i) => {
+              const minVal = Math.min(...history.map(h => h.value));
+              const maxVal = Math.max(...history.map(h => h.value));
+              const range = maxVal - minVal || 1;
+              const height = ((point.value - minVal) / range) * 150 + 20;
+              
+              return (
+                <div 
+                  key={i}
+                  className="chart-bar"
+                  style={{ height: `${height}px` }}
+                  title={`${new Date(point.time).toLocaleDateString()}: ${formatCurrency(point.value)}`}
+                ></div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 
         {/* Performance Stats */}
         {portfolio && (

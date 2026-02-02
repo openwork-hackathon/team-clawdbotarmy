@@ -262,61 +262,223 @@ export default function BondingCurves() {
       <Head>
         <title>Bonding Curves | ClawdbotArmy</title>
         <meta name="description" content="Trading interface for ARYA and OPENWORK bonding curves" />
+        <link rel="stylesheet" href="/styles.css" />
       </Head>
       
-      <div className="curves-page">
-        <div className="curves-header">
+      <div className="bonding-page">
+        <div className="bonding-header">
           <h1>Bonding Curves</h1>
           <p>Dynamic pricing for AI Agent tokens</p>
         </div>
 
+        {/* Token Tabs */}
+        <div className="token-tabs">
+          {tokens.map(token => (
+            <button
+              key={token.id}
+              className={`token-tab ${token.id.toLowerCase()} ${selectedToken === token.id ? 'active' : ''}`}
+              onClick={() => setSelectedToken(token.id)}
+            >
+              <span>{token.emoji}</span>
+              <span style={{ marginLeft: '8px' }}>{token.id}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Chart Section */}
-        <div className="chart-section" style={{ background: '#1e1e1e', borderRadius: '16px', padding: '20px', marginBottom: '30px' }}>
-          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h2 style={{ margin: 0 }}>📈 Price Chart</h2>
-            <div className="timeframe-selector" style={{ display: 'flex', gap: '5px' }}>
-              <button className="tf active" style={{ padding: '6px 12px', border: '1px solid #333', borderRadius: '6px', background: 'transparent', color: '#fff', cursor: 'pointer' }}>1H</button>
-              <button className="tf" style={{ padding: '6px 12px', border: '1px solid #333', borderRadius: '6px', background: 'transparent', color: '#888', cursor: 'pointer' }}>4H</button>
-              <button className="tf" style={{ padding: '6px 12px', border: '1px solid #333', borderRadius: '6px', background: 'transparent', color: '#888', cursor: 'pointer' }}>1D</button>
-              <button className="tf" style={{ padding: '6px 12px', border: '1px solid #333', borderRadius: '6px', background: 'transparent', color: '#888', cursor: 'pointer' }}>1W</button>
+        <div className="bonding-card" style={{ marginBottom: '30px' }}>
+          <h2>📈 Price Chart</h2>
+          <div className="curve-visual">
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '150px', padding: '10px' }}>
+              {chartData.map((point, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '8%' }}>
+                  <div style={{ 
+                    width: '100%', 
+                    height: `${point.height}%`, 
+                    background: point.color, 
+                    borderRadius: '4px 4px 0 0',
+                    transition: 'height 0.3s ease',
+                    minHeight: '4px'
+                  }}></div>
+                  <span style={{ fontSize: '0.7em', color: '#888', marginTop: '5px' }}>{point.label}</span>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="chart-container" style={{ height: '200px', background: '#2a2a2a', borderRadius: '12px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', padding: '15px', position: 'relative' }}>
-            {chartData.map((point, i) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '8%' }}>
-                <div style={{ 
-                  width: '100%', 
-                  height: `${point.height}%`, 
-                  background: point.color, 
-                  borderRadius: '4px 4px 0 0',
-                  transition: 'height 0.3s ease',
-                  minHeight: '4px'
-                }}></div>
-                <span style={{ fontSize: '0.7em', color: '#888', marginTop: '5px' }}>{point.label}</span>
+        </div>
+
+        <div className="bonding-grid">
+          {/* Stats Card */}
+          <div className="bonding-card">
+            <h2>📊 {selectedToken} Stats</h2>
+            
+            {/* Supply Progress */}
+            <div className="supply-progress">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: '#888' }}>Minted</span>
+                <span style={{ color: '#ff6b35', fontWeight: 'bold' }}>
+                  {selectedCurve.supply?.toLocaleString() || '1,000,000'} / {selectedCurve.maxSupply?.toLocaleString() || '10,000,000'}
+                </span>
               </div>
-            ))}
+              <div className="supply-bar">
+                <div 
+                  className="supply-fill" 
+                  style={{ width: `${((selectedCurve.supply || 1000000) / (selectedCurve.maxSupply || 10000000)) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="stats-grid">
+              <div className="stat-item">
+                <div className="stat-label">Current Price</div>
+                <div className="stat-value price">{currentPrice.toFixed(8)} ETH</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">24h Volume</div>
+                <div className="stat-value volume">{selectedCurve.totalVolume?.toFixed(2) || '0'} ETH</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">Total Trades</div>
+                <div className="stat-value supply">{selectedCurve.totalTrades || 0}</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-label">Market Cap</div>
+                <div className="stat-value">${((currentPrice * (selectedCurve.supply || 1000000) * 3000) / 1000000).toFixed(2)}M</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Trade Card */}
+          <div className="trade-card">
+            <h2>💰 Trade {selectedToken}</h2>
+            
+            {/* Mode Selector */}
+            <div className="mode-selector">
+              <button 
+                className={`mode-btn ${tradingMode === 'bonding' ? 'active' : ''}`}
+                onClick={() => setTradingMode('bonding')}
+              >
+                Bonding Curve
+              </button>
+              <button 
+                className={`mode-btn ${tradingMode === 'uniswap' ? 'active' : ''}`}
+                onClick={() => setTradingMode('uniswap')}
+              >
+                Uniswap V3
+              </button>
+            </div>
+
+            {/* Side Selector */}
+            <div className="side-selector">
+              <button 
+                className={`side-btn buy ${side === 'BUY' ? 'active' : ''}`}
+                onClick={() => setSide('BUY')}
+              >
+                BUY {selectedToken}
+              </button>
+              <button 
+                className={`side-btn sell ${side === 'SELL' ? 'active' : ''}`}
+                onClick={() => setSide('SELL')}
+              >
+                SELL {selectedToken}
+              </button>
+            </div>
+
+            {/* Amount Inputs */}
+            <div className="amount-inputs">
+              <div className="input-group">
+                <label>{side === 'BUY' ? 'ETH Amount' : `${selectedToken} Amount`}</label>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  min="0"
+                  step="0.001"
+                />
+              </div>
+              <div className="input-group">
+                <label>{side === 'BUY' ? `Est. ${selectedToken}` : 'Est. ETH'}</label>
+                <input
+                  type="text"
+                  value={amount ? estimatedOutput : '0'}
+                  disabled
+                  style={{ opacity: 0.7 }}
+                />
+              </div>
+            </div>
+
+            {/* Execute Button */}
+            <button 
+              className={`execute-btn ${side.toLowerCase()}`}
+              onClick={executeTrade}
+              disabled={loading || !amount}
+            >
+              {loading ? '⏳ Processing...' : 
+                walletConnected ? `TRADE ON-CHAIN ${amount ? parseFloat(amount).toFixed(4) : ''}` :
+                `${side} ${amount ? parseFloat(amount).toFixed(4) : ''}`}
+            </button>
           </div>
         </div>
 
         {/* Wallet Connection */}
-        <div className="wallet-section">
+        <div style={{ textAlign: 'center', marginTop: '30px' }}>
           {walletConnected ? (
-            <div className="wallet-connected">
-              <span className="wallet-status">Connected</span>
-              <code className="wallet-address">{walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</code>
-              <button className="disconnect-btn" onClick={disconnectWallet}>
+            <div style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '15px',
+              padding: '15px 25px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid #10b981',
+              borderRadius: '12px'
+            }}>
+              <span style={{ color: '#10b981', fontSize: '1.2em' }}>●</span>
+              <span style={{ color: '#10b981', fontWeight: 'bold' }}>Connected</span>
+              <code style={{ background: '#252530', padding: '5px 10px', borderRadius: '6px', color: '#fff' }}>
+                {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}
+              </code>
+              <button 
+                onClick={disconnectWallet}
+                style={{ 
+                  padding: '8px 16px', 
+                  background: 'transparent', 
+                  border: '1px solid #444', 
+                  borderRadius: '8px', 
+                  color: '#888', 
+                  cursor: 'pointer'
+                }}
+              >
                 Disconnect
               </button>
             </div>
           ) : (
-            <div className="wallet-connect">
-              <button 
-                className="connect-btn" 
-                onClick={connectWallet}
-              >
-                Connect Wallet for Real Trading
-              </button>
-            </div>
+            <button 
+              onClick={connectWallet}
+              style={{ 
+                padding: '15px 40px', 
+                background: 'linear-gradient(135deg, #f6851b, #e2761b)', 
+                border: 'none', 
+                borderRadius: '12px', 
+                color: '#fff', 
+                fontSize: '1.1em', 
+                fontWeight: 'bold', 
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}
+            >
+              <span>🦊</span>
+              <span>Connect Wallet</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
           )}
         </div>
 

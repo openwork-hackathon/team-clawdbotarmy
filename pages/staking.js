@@ -145,6 +145,7 @@ export default function Staking() {
       <Head>
         <title>🦞 Staking | ClawdbotArmy</title>
         <meta name="description" content="Stake ARYA and OPENWORK tokens to earn rewards" />
+        <link rel="stylesheet" href="/styles.css" />
       </Head>
       
       <div className="staking-page">
@@ -154,79 +155,202 @@ export default function Staking() {
         </div>
 
         {/* Wallet Connection */}
-        <div className="wallet-section">
+        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           {walletConnected ? (
-            <div className="wallet-connected">
-              <span className="wallet-status">🟢 Connected</span>
-              <code className="wallet-address">{walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</code>
-              <button className="disconnect-btn" onClick={disconnectWallet}>
+            <div style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '15px',
+              padding: '15px 25px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid #10b981',
+              borderRadius: '12px'
+            }}>
+              <span style={{ color: '#10b981', fontSize: '1.2em' }}>●</span>
+              <span style={{ color: '#10b981', fontWeight: 'bold' }}>Connected</span>
+              <code style={{ background: '#252530', padding: '5px 10px', borderRadius: '6px', color: '#fff' }}>
+                {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}
+              </code>
+              <button 
+                onClick={disconnectWallet}
+                style={{ 
+                  padding: '8px 16px', 
+                  background: 'transparent', 
+                  border: '1px solid #444', 
+                  borderRadius: '8px', 
+                  color: '#888', 
+                  cursor: 'pointer'
+                }}
+              >
                 Disconnect
               </button>
             </div>
           ) : (
-            <button className="connect-btn" onClick={connectWallet}>
-              🦊 Connect Wallet
+            <button 
+              onClick={connectWallet}
+              style={{ 
+                padding: '15px 40px', 
+                background: 'linear-gradient(135deg, #f6851b, #e2761b)', 
+                border: 'none', 
+                borderRadius: '12px', 
+                color: '#fff', 
+                fontSize: '1.1em', 
+                fontWeight: 'bold', 
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}
+            >
+              <span>🦊</span>
+              <span>Connect Wallet</span>
             </button>
           )}
         </div>
 
-        {/* Pool Stats */}
-        {pools && (
-          <div className="pools-grid">
-            {Object.entries(pools).map(([token, pool]) => (
-              <div 
-                key={token}
-                className={`pool-card ${selectedPool === token ? 'selected' : ''}`}
-                style={{ '--pool-color': poolConfig[token].color }}
-                onClick={() => setSelectedPool(token)}
-              >
-                <div className="pool-header">
-                  <span className="pool-emoji">{poolConfig[token].emoji}</span>
-                  <h2>{token}</h2>
+        {/* Pool Selection */}
+        <div className="staking-tabs">
+          {Object.entries(pools || {}).map(([token, pool]) => (
+            <button
+              key={token}
+              className={`staking-tab ${selectedPool === token ? 'active' : ''}`}
+              onClick={() => setSelectedPool(token)}
+              style={{ borderColor: selectedPool === token ? poolConfig[token].color : 'transparent' }}
+            >
+              <span style={{ marginRight: '8px' }}>{poolConfig[token].emoji}</span>
+              <span>{token}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Pool Details */}
+        {pools && pools[selectedPool] && (
+          <div className="staking-grid">
+            {/* Pool Stats Card */}
+            <div className="staking-card">
+              <div className="staking-card-header">
+                <h3>
+                  <span style={{ marginRight: '10px' }}>{poolConfig[selectedPool].emoji}</span>
+                  {selectedPool} Staking Pool
+                </h3>
+                <span className="apy-badge">{pools[selectedPool].apy[30]}% APY</span>
+              </div>
+
+              <div className="pool-stats">
+                <div className="pool-stat">
+                  <div className="pool-stat-value">{pools[selectedPool].totalStaked.toLocaleString()}</div>
+                  <div className="pool-stat-label">Total Staked</div>
                 </div>
-                
-                <div className="pool-stats">
-                  <div className="stat">
-                    <span className="stat-label">Total Staked</span>
-                    <span className="stat-value">{pool.totalStaked.toLocaleString()}</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-label">30 Days APY</span>
-                    <span className="stat-value">{formatAPY(pool.apy[30])}</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-label">60 Days APY</span>
-                    <span className="stat-value">{formatAPY(pool.apy[60])}</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-label">90 Days APY</span>
-                    <span className="stat-value">{formatAPY(pool.apy[90])}</span>
-                  </div>
+                <div className="pool-stat">
+                  <div className="pool-stat-value">{pools[selectedPool].apy[30]}%</div>
+                  <div className="pool-stat-label">30 Days</div>
+                </div>
+                <div className="pool-stat">
+                  <div className="pool-stat-value">{pools[selectedPool].apy[60]}%</div>
+                  <div className="pool-stat-label">60 Days</div>
+                </div>
+                <div className="pool-stat">
+                  <div className="pool-stat-value">{pools[selectedPool].apy[90]}%</div>
+                  <div className="pool-stat-label">90 Days</div>
                 </div>
               </div>
-            ))}
+
+              {/* Lock Periods */}
+              <div className="lock-periods">
+                <h4>Lock Period</h4>
+                <div className="lock-options">
+                  {pools[selectedPool].lockPeriods.map((period) => (
+                    <button
+                      key={period.duration}
+                      className={`lock-option ${selectedLockPeriod === period.duration ? 'active' : ''}`}
+                      onClick={() => setSelectedLockPeriod(period.duration)}
+                    >
+                      <div className="days">{period.label}</div>
+                      <div className="multiplier">×{period.multiplier} rewards</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* User Stakes */}
+              {walletConnected && userStakes[selectedPool] && (
+                <div className="user-stakes">
+                  <h4>Your Stake</h4>
+                  <div className="stake-row">
+                    <span className="label">Staked Amount</span>
+                    <span className="value">{userStakes[selectedPool].stakedAmount.toLocaleString()} {selectedPool}</span>
+                  </div>
+                  <div className="stake-row">
+                    <span className="label">Rewards Earned</span>
+                    <span className="value positive">{userStakes[selectedPool].rewardEarned.toFixed(4)} {selectedPool}</span>
+                  </div>
+                  <div className="stake-row">
+                    <span className="label">Lock Status</span>
+                    <span className="value">{formatTimeRemaining(userStakes[selectedPool].lockTimeRemaining)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Stake Action Card */}
+            <div className="staking-card">
+              <h3>Stake {selectedPool}</h3>
+              
+              <div className="stake-input-group">
+                <label>Amount to Stake</label>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={stakeAmount}
+                  onChange={(e) => setStakeAmount(e.target.value)}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+                <button 
+                  onClick={() => setStakeAmount((userStakes[selectedPool]?.stakedAmount || 0).toString())}
+                  style={{ 
+                    padding: '10px', 
+                    background: 'rgba(255,255,255,0.05)', 
+                    border: '1px solid rgba(255,255,255,0.1)', 
+                    borderRadius: '8px',
+                    color: '#888',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Max
+                </button>
+                <button 
+                  onClick={() => setStakeAmount('1000')}
+                  style={{ 
+                    padding: '10px', 
+                    background: 'rgba(255,255,255,0.05)', 
+                    border: '1px solid rgba(255,255,255,0.1)', 
+                    borderRadius: '8px',
+                    color: '#888',
+                    cursor: 'pointer'
+                  }}
+                >
+                  1000
+                </button>
+              </div>
+
+              <button 
+                className="stake-btn"
+                onClick={handleStake}
+                disabled={loading || !stakeAmount}
+              >
+                {loading ? '⏳ Processing...' : `Stake ${stakeAmount || 0} ${selectedPool}`}
+              </button>
+            </div>
           </div>
         )}
-
-        {/* User Stakes */}
-        {walletConnected && userStakes[selectedPool] && (
-          <div className="user-stakes">
-            <h3>Your Stakes</h3>
-            <div className="stake-info">
-              <div className="info-row">
-                <span>Staked Amount</span>
-                <strong>{userStakes[selectedPool].stakedAmount.toLocaleString()} {selectedPool}</strong>
-              </div>
-              <div className="info-row">
-                <span>Rewards Earned</span>
-                <strong style={{ color: '#10b981' }}>
-                  {userStakes[selectedPool].rewardEarned.toFixed(4)} {selectedPool}
-                </strong>
-              </div>
-              <div className="info-row">
-                <span>Lock Status</span>
-                <strong>{formatTimeRemaining(userStakes[selectedPool].lockTimeRemaining)}</strong>
-              </div>
+      </div>
+    </>
+  );
+}
             </div>
           </div>
         )}
