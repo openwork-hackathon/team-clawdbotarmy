@@ -39,16 +39,35 @@ async function getTokenPrice(tokenId) {
   }
 }
 
-// Fetch multiple prices at once
+// Fetch multiple prices at once (with caching)
 async function getAllPrices() {
+  const { getCached, setCache } = require('../utils/priceCache');
+  const cacheKey = 'all_prices';
+  
+  // Check cache first
+  const cached = getCached(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  
+  // Fetch fresh data
   const ids = Object.values(COINGECKO_IDS);
   try {
     const response = await axios.get(`${COINGECKO_BASE}/simple/price`, {
       params: { ids: ids.join(','), vs_currencies: 'usd' }
     });
-    return response.data;
+    const data = response.data;
+    
+    // Cache the result
+    setCache(cacheKey, data);
+    
+    return data;
   } catch (error) {
     console.error('Error fetching prices:', error.message);
+    
+    // Return cached data even if expired, as fallback
+    if (cached) return cached;
+    
     return {};
   }
 }
