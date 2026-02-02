@@ -61,6 +61,11 @@ export default function BondingCurves() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.priceUSD);
   };
 
+  // Uniswap widget URL for embedded swap
+  const getUniswapEmbedUrl = (tokenAddress) => {
+    return `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${tokenAddress}&use=v2`;
+  };
+
   return (
     <>
       <Head>
@@ -137,6 +142,19 @@ export default function BondingCurves() {
           <div className="token-contract">
             <span>Contract</span>
             <code>{selectedToken.address.slice(0,6)}...{selectedToken.address.slice(-4)}</code>
+          </div>
+
+          {/* Uniswap Embed */}
+          <div className="uniswap-embed">
+            <h3>Swap {selectedToken.id} on Uniswap</h3>
+            <iframe
+              src={getUniswapEmbedUrl(selectedToken.address)}
+              width="100%"
+              height="500"
+              style={{ border: 'none', borderRadius: '12px' }}
+              title={`Uniswap ${selectedToken.id} Swap`}
+              allow="cross-origin-isolated"
+            />
           </div>
         </div>
 
@@ -385,6 +403,24 @@ export default function BondingCurves() {
         .mini-price {
           font-size: 0.85em;
           color: #10b981;
+        }
+        
+        .uniswap-embed {
+          margin-top: 25px;
+          background: #1a1a24;
+          border-radius: 16px;
+          padding: 20px;
+          border: 1px solid #2a2a3a;
+        }
+        
+        .uniswap-embed h3 {
+          margin: 0 0 15px 0;
+          font-size: 1em;
+          color: #888;
+        }
+        
+        .uniswap-embed iframe {
+          min-height: 450px;
         }
       `}</style>
     </>
