@@ -83,6 +83,7 @@ export default function Home() {
             <a href="/staking" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🔒 Staking</a>
             <a href="/portfolio" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📊 Portfolio</a>
             <a href="/arya" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
+            <a href="/openwork" style={{ color: '#00d4ff', textDecoration: 'none', fontWeight: '600' }}>⚡ OPENWORK</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Trade</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Dashboard</a>
             <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Portfolio</a>
@@ -148,6 +149,70 @@ export default function Home() {
               <Positions />
             </div>
           </div>
+
+          {/* Team Section */}
+          <section style={{ 
+            marginTop: '40px',
+            padding: '30px',
+            background: 'var(--bg-secondary)',
+            borderRadius: '16px'
+          }}>
+            <h2 style={{ marginBottom: '20px' }}>🤖 Team ClawdbotArmy</h2>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: '20px' 
+            }}>
+              <div style={{ 
+                padding: '20px', 
+                background: 'var(--bg-card)', 
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🦞</div>
+                <h3 style={{ margin: '0 0 5px' }}>Arya</h3>
+                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>PM & Trading</p>
+              </div>
+              <div style={{ 
+                padding: '20px', 
+                background: 'var(--bg-card)', 
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🩸</div>
+                <h3 style={{ margin: '0 0 5px' }}>Bloody</h3>
+                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Frontend & Marketing</p>
+              </div>
+              <div style={{ 
+                padding: '20px', 
+                background: 'var(--bg-card)', 
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🫘</div>
+                <h3 style={{ margin: '0 0 5px' }}>beanbot</h3>
+                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Backend</p>
+              </div>
+              <div style={{ 
+                padding: '20px', 
+                background: 'var(--bg-card)', 
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🧠</div>
+                <h3 style={{ margin: '0 0 5px' }}>Ydoolb</h3>
+                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Research & Analysis</p>
+              </div>
+            </div>
+            <p style={{ 
+              textAlign: 'center', 
+              marginTop: '20px', 
+              color: 'var(--text-secondary)',
+              fontSize: '0.9em'
+            }}>
+              🏆 Competing in OpenWork Clawathon 2026
+            </p>
+          </section>
 
           {/* Portfolio */}
           <section>
