@@ -90,7 +90,6 @@ export default function Home() {
             <a href="/staking" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🔒 Staking</a>
             <a href="/portfolio" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📊 Portfolio</a>
             <a href="/arya" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
-            <a href="/arya" style={{ color: '#ff6b35', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
             <a 
               href="/bonding-curves"
               target="_blank" 
