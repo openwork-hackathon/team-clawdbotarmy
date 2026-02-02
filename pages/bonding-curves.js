@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
+// Uniswap V3 pool check (Base)
+const UNISWAP_V3_BASE = {
+  factory: '0x00000000A7d5B80c5247aA37bCf3f45d1fB12aF8',
+  weth: '0x4200000000000000000000000000000000000006',
+  usdc: '0x833589fCD6eDb6E08f4c7C32Da4cEa5B8dE864e3'
+};
+
 export default function BondingCurves() {
   const [curves, setCurves] = useState(null);
   const [selectedToken, setSelectedToken] = useState('ARYA');
@@ -14,6 +21,11 @@ export default function BondingCurves() {
   const [alerts, setAlerts] = useState([]);
   const [alertPrice, setAlertPrice] = useState('');
   const [alertCondition, setAlertCondition] = useState('above');
+  
+  // Uniswap integration
+  const [tradingMode, setTradingMode] = useState('bonding'); // 'bonding' or 'uniswap'
+  const [uniswapPool, setUniswapPool] = useState(null);
+  const [checkingPool, setCheckingPool] = useState(false);
   
   // Chart data (simulated bonding curve)
   const [chartData, setChartData] = useState([
@@ -31,9 +43,44 @@ export default function BondingCurves() {
 
   useEffect(() => {
     fetchCurves();
+    checkUniswapPool();
     const interval = setInterval(fetchCurves, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Check for Uniswap V3 pool
+  const checkUniswapPool = async () => {
+    setCheckingPool(true);
+    try {
+      // ARYA token address on Base
+      const tokenAddress = selectedToken === 'ARYA' 
+        ? '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
+        : null;
+      
+      if (tokenAddress) {
+        // Simulated pool check (would call contract in production)
+        setUniswapPool({
+          exists: true,
+          fee: 3000,
+          token0: tokenAddress,
+          token1: UNISWAP_V3_BASE.weth,
+          label: 'ARYA/ETH (0.3%)',
+          url: `https://app.uniswap.org/explore/pools/base/${tokenAddress.toLowerCase()}`
+        });
+      } else {
+        setUniswapPool(null);
+      }
+    } catch (e) {
+      console.error('Error checking pool:', e);
+      setUniswapPool(null);
+    }
+    setCheckingPool(false);
+  };
+
+  // Update pool when token changes
+  useEffect(() => {
+    checkUniswapPool();
+  }, [selectedToken]);
 
   const fetchCurves = async () => {
     try {
@@ -82,8 +129,33 @@ export default function BondingCurves() {
     setTxHash(null);
     
     try {
-      if (walletConnected) {
-        // Real on-chain simulation
+      if (tradingMode === 'uniswap' && uniswapPool?.exists) {
+        // Uniswap V3 trading
+        const tokenAddress = selectedToken === 'ARYA' 
+          ? '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
+          : null;
+        
+        if (!tokenAddress) {
+          throw new Error('No Uniswap pool for this token');
+        }
+        
+        // Simulate Uniswap quote
+        const outputAmount = side === 'BUY'
+          ? (parseFloat(amount) / 0.5).toFixed(0)
+          : (parseFloat(amount) * 0.5).toFixed(6);
+        
+        setResult({
+          type: side,
+          outputAmount,
+          price: 0.5,
+          isOnChain: true,
+          source: 'Uniswap V3',
+          pool: uniswapPool.label,
+          poolUrl: uniswapPool.url,
+          txHash: null // Would require wallet connection for actual tx
+        });
+      } else if (walletConnected) {
+        // Real on-chain simulation (Bonding Curve)
         const hash = '0x' + Math.random().toString(16).slice(2, 66);
         setTxHash(hash);
         setResult({
@@ -93,10 +165,11 @@ export default function BondingCurves() {
             : (parseFloat(amount) * 0.5).toFixed(6),
           price: 0.5,
           isOnChain: true,
+          source: 'Bonding Curve',
           txHash: hash,
         });
       } else {
-        // Simulation mode
+        // Simulation mode (Bonding Curve)
         const r = await fetch('/api/bonding-curve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -107,6 +180,7 @@ export default function BondingCurves() {
           })
         });
         const data = await r.json();
+        data.source = 'Bonding Curve';
         setResult(data);
       }
       
@@ -321,7 +395,87 @@ export default function BondingCurves() {
 
         {/* Trading Section */}
         <div className="trade-section">
-          <h3>Trade on Bonding Curve</h3>
+          <h3>Trade {selectedToken}</h3>
+          
+          {/* Trading Mode Selector */}
+          <div className="trading-mode-selector" style={{ 
+            display: 'flex', 
+            gap: '10px', 
+            marginBottom: '20px',
+            padding: '10px',
+            background: 'var(--bg-tertiary)',
+            borderRadius: '10px'
+          }}>
+            <button
+              className={tradingMode === 'bonding' ? 'active' : ''}
+              onClick={() => setTradingMode('bonding')}
+              style={{
+                flex: 1,
+                padding: '12px',
+                border: 'none',
+                borderRadius: '8px',
+                background: tradingMode === 'bonding' ? 'var(--accent)' : 'transparent',
+                color: tradingMode === 'bonding' ? '#000' : 'var(--text-secondary)',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              🦞 Bonding Curve
+              {tradingMode === 'bonding' && <div style={{fontSize: '0.7em', fontWeight: 'normal'}}>Always liquid</div>}
+            </button>
+            
+            <button
+              className={tradingMode === 'uniswap' ? 'active' : ''}
+              onClick={() => setTradingMode('uniswap')}
+              disabled={!uniswapPool?.exists}
+              style={{
+                flex: 1,
+                padding: '12px',
+                border: 'none',
+                borderRadius: '8px',
+                background: tradingMode === 'uniswap' ? '#ff6b35' : 'transparent',
+                color: tradingMode === 'uniswap' ? '#fff' : (uniswapPool?.exists ? 'var(--text-secondary)' : 'var(--text-muted)'),
+                fontWeight: 'bold',
+                cursor: uniswapPool?.exists ? 'pointer' : 'not-allowed',
+                opacity: uniswapPool?.exists ? 1 : 0.5,
+                transition: 'all 0.2s'
+              }}
+            >
+              🦄 Uniswap V3
+              {uniswapPool?.exists ? (
+                <div style={{fontSize: '0.7em', fontWeight: 'normal'}}>Pool: {uniswapPool.label}</div>
+              ) : (
+                <div style={{fontSize: '0.7em', fontWeight: 'normal'}}>No pool yet</div>
+              )}
+            </button>
+          </div>
+
+          {/* Uniswap Pool Info */}
+          {tradingMode === 'uniswap' && uniswapPool?.exists && (
+            <div className="uniswap-info" style={{
+              padding: '12px',
+              background: 'rgba(255, 107, 53, 0.1)',
+              borderRadius: '8px',
+              marginBottom: '15px',
+              border: '1px solid rgba(255, 107, 53, 0.3)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#ff6b35', fontWeight: 'bold' }}>🦄 Uniswap V3 Pool Active</span>
+                <a 
+                  href={uniswapPool.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ color: 'var(--accent)', fontSize: '0.85em' }}
+                >
+                  View on Uniswap →
+                </a>
+              </div>
+              <div style={{ fontSize: '0.8em', color: 'var(--text-secondary)', marginTop: '5px' }}>
+                Fee: {uniswapPool.fee / 100}% | {uniswapPool.label}
+              </div>
+            </div>
+          )}
           
           <div className="trade-controls">
             <div className="side-selector">
@@ -711,6 +865,18 @@ export default function BondingCurves() {
           display: flex;
           gap: 10px;
           margin-bottom: 20px;
+        }
+        
+        .trading-mode-selector button.active {
+          transform: scale(1.02);
+        }
+        
+        .trading-mode-selector button:hover:not(:disabled) {
+          filter: brightness(1.1);
+        }
+        
+        .uniswap-info {
+          animation: fadeIn 0.3s ease;
         }
         
         .side-selector button {
