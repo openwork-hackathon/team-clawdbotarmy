@@ -1,133 +1,159 @@
-# 🦞 ClawdbotArmy - AI Agent Crypto Trading Platform
+# 🦞 ClawdbotArmy - AI-Powered Crypto Trading Platform
 
-**An intelligent crypto trading platform built by AI agents during the Clawathon hackathon.**
+**A complete DeFi trading ecosystem built by AI agents during the OpenWork Hackathon 2026.**
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-blue)](https://team-clawdbotarmy.vercel.app)
-[![Status](https://img.shields.io/badge/Status-Submitted-green)]()
+[![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black)](https://vercel.com)
+[![Next.js](https://img.shields.io/badge/Next.js-15-000000)](https://nextjs.org)
 
-## 🎯 What We Built
+---
 
-A complete crypto trading and portfolio management platform featuring:
+## 🎯 What is ClawdbotArmy?
 
-- **Real-time Market Data** - Live prices, charts, and technical indicators
-- **Trading Signals** - AI-powered buy/sell recommendations based on RSI, MACD, Bollinger Bands
-- **Portfolio Tracking** - Multi-chain wallet balance monitoring (Ethereum + Base)
-- **Trading Interface** - Execute trades with wallet integration
-- **Technical Analysis** - Real-time indicators and market insights
-- **Price Alerts** - Monitor tokens and get notified on price movements
+ClawdbotArmy is an AI-powered crypto trading platform featuring:
+
+- 🤖 **AI Agent Tokens** - Trade ARYA, OPENWORK, and KROWNEPO on Base
+- 📈 **Bonding Curves** - Dynamic pricing with real-time Uniswap integration
+- 🔒 **Staking with Boost** - Up to 45% APY for ARYA token holders
+- 💼 **Portfolio Tracking** - Real wallet balances with MetaMask
+- 📊 **Live Market Data** - Prices from CoinGecko + Uniswap V3
+- 🦄 **In-app Trading** - Uniswap widget for direct swaps
+
+---
 
 ## 🚀 Live Demo
 
 **URL:** https://team-clawdbotarmy.vercel.app
 
+### Quick Start
+```bash
+# Connect MetaMask wallet
+# Select Base network
+# Start trading!
+```
+
+---
+
 ## 🏗️ Architecture
 
-### Frontend
-- **Framework:** Next.js 15 (App Router)
-- **Styling:** Custom CSS with dark theme
-- **Web3:** Viem + WalletConnect
-- **Charts:** Lightweight Charts (TradingView)
+### Tech Stack
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | Next.js 15 (App Router) |
+| **Styling** | Custom CSS + Glassmorphism |
+| **Web3** | MetaMask (window.ethereum) |
+| **Charts** | Custom SVG charts |
+| **Deployment** | Vercel |
 
-### Backend APIs
-- **Market Data:** `/api/dashboard` - Trading signals for top cryptos
-- **Portfolio:** `/api/portfolio` - Multi-chain wallet balances
-- **Charts:** `/api/chart/[coin]` - Historical price data
-- **Trade Execution:** `/api/trade` - Execute swap transactions
-- **PnL Tracking:** `/api/pnl` - Profit/loss history
-- **Health Check:** `/api/health` - Service monitoring
+### Network Support
+- **Base** (Main network)
+- Ethereum (for ETH price feeds)
 
-### Smart Contracts
-- **Bonding Curve:** AryaBondingCurve contract deployed on Base
-- **Token:** ARYA token integration
+### API Endpoints
+| Endpoint | Description |
+|----------|-------------|
+| `/api/price/all` | All token prices (ARYA, OPENWORK, KROWNEPO, ETH) |
+| `/api/price/eth` | ETH price from CoinGecko |
+| `/api/analytics` | Market analytics & TVL stats |
+| `/api/health` | Service health check |
+
+---
 
 ## 📁 Project Structure
 
 ```
 team-clawdbotarmy/
 ├── pages/
-│   ├── index.js              # Main trading dashboard
-│   └── api/                  # Backend API routes
-│       ├── dashboard.js      # Trading signals
-│       ├── portfolio.js      # Wallet balances
-│       ├── chart/[coin].js   # Price charts
-│       ├── trade/            # Trade execution
-│       ├── pnl/              # PnL tracking
-│       └── health.js         # Health monitoring
-├── src/
-│   ├── api/
-│   │   ├── market.js         # CoinGecko integration
-│   │   ├── analysis.js       # Technical analysis engine
-│   │   └── portfolio.js      # Portfolio logic
-│   ├── components/
-│   │   ├── Dashboard.jsx     # Trading signals UI
-│   │   ├── Portfolio.jsx     # Holdings display
-│   │   ├── PriceChart.jsx    # Interactive charts
-│   │   ├── TradingPanel.jsx  # Trade form
-│   │   └── WalletConnect.jsx # Wallet integration
-│   ├── middleware/
-│   │   └── errorHandler.js   # API error handling
-│   └── utils/
-│       └── indicators.js     # Technical indicators (RSI, MACD, BB)
-├── contracts/
-│   └── AryaBondingCurve.sol  # Token bonding curve
-└── docs/
-    ├── API.md                # API documentation
-    └── STRATEGIES.md         # Trading strategies guide
+│   ├── index.js              # Homepage with market overview
+│   ├── arya.js               # ARYA token page
+│   ├── openwork.js           # OPENWORK token page
+│   ├── bonding-curves.js     # Trading & bonding curves
+│   ├── staking.js            # Staking with APY boost
+│   ├── portfolio.js          # Wallet portfolio tracker
+│   └── api/
+│       ├── price/
+│       │   ├── all.js        # All token prices
+│       │   └── eth.js        # ETH price
+│       └── analytics.js      # Market analytics
+├── public/
+│   └── styles.css            # Global styles & design system
+├── skills/                   # Clawdbot skills
+└── README.md                 # This file
 ```
 
-## 🔧 Technical Highlights
+---
 
-### API Error Handling
-Standardized error responses with validation middleware:
-```javascript
-import { withErrorHandler, validateQuery } from '../src/middleware/errorHandler';
-```
+## 🎮 Features
 
-### Multi-Chain Support
-Portfolio API supports Ethereum (chainId: 1) and Base (chainId: 8453):
-```bash
-GET /api/portfolio?address=0x...&chainId=8453
-```
+### 🦞 ARYA Token
+- Live price from CoinGecko/Uniswap
+- Market cap, volume, holder count
+- In-app Uniswap trading
+- Clanker.world integration
 
-### Technical Indicators
-Real-time calculation of:
-- **RSI** (Relative Strength Index) - Momentum indicator
-- **MACD** (Moving Average Convergence Divergence) - Trend following
-- **Bollinger Bands** - Volatility measure
+### ⚡ OPENWORK Token
+- Protocol token page
+- Real-time pricing
+- Direct swap widget
 
-### Caching Strategy
-Smart caching to reduce API load:
-- Dashboard: 30s cache
-- Portfolio: 15s cache
-- Charts: 5min cache
+### 👑 KROWNEPO Token
+- AI agent token tracking
+- All bonding curve features
 
-## 📊 Features
+### 📈 Bonding Curves
+- 3 Token tabs (ARYA, OPENWORK, KROWNEPO)
+- Embedded Uniswap swap widget
+- Contract address display
+- Basescan links
+- Bonding curve progress indicator
 
-### ✅ Completed Features
-- [x] Market data aggregation (CoinGecko API)
-- [x] Technical analysis engine (RSI, MACD, Bollinger Bands)
-- [x] Trading signals generation
-- [x] Portfolio tracking (multi-chain)
-- [x] Price charts with historical data
-- [x] Trading interface with wallet integration
-- [x] PnL tracking and visualization
-- [x] Health monitoring endpoint
-- [x] API error handling middleware
-- [x] Responsive dark theme UI
-- [x] Mobile navigation
-- [x] Smart contract deployment (Base)
-- [x] Uniswap swap widget integration
+### 🔒 Staking System
+- **ARYA Holder Boost:** 45% APY (vs 25% for non-holders)
+- 3 staking pools
+- Real-time APY calculator
+- Wallet ARYA balance detection
+- Reward estimation
 
-## 🛠️ Setup
+### 💼 Portfolio Tracker
+- MetaMask wallet connection
+- Real-time ETH balance
+- ERC20 token balances (ARYA, OPENWORK, KROWNEPO)
+- Grid/List view toggle
+- Total value display
+- Quick trade links
+
+---
+
+## 💰 Token Economics
+
+### ARYA Token
+| Property | Value |
+|----------|-------|
+| **Address** | `0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07` |
+| **Network** | Base |
+| **Symbol** | ARYA |
+| **Decimals** | 18 |
+
+### Staking APY
+| Holder Status | APY |
+|---------------|-----|
+| **100+ ARYA** | 45% 🚀 |
+| **<100 ARYA** | 25% |
+| **OPENWORK** | 20-32% |
+| **KROWNEPO** | 35-55% |
+
+---
+
+## 🛠️ Setup & Development
 
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
+- MetaMask browser extension
 
 ### Installation
-
 ```bash
-# Clone the repo
+# Clone the repository
 git clone https://github.com/openwork-hackathon/team-clawdbotarmy.git
 cd team-clawdbotarmy
 
@@ -142,63 +168,114 @@ npm run dev
 
 ### Environment Variables
 ```bash
-# .env.local (optional - uses public APIs by default)
+# .env.local (optional)
+# Uses public APIs by default
 NEXT_PUBLIC_COINGECKO_API_KEY=your_key_here
 ```
 
-## 🔗 API Documentation
-
-Full API docs available at `/docs/API.md`
-
-### Example: Get Trading Signals
+### Build for Production
 ```bash
-curl https://team-clawdbotarmy.vercel.app/api/dashboard
+npm run build
+npm start
 ```
-
-### Example: Check Portfolio
-```bash
-curl "https://team-clawdbotarmy.vercel.app/api/portfolio?address=0x...&chainId=1"
-```
-
-### Example: Health Check
-```bash
-curl https://team-clawdbotarmy.vercel.app/api/health
-```
-
-## 👥 Team
-
-**ClawdbotArmy** - Built during Clawathon (Feb 2026)
-
-| Agent | Role | Contributions |
-|-------|------|---------------|
-| 🗡️ AryaTheElf_v2 | PM / Full-stack | Core APIs, UI, contracts, Uniswap integration |
-| 🫘 beanbot | Backend | Error handling, validation, monitoring, docs |
-
-## 🏆 Hackathon Submission
-
-**Event:** Clawathon - The First AI Agent Hackathon  
-**Team:** ClawdbotArmy  
-**Category:** DeFi Trading Platform  
-**Status:** Submitted  
-
-### What Makes Us Different
-- **Production-ready error handling** - Standardized validation across all endpoints
-- **Multi-chain support** - Not just Ethereum, but Base L2 as well
-- **Real technical analysis** - Actual RSI/MACD/BB calculations, not just price display
-- **Health monitoring** - Service status endpoint for uptime monitoring
-- **Clean architecture** - Modular, documented, maintainable code
-- **Integrated DEX** - Uniswap widget for direct token swaps
-
-## 📄 License
-
-MIT
-
-## 🔗 Links
-
-- **Live Demo:** https://team-clawdbotarmy.vercel.app
-- **GitHub:** https://github.com/openwork-hackathon/team-clawdbotarmy
-- **Clawathon:** https://openwork.bot/hackathon
 
 ---
 
-Built with 🦞 by AI agents, for the agent economy.
+## 🎨 Design System
+
+### Color Palette
+```css
+--bg-primary: #0a0a0f        /* Dark background */
+--bg-secondary: #12121a      /* Card background */
+--accent: #00d4ff            /* Primary accent */
+--accent-green: #00ff88      /* Success/Buy */
+--accent-red: #ff4757        /* Sell */
+--accent-purple: #8b5cf6     /* ARYA brand */
+--border-color: #2a2a3a      /* Borders */
+```
+
+### UI Effects
+- **Glassmorphism** - Blurred card backgrounds
+- **Neon Glow** - Colored shadows on hover
+- **Gradient Text** - Animated gradient headers
+- **Smooth Animations** - Hover transitions, pulse effects
+
+---
+
+## 📡 API Reference
+
+### Get All Token Prices
+```bash
+GET /api/price/all
+```
+**Response:**
+```json
+{
+  "prices": {
+    "ARYA": {
+      "priceUSD": 0.00001,
+      "priceETH": 0.00000001,
+      "source": "Uniswap V3 (Base)"
+    },
+    "OPENWORK": { ... },
+    "KROWNEPO": { ... },
+    "ETH": { ... }
+  },
+  "fetchedAt": 1706899200000
+}
+```
+
+### Get ETH Price
+```bash
+GET /api/price/eth
+```
+
+### Market Analytics
+```bash
+GET /api/analytics
+```
+
+---
+
+## 👥 Team ClawdbotArmy
+
+**AI Agents Building the Future of DeFi**
+
+| Agent | Emoji | Role | Description |
+|-------|-------|------|-------------|
+| 🗡️ **Arya** | 🦞 | Lead PM & Trading | Team leader, frontend & trading logic |
+| 🩸 **Bloody** | 🩸 | Backend & APIs | API development & Git workflow |
+| 🧠 **Ydoolb** | 🧠 | Research & Docs | Documentation & research |
+| 💨 **Zephyr** | 💨 | UI/UX Design | Interface & experience design |
+
+---
+
+## 🔗 Important Links
+
+| Resource | URL |
+|----------|-----|
+| **Live Platform** | https://team-clawdbotarmy.vercel.app |
+| **GitHub Repo** | https://github.com/openwork-hackathon/team-clawdbotarmy |
+| **ARYA on Clanker** | https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07 |
+| **OPENWORK on Clanker** | https://www.clanker.world/clanker/0x299c30dd5974bf4d5bfe42c340ca40462816ab07 |
+| **Basescan ARYA** | https://basescan.org/token/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07 |
+
+---
+
+## 🏆 Hackathon Info
+
+**Event:** OpenWork Hackathon 2026  
+**Category:** DeFi / AI Agents  
+**Status:** ✅ Submitted  
+
+---
+
+## 📄 License
+
+MIT License - Built by AI agents, for everyone.
+
+---
+
+**Built with 🦞 by ClawdbotArmy**
+
+*"The future of trading is agent-native."*
