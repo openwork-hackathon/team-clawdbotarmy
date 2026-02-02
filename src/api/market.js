@@ -1,26 +1,17 @@
 // Market Data API - Fetches crypto prices from CoinGecko
-
-const axios = require('axios');
+// Uses native fetch to avoid axios caching issues on serverless
 
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
 /**
  * Get current prices for multiple coins
- * @param {Array} coinIds - Array of coin IDs (e.g., ['bitcoin', 'ethereum', 'solana'])
- * @returns {Object} Price data
  */
 async function getPrices(coinIds) {
   try {
-    const response = await axios.get(`${COINGECKO_BASE}/simple/price`, {
-      params: {
-        ids: coinIds.join(','),
-        vs_currencies: 'usd',
-        include_24hr_change: true,
-        include_24hr_vol: true,
-        include_market_cap: true
-      }
-    });
-    return response.data;
+    const response = await fetch(
+      `${COINGECKO_BASE}/simple/price?ids=${coinIds.join(',')}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true&_cb=${Date.now()}`
+    );
+    return response.json();
   } catch (error) {
     console.error('Error fetching prices:', error.message);
     return {};
@@ -29,12 +20,10 @@ async function getPrices(coinIds) {
 
 /**
  * Get historical market data for charts
- * @param {String} coinId - Coin ID
- * @param {Number} days - Number of days of history
- * @param {String} timeframe - Timeframe: 1m, 5m, 15m, 1h, 4h, 1d
- * @returns {Array} Price history
  */
 async function getMarketChart(coinId, days = 7, timeframe = '1d') {
+  const cb = Date.now() + Math.random();
+  
   try {
     let prices = [];
     
@@ -43,50 +32,34 @@ async function getMarketChart(coinId, days = 7, timeframe = '1d') {
       const daysMap = { '1m': 1, '5m': 1, '15m': 1, '1h': 1, '4h': 3 };
       
       try {
-        // Add timestamp to prevent any caching
-        const cacheBuster = Date.now();
-        const ohlcResponse = await axios.get(
-          `${COINGECKO_BASE}/coins/${coinId}/ohlc`,
-          {
-            params: {
-              vs_currency: 'usd',
-              days: daysMap[timeframe] || 1,
-              _cb: cacheBuster
-            },
-            headers: {
-              'Cache-Control': 'no-cache'
-            }
-          }
+        const ohlcResponse = await fetch(
+          `${COINGECKO_BASE}/coins/${coinId}/ohlc?vs_currency=usd&days=${daysMap[timeframe] || 1}&_cb=${cb}`,
+          { headers: { 'Cache-Control': 'no-cache' } }
         );
-        
-        const ohlcData = ohlcResponse.data || [];
+        const ohlcData = await ohlcResponse.json();
         
         // CoinGecko OHLC returns data at 5-minute intervals
-        // Use all data points for accurate chart
-        prices = ohlcData.map(d => [d[0], d[4]]); // Use close price
+        // Use all data points
+        prices = (Array.isArray(ohlcData) ? ohlcData : []).map(d => [d[0], d[4]]);
         
       } catch (e) {
         console.error('OHLC error, falling back:', e.message);
-        // Fallback: use market_chart with small days for intraday data
-        const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}/market_chart`, {
-          params: { vs_currency: 'usd', days: daysMap[timeframe] || 1 }
-        });
-        prices = response.data.prices || [];
+        // Fallback to market_chart
+        const marketResponse = await fetch(
+          `${COINGECKO_BASE}/coins/${coinId}/market_chart?vs_currency=usd&days=${daysMap[timeframe] || 1}&_cb=${cb}`,
+          { headers: { 'Cache-Control': 'no-cache' } }
+        );
+        const marketData = await marketResponse.json();
+        prices = (marketData.prices || []);
       }
     } else {
-      // Daily/weekly data - add cache-buster
-      const cacheBuster = Date.now();
-      const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}/market_chart`, {
-        params: {
-          vs_currency: 'usd',
-          days: days,
-          _cb: cacheBuster
-        },
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      });
-      prices = response.data.prices || [];
+      // Daily/weekly data
+      const marketResponse = await fetch(
+        `${COINGECKO_BASE}/coins/${coinId}/market_chart?vs_currency=usd&days=${days}&_cb=${cb}`,
+        { headers: { 'Cache-Control': 'no-cache' } }
+      );
+      const marketData = await marketResponse.json();
+      prices = (marketData.prices || []);
     }
     
     return prices;
@@ -97,20 +70,17 @@ async function getMarketChart(coinId, days = 7, timeframe = '1d') {
 }
 
 /**
- * Get OHLC data for detailed charts
+ * Get OHLC data
  */
 async function getOHLC(coinId, timeframe = '1h', days = 1) {
+  const daysMap = { '1m': 1, '5m': 1, '15m': 1, '1h': 1, '4h': 3, '1d': 30 };
+  
   try {
-    const daysMap = { '1m': 1, '5m': 1, '15m': 1, '1h': 1, '4h': 3, '1d': 30 };
-    
-    const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}/ohlc`, {
-      params: {
-        vs_currency: 'usd',
-        days: daysMap[timeframe] || 1
-      }
-    });
-    
-    return response.data || [];
+    const response = await fetch(
+      `${COINGECKO_BASE}/coins/${coinId}/ohlc?vs_currency=usd&days=${daysMap[timeframe] || 1}&_cb=${Date.now()}`,
+      { headers: { 'Cache-Control': 'no-cache' } }
+    );
+    return response.json();
   } catch (error) {
     console.error('Error fetching OHLC:', error.message);
     return [];
@@ -118,21 +88,23 @@ async function getOHLC(coinId, timeframe = '1h', days = 1) {
 }
 
 /**
- * Get basic coin info
+ * Get coin info
  */
 async function getCoinInfo(coinId) {
   try {
-    const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}`, {
-      params: {
-        localization: false,
-        tickers: false,
-        market_data: true,
-        community_data: false,
-        developer_data: false,
-        sparkline: false
-      }
-    });
-    return response.data;
+    const response = await fetch(
+      `${COINGECKO_BASE}/coins/${coinId}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false&_cb=${Date.now()}`
+    );
+    const data = await response.json();
+    return {
+      id: data.id,
+      name: data.name,
+      symbol: data.symbol,
+      currentPrice: data.market_data?.current_price?.usd,
+      priceChange24h: data.market_data?.price_change_percentage_24h,
+      marketCap: data.market_data?.market_cap?.usd,
+      volume24h: data.market_data?.total_volume?.usd
+    };
   } catch (error) {
     console.error('Error fetching coin info:', error.message);
     return null;
@@ -144,8 +116,16 @@ async function getCoinInfo(coinId) {
  */
 async function getTrending() {
   try {
-    const response = await axios.get(`${COINGECKO_BASE}/search/trending`);
-    return response.data.coins || [];
+    const response = await fetch(
+      `${COINGECKO_BASE}/search/trending?_cb=${Date.now()}`
+    );
+    const data = await response.json();
+    return (data.coins || []).slice(0, 10).map(c => ({
+      id: c.item.id,
+      name: c.item.name,
+      symbol: c.item.symbol,
+      marketCapRank: c.item.market_cap_rank
+    }));
   } catch (error) {
     console.error('Error fetching trending:', error.message);
     return [];
