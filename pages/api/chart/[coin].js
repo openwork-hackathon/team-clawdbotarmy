@@ -4,9 +4,20 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function handler(req, res) {
-  const { coin } = req.query;
-  const days = parseInt(req.query.days) || 7;
-  const timeframe = req.query.timeframe || '1d';
+  // Support both GET and POST
+  let coin, days = 7, timeframe = '1d';
+  
+  if (req.method === 'POST') {
+    const body = req.body || {};
+    coin = body.coin;
+    days = body.days || 7;
+    timeframe = body.timeframe || '1d';
+  } else {
+    // GET with query params
+    coin = req.query.coin;
+    days = parseInt(req.query.days) || 7;
+    timeframe = req.query.timeframe || '1d';
+  }
   
   if (!coin) {
     return res.status(400).json({ error: 'Missing coin parameter' });

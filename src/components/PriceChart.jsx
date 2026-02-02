@@ -32,15 +32,17 @@ export default function PriceChart({ coinId, days = 7, timeframe = '1d', onTimef
     setLoading(true);
     setError(null);
     
-    // Use GET with cache-buster to avoid Vercel caching
-    const cacheBuster = Date.now() + Math.random();
-    fetch(`/api/chart/${coinId}?days=${days}&timeframe=${activeTimeframe}&_cb=${cacheBuster}`)
+    // Use POST to avoid any caching issues
+    fetch(`/api/chart/${coinId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days, timeframe: activeTimeframe })
+    })
       .then(r => r.json())
       .then(d => {
         if (d.prices && d.prices.length > 0) {
           setData(d.prices);
         } else {
-          // Generate fallback data
           setData(generateFallbackData());
         }
         setLoading(false);
