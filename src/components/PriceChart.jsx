@@ -32,21 +32,24 @@ export default function PriceChart({ coinId, days = 7, timeframe = '1d', onTimef
     setLoading(true);
     setError(null);
     
-    fetch(`/api/chart/${coinId}?days=${days}&timeframe=${activeTimeframe}&_t=${Date.now()}`)
+    // Use POST to avoid caching issues
+    fetch(`/api/chart/${coinId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days, timeframe: activeTimeframe })
+    })
       .then(r => r.json())
       .then(d => {
         if (d.prices && d.prices.length > 0) {
           setData(d.prices);
         } else {
           // Generate fallback data
-          const fallback = generateFallbackData();
-          setData(fallback);
+          setData(generateFallbackData());
         }
         setLoading(false);
       })
       .catch(e => {
         console.error('Error fetching chart:', e);
-        // Use fallback data
         setData(generateFallbackData());
         setLoading(false);
       });
