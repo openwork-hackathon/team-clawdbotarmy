@@ -197,8 +197,8 @@ export default function Arya() {
               minWidth: '180px'
             }}>
               <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '5px' }}>
-                {marketData?.source ? 'LIVE PRICE' : 'PRICE'}
-                {marketData?.source && <span style={{ marginLeft: '8px' }}>🔴</span>}
+                {marketData?.priceUSD ? 'LIVE PRICE' : 'PRICE'}
+                {marketData?.priceUSD && <span style={{ marginLeft: '8px' }}>🔴</span>}
               </div>
               {marketData?.priceUSD ? (
                 <>
@@ -217,10 +217,14 @@ export default function Arya() {
                   <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#888' }}>
                     --
                   </div>
-                  <div style={{ fontSize: '0.8em', color: '#666', marginTop: '5px' }}>
-                    <a href={uniswapUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'none' }}>
-                      Trade on Uniswap →
+                  <div style={{ fontSize: '0.8em', color: '#6366f1', marginTop: '8px' }}>
+                    <a href={uniswapUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                      <span>🦄</span>
+                      <span>Trade on Uniswap</span>
                     </a>
+                  </div>
+                  <div style={{ fontSize: '0.7em', color: '#555', marginTop: '8px' }}>
+                    Pool en création...
                   </div>
                 </>
               )}
@@ -236,12 +240,20 @@ export default function Arya() {
               minWidth: '150px'
             }}>
               <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '5px' }}>MARKET CAP</div>
-              <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#6366f1' }}>
-                ${((currentPrice * supply * 3000) / 1000000).toFixed(2)}M
-              </div>
-              <div style={{ fontSize: '0.8em', color: '#888' }}>
-                {supply.toLocaleString()} supply
-              </div>
+              {currentPriceUSD > 0 ? (
+                <>
+                  <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#6366f1' }}>
+                    ${((currentPriceUSD * supply) / 1000000).toFixed(2)}M
+                  </div>
+                  <div style={{ fontSize: '0.8em', color: '#888' }}>
+                    {supply.toLocaleString()} supply
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#888' }}>
+                  --
+                </div>
+              )}
             </div>
             <div style={{ 
               textAlign: 'center',
