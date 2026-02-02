@@ -35,15 +35,56 @@ export default function Arya() {
 
   const connectWallet = async () => {
     if (typeof window === 'undefined' || !window.ethereum) {
-      alert('MetaMask not installed');
+      alert('MetaMask not installed! Please install MetaMask to connect.');
       return;
     }
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       setWalletConnected(true);
       setWalletAddress(accounts[0]);
+      
+      // Listen for account changes
+      window.ethereum.on('accountsChanged', (newAccounts) => {
+        if (newAccounts.length === 0) {
+          setWalletConnected(false);
+          setWalletAddress('');
+        } else {
+          setWalletAddress(newAccounts[0]);
+        }
+      });
     } catch (e) {
       console.error('Wallet connection failed:', e);
+      alert('Failed to connect wallet. Please try again.');
+    }
+  };
+
+  // Direct Uniswap trade via MetaMask
+  const buyOnUniswap = () => {
+    if (!walletConnected) {
+      alert('Please connect your wallet first!');
+      return;
+    }
+    // Open Uniswap with pre-filled ARYA token
+    window.open(uniswapUrl, '_blank');
+  };
+
+  // Swap directly via MetaMask (contract interaction)
+  const swapViaMetaMask = async () => {
+    if (!walletConnected || !window.ethereum) {
+      alert('Please connect your wallet first!');
+      return;
+    }
+    
+    try {
+      // The contract address for ARYA on Base
+      const aryaTokenAddress = '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
+      
+      // For a direct swap, we'd need to interact with the Uniswap router
+      // For simplicity, we'll open Uniswap which handles the swap
+      window.open(uniswapUrl, '_blank');
+    } catch (e) {
+      console.error('Swap error:', e);
+      alert('Error initiating swap. Please try Uniswap directly.');
     }
   };
 
@@ -315,45 +356,133 @@ export default function Arya() {
             maxWidth: '500px',
             margin: '0 auto 30px'
           }}>
-            {/* Wallet Button */}
-            <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+            {/* Wallet Connection + Actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
               {walletConnected ? (
                 <div style={{ 
-                  display: 'inline-flex', 
+                  display: 'flex', 
                   alignItems: 'center', 
-                  gap: '15px', 
-                  padding: '12px 20px', 
-                  background: 'rgba(16, 185, 129, 0.15)', 
-                  border: '1px solid #10b981', 
-                  borderRadius: '12px' 
+                  justifyContent: 'space-between',
+                  gap: '15px',
+                  flexWrap: 'wrap'
                 }}>
-                  <span style={{ color: '#10b981', fontSize: '1.2em' }}>●</span>
-                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>Connected</span>
-                  <code style={{ background: '#252530', padding: '5px 10px', borderRadius: '6px', fontSize: '0.9em' }}>
-                    {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}
-                  </code>
+                  <div style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '10px', 
+                    padding: '12px 20px', 
+                    background: 'rgba(16, 185, 129, 0.15)', 
+                    border: '1px solid #10b981', 
+                    borderRadius: '12px' 
+                  }}>
+                    <span style={{ color: '#10b981', fontSize: '1.2em' }}>●</span>
+                    <span style={{ color: '#10b981', fontWeight: 'bold' }}>Connected</span>
+                    <code style={{ background: '#252530', padding: '5px 10px', borderRadius: '6px', fontSize: '0.9em', color: '#fff' }}>
+                      {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}
+                    </code>
+                  </div>
+                  <button 
+                    onClick={() => setWalletConnected(false)}
+                    style={{ 
+                      padding: '10px 20px', 
+                      background: 'transparent', 
+                      border: '1px solid #444', 
+                      borderRadius: '8px', 
+                      color: '#888', 
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Disconnect
+                  </button>
                 </div>
               ) : (
-                <button 
-                  onClick={connectWallet}
+                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button 
+                    onClick={connectWallet}
+                    style={{ 
+                      padding: '15px 30px', 
+                      background: 'linear-gradient(135deg, #f6851b, #e2761b)', 
+                      border: 'none', 
+                      borderRadius: '12px', 
+                      color: '#fff', 
+                      fontSize: '1em', 
+                      fontWeight: 'bold', 
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '10px'
+                    }}
+                  >
+                    <span>🦞</span>
+                    <span>Connect Wallet</span>
+                  </button>
+                  
+                  <a 
+                    href={uniswapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ 
+                      padding: '15px 30px', 
+                      background: 'linear-gradient(135deg, #ff0055, #ff00aa)', 
+                      border: 'none', 
+                      borderRadius: '12px', 
+                      color: '#fff', 
+                      fontSize: '1em', 
+                      fontWeight: 'bold', 
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <span>🦄</span>
+                    <span>Buy on Uniswap</span>
+                  </a>
+                </div>
+              )}
+              
+              {/* Quick Links */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                gap: '15px',
+                marginTop: '10px',
+                flexWrap: 'wrap'
+              }}>
+                <a 
+                  href={uniswapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{ 
-                    padding: '15px 40px', 
-                    background: 'linear-gradient(135deg, #f6851b, #e2761b)', 
-                    border: 'none', 
-                    borderRadius: '12px', 
-                    color: '#fff', 
-                    fontSize: '1.1em', 
-                    fontWeight: 'bold', 
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '10px'
+                    padding: '10px 20px', 
+                    background: 'rgba(255,0,85,0.1)', 
+                    border: '1px solid rgba(255,0,85,0.3)', 
+                    borderRadius: '10px', 
+                    color: '#ff0055', 
+                    fontSize: '0.9em',
+                    textDecoration: 'none'
                   }}
                 >
-                  <span>🦞</span>
-                  <span>Connect Wallet</span>
-                </button>
-              )}
+                  🦄 Trade on Uniswap
+                </a>
+                <a 
+                  href="https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ 
+                    padding: '10px 20px', 
+                    background: 'rgba(99,102,241,0.1)', 
+                    border: '1px solid rgba(99,102,241,0.3)', 
+                    borderRadius: '10px', 
+                    color: '#6366f1', 
+                    fontSize: '0.9em',
+                    textDecoration: 'none'
+                  }}
+                >
+                  🦞 View on Clanker
+                </a>
+              </div>
             </div>
 
             {/* BUY/SELL Toggle */}
@@ -479,10 +608,37 @@ export default function Arya() {
                 fontWeight: 'bold', 
                 cursor: loading || !amount ? 'not-allowed' : 'pointer',
                 opacity: loading || !amount ? 0.5 : 1,
-                transition: 'all 0.3s'
+                transition: 'all 0.3s',
+                marginBottom: '15px'
               }}
             >
               {loading ? '⏳ Processing...' : `${side} ${amount ? parseFloat(amount).toFixed(4) : ''}`}
+            </button>
+            
+            {/* MetaMask Swap Button */}
+            <button 
+              onClick={swapViaMetaMask}
+              disabled={!walletConnected}
+              style={{ 
+                width: '100%', 
+                padding: '14px', 
+                border: '2px solid #f6851b', 
+                borderRadius: '12px', 
+                background: 'transparent',
+                color: '#f6851b', 
+                fontSize: '1em', 
+                fontWeight: 'bold', 
+                cursor: !walletConnected ? 'not-allowed' : 'pointer',
+                opacity: !walletConnected ? 0.5 : 1,
+                transition: 'all 0.3s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px'
+              }}
+            >
+              <span>🦊</span>
+              <span>{walletConnected ? 'Swap with MetaMask' : 'Connect wallet to swap'}</span>
             </button>
           </div>
 
