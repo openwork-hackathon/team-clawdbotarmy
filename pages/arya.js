@@ -3,6 +3,7 @@ import Head from 'next/head';
 
 export default function Arya() {
   const [curve, setCurve] = useState(null);
+  const [marketData, setMarketData] = useState(null);
   const [side, setSide] = useState('BUY');
   const [amount, setAmount] = useState('');
   const [result, setResult] = useState(null);
@@ -12,6 +13,7 @@ export default function Arya() {
 
   useEffect(() => {
     fetchCurve();
+    fetchMarketData();
     const interval = setInterval(fetchCurve, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -21,7 +23,6 @@ export default function Arya() {
       const r = await fetch('/api/bonding-curve');
       const data = await r.json();
       setCurve(data?.ARYA || {
-        currentPrice: 0.00002,
         supply: 1000000,
         maxSupply: 10000000,
         totalTrades: 42,
@@ -29,6 +30,18 @@ export default function Arya() {
       });
     } catch (e) {
       console.error('Error fetching curve:', e);
+    }
+  };
+
+  const fetchMarketData = async () => {
+    try {
+      const r = await fetch('/api/price/arya');
+      const data = await r.json();
+      if (data.price) {
+        setMarketData(data);
+      }
+    } catch (e) {
+      console.error('Error fetching market data:', e);
     }
   };
 
@@ -114,7 +127,8 @@ export default function Arya() {
     setLoading(false);
   };
 
-  const currentPrice = curve?.currentPrice || 0.00002;
+  const currentPrice = marketData?.priceETH || curve?.currentPrice || 0.00002;
+  const currentPriceUSD = marketData?.priceUSD || (currentPrice * 3000);
   const supply = curve?.supply || 1000000;
   const maxSupply = curve?.maxSupply || 10000000;
   const progress = (supply / maxSupply) * 100;
@@ -173,22 +187,46 @@ export default function Arya() {
             marginBottom: '30px',
             flexWrap: 'wrap'
           }}>
+            {/* Live Price from Uniswap */}
             <div style={{ 
               textAlign: 'center',
               padding: '20px 30px',
               background: 'rgba(16,185,129,0.1)',
               borderRadius: '16px',
               border: '1px solid rgba(16,185,129,0.3)',
-              minWidth: '150px'
+              minWidth: '180px'
             }}>
-              <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '5px' }}>PRICE</div>
-              <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#10b981' }}>
-                ${(currentPrice * 3000).toFixed(4)}
+              <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '5px' }}>
+                {marketData?.source ? 'LIVE PRICE' : 'PRICE'}
+                {marketData?.source && <span style={{ marginLeft: '8px' }}>🔴</span>}
               </div>
-              <div style={{ fontSize: '0.8em', color: '#10b981' }}>
-                {currentPrice.toFixed(8)} ETH
-              </div>
+              {marketData?.priceUSD ? (
+                <>
+                  <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#10b981' }}>
+                    ${marketData.priceUSD.toFixed(6)}
+                  </div>
+                  <div style={{ fontSize: '0.8em', color: '#10b981' }}>
+                    {marketData.priceETH.toFixed(10)} ETH
+                  </div>
+                  <div style={{ fontSize: '0.7em', color: '#666', marginTop: '5px' }}>
+                    via Uniswap V3
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#888' }}>
+                    --
+                  </div>
+                  <div style={{ fontSize: '0.8em', color: '#666', marginTop: '5px' }}>
+                    <a href={uniswapUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'none' }}>
+                      Trade on Uniswap →
+                    </a>
+                  </div>
+                </>
+              )}
             </div>
+            
+            {/* Market Cap */}
             <div style={{ 
               textAlign: 'center',
               padding: '20px 30px',
