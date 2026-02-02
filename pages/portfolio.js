@@ -2,19 +2,35 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function Portfolio() {
-  const [holdings] = useState([
-    { token: 'ARYA', emoji: '🦞', amount: 15000, price: 0.52, color: '#ff6b35' },
-    { token: 'ETH', emoji: 'Ξ', amount: 2.5, price: 2297.35, color: '#627eea' },
-    { token: 'BTC', emoji: '₿', amount: 0.35, price: 76786, color: '#f7931a' },
-    { token: 'SOL', emoji: '◎', amount: 25, price: 100.45, color: '#9945ff' },
-    { token: 'OPENWORK', emoji: '⚡', amount: 50000, price: 0.0012, color: '#00d4ff' },
-    { token: 'USDC', emoji: '$', amount: 2240.77, price: 1.00, color: '#2775ca' }
-  ]);
+  const [holdings, setHoldings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const totalValue = holdings.reduce((sum, h) => sum + (h.amount * h.price), 0);
+  // Default portfolio for display
+  const defaultHoldings = [
+    { token: 'ARYA', emoji: '🦞', amount: 15000, price: 0.00001, color: '#ff6b35', value: 0.15 },
+    { token: 'ETH', emoji: 'Ξ', amount: 2.5, price: 2297.35, color: '#627eea', value: 5743.38 },
+    { token: 'BTC', emoji: '₿', amount: 0.35, price: 76786, color: '#f7931a', value: 26875.10 },
+    { token: 'SOL', emoji: '◎', amount: 25, price: 100.45, color: '#9945ff', value: 2511.25 },
+    { token: 'KROWNEPO', emoji: '👑', amount: 1000000, price: 0.000001, color: '#9333ea', value: 1.00 },
+    { token: 'OPENWORK', emoji: '⚡', amount: 50000, price: 0.00001, color: '#00d4ff', value: 0.50 },
+    { token: 'USDC', emoji: '$', amount: 2240.77, price: 1.00, color: '#2775ca', value: 2240.77 }
+  ];
+
+  const displayHoldings = holdings.length > 0 ? holdings : defaultHoldings;
+  const totalValue = displayHoldings.reduce((sum, h) => sum + (h.value || 0), 0);
 
   const formatCurrency = (value) => {
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
+    if (value >= 1000) return `$${(value / 1000).toFixed(2)}K`;
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  };
+
+  const formatAmount = (amount, token) => {
+    if (token === 'BTC' || token === 'WBTC') return amount.toFixed(4);
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`;
+    if (amount >= 1000) return `${(amount / 1000).toFixed(2)}K`;
+    return amount.toLocaleString(undefined, { maximumFractionDigits: 2 });
   };
 
   return (
@@ -31,36 +47,45 @@ export default function Portfolio() {
           <div className="total-value">{formatCurrency(totalValue)}</div>
         </header>
 
-        {/* Holdings List */}
+        {error && (
+          <div className="error-message">{error}</div>
+        )}
+
         <div className="holdings-section">
           <h2>Holdings</h2>
           <div className="holdings-table">
-            {holdings.map(holding => (
+            {displayHoldings.map(holding => (
               <div key={holding.token} className="holding-row">
                 <div className="holding-token">
                   <span className="token-emoji" style={{ color: holding.color }}>{holding.emoji}</span>
                   <span className="token-name">{holding.token}</span>
                 </div>
-                <div className="holding-price">{formatCurrency(holding.price)}</div>
-                <div className="holding-amount">{holding.amount.toLocaleString()}</div>
-                <div className="holding-value">{formatCurrency(holding.amount * holding.price)}</div>
+                <div className="holding-price">{formatCurrency(holding.price || 0)}</div>
+                <div className="holding-amount">{formatAmount(holding.amount, holding.token)}</div>
+                <div className="holding-value">{formatCurrency(holding.value || 0)}</div>
               </div>
             ))}
           </div>
           
-          {/* Allocation Bar */}
-          <div className="allocation-bar">
-            {holdings.map(h => (
-              <div 
-                key={h.token}
-                className="allocation-segment"
-                style={{ 
-                  width: `${(h.amount * h.price / totalValue * 100).toFixed(1)}%`,
-                  background: h.color
-                }}
-              />
-            ))}
-          </div>
+          {totalValue > 0 && (
+            <div className="allocation-bar">
+              {displayHoldings.map(h => {
+                const percentage = ((h.value || 0) / totalValue * 100).toFixed(1);
+                return percentage > 0 ? (
+                  <div 
+                    key={h.token}
+                    className="allocation-segment"
+                    style={{ 
+                      width: `${percentage}%`,
+                      background: h.color,
+                      minWidth: percentage > 1 ? '4px' : '0px'
+                    }}
+                    title={`${h.token}: ${percentage}%`}
+                  />
+                ) : null;
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -90,6 +115,16 @@ export default function Portfolio() {
           font-size: 2.5em;
           font-weight: bold;
           color: #10b981;
+        }
+        
+        .error-message {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid #ef4444;
+          border-radius: 8px;
+          padding: 12px;
+          margin-bottom: 20px;
+          color: #ef4444;
+          text-align: center;
         }
         
         .holdings-section {
@@ -143,18 +178,22 @@ export default function Portfolio() {
         .holding-price {
           color: #888;
           font-size: 0.9em;
+          min-width: 80px;
+          text-align: right;
         }
         
         .holding-amount {
           color: #888;
           text-align: right;
           font-size: 0.9em;
+          min-width: 70px;
         }
         
         .holding-value {
           font-weight: bold;
           color: #10b981;
           text-align: right;
+          min-width: 90px;
         }
         
         .allocation-bar {
