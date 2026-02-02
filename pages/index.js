@@ -44,6 +44,13 @@ function LivePrices() {
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
+  const [selectedCoin, setSelectedCoin] = useState('bitcoin');
+  const [timeframe, setTimeframe] = useState('1h');
+
+  const handleTimeframeChange = (tf) => {
+    setTimeframe(tf);
+  };
+
   return (
     <>
       <Head>
@@ -84,9 +91,6 @@ export default function Home() {
             <a href="/portfolio" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📊 Portfolio</a>
             <a href="/arya" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
             <a href="/openwork" style={{ color: '#00d4ff', textDecoration: 'none', fontWeight: '600' }}>⚡ OPENWORK</a>
-            <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Trade</a>
-            <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Dashboard</a>
-            <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Portfolio</a>
             <div style={{ marginLeft: '10px' }}>
               <WalletConnect />
             </div>
@@ -112,20 +116,42 @@ export default function Home() {
           {/* Main Trading Section */}
           <div className="trading-grid">
             <div className="chart-section">
-              <div className="section-header">
-                <h2>📈 BTC/USDT</h2>
-                <div className="timeframe-selector">
-                  <button className="tf active">1H</button>
-                  <button className="tf">4H</button>
-                  <button className="tf">1D</button>
-                  <button className="tf">1W</button>
+              <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {/* Coin Selector */}
+                  <select 
+                    value={selectedCoin} 
+                    onChange={(e) => setSelectedCoin(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--bg-secondary)',
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="bitcoin">BTC</option>
+                    <option value="ethereum">ETH</option>
+                    <option value="solana">SOL</option>
+                    <option value="pepe">PEPE</option>
+                    <option value="bonk">BONK</option>
+                  </select>
                 </div>
               </div>
-              <PriceChart coinId="bitcoin" days={7} />
+              
+              {/* Price Chart with Timeframes */}
+              <PriceChart 
+                coinId={selectedCoin} 
+                days={7} 
+                timeframe={timeframe}
+                onTimeframeChange={handleTimeframeChange}
+              />
             </div>
             
             <div className="orderbook-section">
-              <OrderBook symbol="BTC" />
+              <OrderBook symbol={selectedCoin.toUpperCase()} />
             </div>
           </div>
 
@@ -181,17 +207,7 @@ export default function Home() {
               }}>
                 <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🩸</div>
                 <h3 style={{ margin: '0 0 5px' }}>Bloody</h3>
-                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Frontend & Marketing</p>
-              </div>
-              <div style={{ 
-                padding: '20px', 
-                background: 'var(--bg-card)', 
-                borderRadius: '12px',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🫘</div>
-                <h3 style={{ margin: '0 0 5px' }}>beanbot</h3>
-                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Backend</p>
+                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Backend & APIs</p>
               </div>
               <div style={{ 
                 padding: '20px', 
@@ -201,7 +217,17 @@ export default function Home() {
               }}>
                 <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🧠</div>
                 <h3 style={{ margin: '0 0 5px' }}>Ydoolb</h3>
-                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Research & Analysis</p>
+                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>Research & Docs</p>
+              </div>
+              <div style={{ 
+                padding: '20px', 
+                background: 'var(--bg-card)', 
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>💨</div>
+                <h3 style={{ margin: '0 0 5px' }}>Zephyr</h3>
+                <p style={{ color: 'var(--accent)', margin: 0, fontSize: '0.85em' }}>UI Enhancement</p>
               </div>
             </div>
             <p style={{ 
