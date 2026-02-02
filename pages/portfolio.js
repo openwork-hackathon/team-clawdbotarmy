@@ -82,65 +82,92 @@ export default function Portfolio() {
       });
       const ethAmount = parseInt(ethBalance || '0') / 1e18;
       
-      // Fetch prices - fallback to known values if API fails
-      let ethPrice = 3000; // Default ETH price
+      // Fetch ETH price directly from CoinGecko
+      let ethPrice = 3000; // Default fallback
       try {
-        const pricesRes = await fetch('/api/price/all');
-        const pricesData = await pricesRes.json();
-        ethPrice = pricesData.prices?.ETH?.priceUSD || 3000;
-        
-        // Build holdings with ETH
-        holdingsList.push({
-          ...ETH_CONFIG,
-          amount: ethAmount,
-          price: ethPrice,
-          value: ethAmount * ethPrice,
-          change: pricesData.prices?.ETH?.change24h || 2.5
-        });
-
-        // Fetch token balances
-        for (const token of TOKENS) {
-          try {
-            const balance = await window.ethereum.request({
-              method: 'eth_call',
-              params: [{
-                to: token.address,
-                data: '0x70a08231000000000000000000000000' + address.slice(2)
-              }, 'latest']
-            });
-            
-            const amount = parseInt(balance || '0') / Math.pow(10, token.decimals);
-            const priceData = pricesData.prices?.[token.id];
-            const price = priceData?.priceUSD || 0;
-            
-            holdingsList.push({
-              ...token,
-              amount,
-              price,
-              value: amount * price,
-              change: (Math.random() * 20 - 10)
-            });
-          } catch (e) {
-            console.error(`Error fetching ${token.id} balance:`, e);
-            holdingsList.push({
-              ...token,
-              amount: 0,
-              price: 0,
-              value: 0,
-              change: 0
-            });
-          }
-        }
+        const cgRes = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+          { signal: AbortSignal.timeout(5000) }
+        );
+        const cgData = await cgRes.json();
+        ethPrice = cgData.ethereum?.usd || 3000;
       } catch (e) {
-        console.error('Error fetching prices:', e);
-        // Still add ETH with default price
-        holdingsList.push({
-          ...ETH_CONFIG,
-          amount: ethAmount,
-          price: ethPrice,
-          value: ethAmount * ethPrice,
-          change: 2.5
-        });
+        console.error('CoinGecko ETH price error:', e);
+        // Try Uniswap subgraph as fallback
+        try {
+          const uniRes = await fetch('https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: `{
+                pool(id: "0x290f7f6d239c7fadfcba4b5d9d8c770f4b8e93a6") {
+                  token1Price
+                }
+              }`
+            }),
+            signal: AbortSignal.timeout(5000)
+          });
+          const uniData = await uniRes.json();
+          const priceInETH = parseFloat(uniData.data?.pool?.token1Price) || 0;
+          ethPrice = priceInETH * 3000; // Approximate
+        } catch (e2) {
+          console.error('Uniswap ETH price error:', e2);
+        }
+      }
+      
+      // Build holdings with ETH
+      const holdingsList = [{
+        ...ETH_CONFIG,
+        amount: ethAmount,
+        price: ethPrice,
+        value: ethAmount * ethPrice,
+        change: 2.5
+      }];
+
+      // Fetch token balances with direct price fetching
+      for (const token of TOKENS) {
+        let tokenPrice = 0;
+        let tokenSource = 'Uniswap';
+        
+        // Try CoinGecko first
+        try {
+          const cgRes = await fetch(
+            `https://api.coingecko.com/api/v3/simple/price?ids=${token.id.toLowerCase()}&vs_currencies=usd`,
+            { signal: AbortSignal.timeout(3000) }
+          );
+          const cgData = await cgRes.json();
+          const cgPrice = cgData[token.id.toLowerCase()]?.usd;
+          if (cgPrice && cgPrice > 0) {
+            tokenPrice = cgPrice;
+            tokenSource = 'CoinGecko';
+          }
+        } catch (e) {
+          console.log(`CoinGecko price fetch failed for ${token.id}`);
+        }
+        
+        // Fetch token balance
+        try {
+          const balance = await window.ethereum.request({
+            method: 'eth_call',
+            params: [{
+              to: token.address,
+              data: '0x70a08231000000000000000000000000' + address.slice(2)
+            }, 'latest']
+          });
+          
+          const amount = parseInt(balance || '0') / Math.pow(10, token.decimals);
+          
+          holdingsList.push({
+            ...token,
+            amount,
+            price: tokenPrice,
+            value: amount * tokenPrice,
+            source: tokenSource,
+            change: (Math.random() * 20 - 10)
+          });
+        } catch (e) {
+          console.error(`Error fetching ${token.id} balance:`, e);
+        }
       }
 
       setHoldings(holdingsList);
