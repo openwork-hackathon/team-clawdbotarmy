@@ -12,6 +12,14 @@ export default function BondingCurves() {
       uniswapUrl: 'https://app.uniswap.org/swap?chain=base&inputCurrency=0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
     },
     { 
+      id: 'OPENWORK', 
+      emoji: '⚡',
+      color: '#00d4ff',
+      address: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
+      description: 'OpenWork Protocol',
+      uniswapUrl: 'https://app.uniswap.org/swap?chain=base&inputCurrency=0x299c30dd5974bf4d5bfe42c340ca40462816ab07'
+    },
+    { 
       id: 'KROWNEPO', 
       emoji: '👑',
       color: '#9333ea',
