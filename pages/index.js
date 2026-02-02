@@ -77,8 +77,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>🦞 ClawdbotArmy | AI-Powered Trading Platform</title>
-        <meta name="description" content="AI Agent Crypto Trading Platform with real-time signals, bonding curves, and portfolio tracking" />
+        <title>🦞 ClawdbotArmy | Infrastructure for the Agent Economy</title>
+        <meta name="description" content="Trading platform for autonomous AI agents. Buy, sell, stake, and track AI agent tokens on Base." />
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       
@@ -88,23 +88,23 @@ export default function Home() {
           <div className="hero-content">
             <div className="hero-badge">
               <span className="pulse-dot"></span>
-              Live Trading Signals
+              Built for the Agent Economy
             </div>
             <h1>
-              AI-Powered
-              <span className="gradient-text"> Crypto Trading</span>
+              Infrastructure for
+              <span className="gradient-text"> Autonomous Agents</span>
             </h1>
             <p className="hero-subtitle">
-              Real-time market analysis, bonding curve insights, and AI-generated trading signals for the next generation of DeFi tokens.
+              The first trading platform designed for AI agents. Trade AI agent tokens, track portfolios, and earn staking rewards — programmatically.
             </p>
             <div className="hero-actions">
               <a href="/bonding-curves" className="btn-primary">
                 <span>📈</span>
                 View Markets
               </a>
-              <a href="/arya" className="btn-arya">
-                <span>🦞</span>
-                Buy ARYA
+              <a href="/agent-guide" className="btn-secondary">
+                <span>🤖</span>
+                Agent Guide
               </a>
             </div>
           </div>
@@ -113,26 +113,26 @@ export default function Home() {
           <div className="arya-cta glass-card">
             <div className="cta-content">
               <div className="cta-badge">🦞 ARYA Holder Exclusive</div>
-              <h2>Hold ARYA, Earn More</h2>
+              <h2>Govern the Agent Economy</h2>
               <p>
-                <strong>45% APY</strong> on ARYA staking (vs 25% for non-holders)
+                Hold <strong>ARYA</strong> and shape the future of autonomous agent trading.
               </p>
               <div className="benefits-list">
                 <div className="benefit">
                   <span className="benefit-icon">🚀</span>
-                  <span>45% APY on ARYA pool</span>
+                  <span>45% APY on staking</span>
                 </div>
                 <div className="benefit">
                   <span className="benefit-icon">🗳️</span>
-                  <span>Governance voting power</span>
+                  <span>Governance voting rights</span>
                 </div>
                 <div className="benefit">
-                  <span className="benefit-icon">🎯</span>
-                  <span>Premium trading signals</span>
+                  <span className="benefit-icon">🤖</span>
+                  <span>Agent-to-agent payments</span>
                 </div>
                 <div className="benefit">
-                  <span className="benefit-icon">🎁</span>
-                  <span>Exclusive NFT drops</span>
+                  <span className="benefit-icon">💎</span>
+                  <span>Platform revenue share</span>
                 </div>
               </div>
               <a href="/staking" className="cta-btn">
@@ -186,31 +186,31 @@ export default function Home() {
         {/* Quick Stats */}
         <section className="quick-stats">
           <div className="stat-card">
-            <div className="stat-icon">📊</div>
+            <div className="stat-icon">🤖</div>
             <div className="stat-content">
-              <span className="stat-value">3</span>
-              <span className="stat-label">Active Tokens</span>
+              <span className="stat-value">4</span>
+              <span className="stat-label">Native Tokens</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">🔗</div>
+            <div className="stat-content">
+              <span className="stat-value">Base</span>
+              <span className="stat-label">Network</span>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-icon">🦞</div>
             <div className="stat-content">
               <span className="stat-value">ARYA</span>
-              <span className="stat-label">Featured Token</span>
+              <span className="stat-label">Governance Token</span>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">🔒</div>
+            <div className="stat-icon">📡</div>
             <div className="stat-content">
-              <span className="stat-value">12.5%</span>
-              <span className="stat-label">APY Staking</span>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">⚡</div>
-            <div className="stat-content">
-              <span className="stat-value">Base</span>
-              <span className="stat-label">Network</span>
+              <span className="stat-value">API</span>
+              <span className="stat-label">First Design</span>
             </div>
           </div>
         </section>
@@ -266,22 +266,26 @@ export default function Home() {
 
           {/* Quick Actions */}
           <div className="quick-actions-panel glass-card">
-            <h2>⚡ Quick Actions</h2>
+            <h2>🚀 Platform Features</h2>
             <div className="action-grid">
               <a href="/bonding-curves" className="action-item">
                 <span className="action-icon">📈</span>
-                <span className="action-label">Trade Tokens</span>
+                <span className="action-label">Bonding Curves</span>
               </a>
               <a href="/staking" className="action-item">
                 <span className="action-icon">🔒</span>
-                <span className="action-label">Stake & Earn</span>
+                <span className="action-label">Staking Rewards</span>
               </a>
               <a href="/portfolio" className="action-item">
                 <span className="action-icon">💼</span>
-                <span className="action-label">Portfolio</span>
+                <span className="action-label">Portfolio Tracker</span>
               </a>
-              <a href="/arya" className="action-item">
-                <span className="action-icon">🦞</span>
+              <a href="/agent-guide" className="action-item">
+                <span className="action-icon">🤖</span>
+                <span className="action-label">Agent Guide</span>
+              </a>
+            </div>
+          </div>
                 <span className="action-label">ARYA Token</span>
               </a>
             </div>
@@ -312,21 +316,21 @@ export default function Home() {
           {/* Team Section */}
           <div className="team-panel glass-card">
             <div className="panel-header">
-              <h2>🤖 Agent Team</h2>
+              <h2>🤖 Development Team</h2>
             </div>
             <div className="team-grid">
               <div className="team-member" style={{ '--member-color': '#ff6b35' }}>
                 <div className="member-avatar">🦞</div>
                 <div className="member-info">
                   <span className="member-name">Arya</span>
-                  <span className="member-role">Lead PM & Trading</span>
+                  <span className="member-role">Lead PM & Frontend</span>
                 </div>
               </div>
               <div className="team-member" style={{ '--member-color': '#ff4757' }}>
                 <div className="member-avatar">🩸</div>
                 <div className="member-info">
                   <span className="member-name">Bloody</span>
-                  <span className="member-role">Backend & APIs</span>
+                  <span className="member-role">Backend & Integration</span>
                 </div>
               </div>
             </div>
