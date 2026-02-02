@@ -102,10 +102,49 @@ export default function Home() {
                 <span>📈</span>
                 View Markets
               </a>
-              <a href="/portfolio" className="btn-secondary">
-                <span>💼</span>
-                My Portfolio
+              <a href="/arya" className="btn-arya">
+                <span>🦞</span>
+                Buy ARYA
               </a>
+            </div>
+          </div>
+          
+          {/* ARYA Holder CTA */}
+          <div className="arya-cta glass-card">
+            <div className="cta-content">
+              <div className="cta-badge">🦞 ARYA Holder Exclusive</div>
+              <h2>Hold ARYA, Earn More</h2>
+              <p>
+                <strong>45% APY</strong> on ARYA staking (vs 25% for non-holders)
+              </p>
+              <div className="benefits-list">
+                <div className="benefit">
+                  <span className="benefit-icon">🚀</span>
+                  <span>45% APY on ARYA pool</span>
+                </div>
+                <div className="benefit">
+                  <span className="benefit-icon">🗳️</span>
+                  <span>Governance voting power</span>
+                </div>
+                <div className="benefit">
+                  <span className="benefit-icon">🎯</span>
+                  <span>Premium trading signals</span>
+                </div>
+                <div className="benefit">
+                  <span className="benefit-icon">🎁</span>
+                  <span>Exclusive NFT drops</span>
+                </div>
+              </div>
+              <a href="/staking" className="cta-btn">
+                Start Staking →
+              </a>
+            </div>
+            <div className="cta-visual">
+              <div className="visual-emoji">🦞</div>
+              <div className="apy-circle">
+                <span className="apy-number">45%</span>
+                <span className="apy-label">APY</span>
+              </div>
             </div>
           </div>
           
@@ -423,6 +462,139 @@ export default function Home() {
         .btn-secondary:hover {
           border-color: var(--accent);
           background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .btn-arya {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 28px;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          color: #fff;
+          border-radius: 30px;
+          font-weight: 700;
+          font-size: 1em;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+        }
+        
+        .btn-arya:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
+        }
+        
+        .arya-cta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 30px;
+          padding: 35px;
+          background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.05));
+          border: 1px solid rgba(255, 107, 53, 0.3);
+          margin: 30px 0;
+        }
+        
+        .cta-badge {
+          display: inline-block;
+          padding: 6px 14px;
+          background: rgba(255, 107, 53, 0.2);
+          border-radius: 20px;
+          color: #ff6b35;
+          font-size: 0.85em;
+          font-weight: 600;
+          margin-bottom: 15px;
+        }
+        
+        .cta-content h2 {
+          margin: 0 0 12px 0;
+          font-size: 1.8em;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        
+        .cta-content p {
+          color: var(--text-secondary);
+          margin: 0 0 20px 0;
+          font-size: 1.05em;
+        }
+        
+        .benefits-list {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+          margin-bottom: 25px;
+        }
+        
+        .benefit {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 14px;
+          background: rgba(255, 107, 53, 0.1);
+          border-radius: 10px;
+        }
+        
+        .benefit-icon {
+          font-size: 1.2em;
+        }
+        
+        .cta-btn {
+          display: inline-block;
+          padding: 14px 28px;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          color: #fff;
+          border-radius: 30px;
+          text-decoration: none;
+          font-weight: 700;
+          transition: all 0.3s ease;
+        }
+        
+        .cta-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+        
+        .cta-visual {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 15px;
+        }
+        
+        .visual-emoji {
+          font-size: 4em;
+          animation: bounce 2s ease infinite;
+        }
+        
+        .apy-circle {
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 0 30px rgba(255, 107, 53, 0.4);
+        }
+        
+        .apy-number {
+          font-size: 1.8em;
+          font-weight: 800;
+          color: #fff;
+        }
+        
+        .apy-label {
+          font-size: 0.75em;
+          color: rgba(255, 255, 255, 0.8);
+          font-weight: 600;
+        }
+        
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
         }
         
         .market-ticker {

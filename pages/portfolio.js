@@ -355,6 +355,44 @@ export default function Portfolio() {
             </div>
           </div>
         )}
+
+        {/* ARYA Holder Benefits */}
+        <div className="holder-benefits">
+          <h3>🦞 ARYA Holder Benefits</h3>
+          <div className="benefits-grid">
+            <div className="benefit-item">
+              <span className="icon">🚀</span>
+              <div className="text">
+                <strong>45% APY</strong>
+                <span>on ARYA staking</span>
+              </div>
+            </div>
+            <div className="benefit-item">
+              <span className="icon">🗳️</span>
+              <div className="text">
+                <strong>Governance</strong>
+                <span>Voting power</span>
+              </div>
+            </div>
+            <div className="benefit-item">
+              <span className="icon">🎯</span>
+              <div className="text">
+                <strong>Premium Signals</strong>
+                <span>Trading insights</span>
+              </div>
+            </div>
+            <div className="benefit-item">
+              <span className="icon">🎁</span>
+              <div className="text">
+                <strong>NFT Drops</strong>
+                <span>Exclusive access</span>
+              </div>
+            </div>
+          </div>
+          <Link href="/staking" className="stake-arya-btn">
+            Stake ARYA & Earn 45% APY →
+          </Link>
+        </div>
       </div>
 
       <style jsx>{`
@@ -771,6 +809,79 @@ export default function Portfolio() {
           .col-price, .col-value, .col-action {
             text-align: left;
           }
+        }
+        
+        /* ARYA Holder Benefits */
+        .holder-benefits {
+          margin-top: 30px;
+          padding: 25px;
+          background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 107, 53, 0.05));
+          border: 1px solid rgba(255, 107, 53, 0.3);
+          border-radius: 16px;
+        }
+        
+        .holder-benefits h3 {
+          margin: 0 0 20px 0;
+          color: #ff6b35;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        
+        .benefits-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+        }
+        
+        .benefit-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 15px;
+          background: rgba(255, 107, 53, 0.1);
+          border-radius: 12px;
+        }
+        
+        .benefit-item .icon {
+          font-size: 1.5em;
+        }
+        
+        .benefit-item .text {
+          font-size: 0.9em;
+        }
+        
+        .benefit-item .text strong {
+          display: block;
+          color: #ff6b35;
+          margin-bottom: 2px;
+        }
+        
+        .benefit-item .text span {
+          color: var(--text-secondary);
+          font-size: 0.85em;
+        }
+        
+        .stake-arya-btn {
+          display: block;
+          width: 100%;
+          margin-top: 20px;
+          padding: 14px;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          color: #fff;
+          border: none;
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 1em;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-align: center;
+          text-decoration: none;
+        }
+        
+        .stake-arya-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
         }
       `}</style>
     </>
