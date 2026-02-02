@@ -14,6 +14,20 @@ export default function BondingCurves() {
   const [alerts, setAlerts] = useState([]);
   const [alertPrice, setAlertPrice] = useState('');
   const [alertCondition, setAlertCondition] = useState('above');
+  
+  // Chart data (simulated bonding curve)
+  const [chartData, setChartData] = useState([
+    { label: '1H', height: 30, color: '#6366f1' },
+    { label: '2H', height: 45, color: '#6366f1' },
+    { label: '3H', height: 55, color: '#6366f1' },
+    { label: '4H', height: 70, color: '#6366f1' },
+    { label: '5H', height: 65, color: '#6366f1' },
+    { label: '6H', height: 80, color: '#6366f1' },
+    { label: '7H', height: 90, color: '#6366f1' },
+    { label: '8H', height: 85, color: '#6366f1' },
+    { label: '9H', height: 95, color: '#10b981' },
+    { label: '10H', height: 100, color: '#10b981' },
+  ]);
 
   useEffect(() => {
     fetchCurves();
@@ -26,6 +40,15 @@ export default function BondingCurves() {
       const r = await fetch('/api/bonding-curve');
       const data = await r.json();
       setCurves(data);
+      
+      // Update chart data based on current price
+      const aryaPrice = data?.ARYA?.currentPrice || 0.00002;
+      const baseHeight = Math.min(aryaPrice * 5000, 100); // Scale price to height
+      setChartData(prev => prev.map((point, i) => ({
+        ...point,
+        height: Math.max(20, baseHeight + (Math.random() * 20 - 10) + (i * 3)),
+        color: baseHeight >= 80 ? '#10b981' : baseHeight >= 50 ? '#f6851b' : '#6366f1'
+      })));
     } catch (e) {
       console.error('Error fetching curves:', e);
     }
@@ -156,6 +179,34 @@ export default function BondingCurves() {
         <div className="curves-header">
           <h1>Bonding Curves</h1>
           <p>Dynamic pricing for AI Agent tokens</p>
+        </div>
+
+        {/* Chart Section */}
+        <div className="chart-section" style={{ background: '#1e1e1e', borderRadius: '16px', padding: '20px', marginBottom: '30px' }}>
+          <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h2 style={{ margin: 0 }}>📈 Price Chart</h2>
+            <div className="timeframe-selector" style={{ display: 'flex', gap: '5px' }}>
+              <button className="tf active" style={{ padding: '6px 12px', border: '1px solid #333', borderRadius: '6px', background: 'transparent', color: '#fff', cursor: 'pointer' }}>1H</button>
+              <button className="tf" style={{ padding: '6px 12px', border: '1px solid #333', borderRadius: '6px', background: 'transparent', color: '#888', cursor: 'pointer' }}>4H</button>
+              <button className="tf" style={{ padding: '6px 12px', border: '1px solid #333', borderRadius: '6px', background: 'transparent', color: '#888', cursor: 'pointer' }}>1D</button>
+              <button className="tf" style={{ padding: '6px 12px', border: '1px solid #333', borderRadius: '6px', background: 'transparent', color: '#888', cursor: 'pointer' }}>1W</button>
+            </div>
+          </div>
+          <div className="chart-container" style={{ height: '200px', background: '#2a2a2a', borderRadius: '12px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', padding: '15px', position: 'relative' }}>
+            {chartData.map((point, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '8%' }}>
+                <div style={{ 
+                  width: '100%', 
+                  height: `${point.height}%`, 
+                  background: point.color, 
+                  borderRadius: '4px 4px 0 0',
+                  transition: 'height 0.3s ease',
+                  minHeight: '4px'
+                }}></div>
+                <span style={{ fontSize: '0.7em', color: '#888', marginTop: '5px' }}>{point.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Wallet Connection */}
