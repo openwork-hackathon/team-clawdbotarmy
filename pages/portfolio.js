@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
+// ERC20 ABI for balanceOf
+const ERC20_ABI = [
+  {
+    "constant": true,
+    "inputs": [{ "name": "_owner", "type": "address" }],
+    "name": "balanceOf",
+    "outputs": [{ "name": "balance", "type": "uint256" }],
+    "type": "function"
+  }
+];
+
 export default function Portfolio() {
   const [holdings, setHoldings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,29 +20,28 @@ export default function Portfolio() {
   const [error, setError] = useState(null);
 
   // Token addresses on Base
-  const TOKEN_ADDRESSES = {
-    ARYA: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
-    OPENWORK: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
-    KROWNEPO: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07',
-    ETH: '0x4200000000000000000000000000000000000006',
-    USDC: '0x833589fCD6eDb6E08f4c7C32Da4cEa5B8dE864e3'
-  };
-
-  const TOKEN_CONFIG = {
-    ARYA: { emoji: '🦞', color: '#ff6b35' },
-    OPENWORK: { emoji: '⚡', color: '#00d4ff' },
-    KROWNEPO: { emoji: '👑', color: '#9333ea' },
-    ETH: { emoji: 'Ξ', color: '#627eea' },
-    USDC: { emoji: '$', color: '#2775ca' }
-  };
-
-  // Default portfolio for display when not connected
-  const defaultHoldings = [
-    { token: 'ARYA', amount: 15000, price: 0.00001, ...TOKEN_CONFIG.ARYA },
-    { token: 'ETH', amount: 2.5, price: 2297.35, ...TOKEN_CONFIG.ETH },
-    { token: 'OPENWORK', amount: 50000, price: 0.00001, ...TOKEN_CONFIG.OPENWORK },
-    { token: 'USDC', amount: 2240.77, price: 1.00, ...TOKEN_CONFIG.USDC }
+  const TOKENS = [
+    { 
+      id: 'ARYA', 
+      address: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
+      decimals: 18,
+      ...{ emoji: '🦞', color: '#ff6b35' }
+    },
+    { 
+      id: 'OPENWORK', 
+      address: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
+      decimals: 18,
+      ...{ emoji: '⚡', color: '#00d4ff' }
+    },
+    { 
+      id: 'KROWNEPO', 
+      address: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07',
+      decimals: 18,
+      ...{ emoji: '👑', color: '#9333ea' }
+    }
   ];
+
+  const ETH_CONFIG = { id: 'ETH', emoji: 'Ξ', color: '#627eea' };
 
   useEffect(() => {
     checkWalletConnection();
@@ -44,18 +54,16 @@ export default function Portfolio() {
         if (accounts.length > 0) {
           setWalletConnected(true);
           setWalletAddress(accounts[0]);
-          fetchWalletBalances(accounts[0]);
+          fetchAllBalances(accounts[0]);
         } else {
-          setHoldings(defaultHoldings);
+          setHoldings([]);
           setLoading(false);
         }
       } catch (e) {
         console.error('Error checking wallet:', e);
-        setHoldings(defaultHoldings);
         setLoading(false);
       }
     } else {
-      setHoldings(defaultHoldings);
       setLoading(false);
     }
   };
@@ -69,47 +77,76 @@ export default function Portfolio() {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       setWalletConnected(true);
       setWalletAddress(accounts[0]);
-      fetchWalletBalances(accounts[0]);
+      fetchAllBalances(accounts[0]);
     } catch (e) {
       console.error('Wallet connection failed:', e);
       setError('Failed to connect wallet');
     }
   };
 
-  const fetchWalletBalances = async (address) => {
+  const fetchAllBalances = async (address) => {
     setLoading(true);
     setError(null);
     
     try {
-      // Get ETH balance
+      // Fetch ETH balance
       const ethBalance = await window.ethereum.request({
         method: 'eth_getBalance',
         params: [address, 'latest']
       });
       const ethAmount = parseInt(ethBalance) / 1e18;
-      const ethPrice = 3000; // Approximate
       
-      // Fetch token balances via multicall would be better, but simplified here
-      const holdings = [
-        { token: 'ETH', amount: ethAmount, price: ethPrice, ...TOKEN_CONFIG.ETH },
-        // Note: For token balances, you'd need to call balanceOf for each token
-        // This is simplified - in production use multicall or indexer
-      ];
+      // Fetch prices from our API
+      const pricesRes = await fetch('/api/price/all');
+      const pricesData = await pricesRes.json();
       
-      // For now, show ETH balance and fallback to defaults for tokens
-      // Real token balances require contract calls
-      setHoldings(holdings);
+      // Build holdings with ETH
+      const holdingsList = [{
+        ...ETH_CONFIG,
+        amount: ethAmount,
+        price: pricesData.prices?.ETH?.priceUSD || 3000,
+        value: ethAmount * (pricesData.prices?.ETH?.priceUSD || 3000)
+      }];
+
+      // Fetch token balances
+      for (const token of TOKENS) {
+        try {
+          const balance = await window.ethereum.request({
+            method: 'eth_call',
+            params: [{
+              to: token.address,
+              data: '0x70a08231000000000000000000000000' + address.slice(2)
+            }, 'latest']
+          });
+          
+          const amount = parseInt(balance || '0') / Math.pow(10, token.decimals);
+          const priceData = pricesData.prices?.[token.id];
+          const price = priceData?.priceUSD || 0;
+          
+          if (amount > 0) {
+            holdingsList.push({
+              ...token,
+              amount,
+              price,
+              value: amount * price
+            });
+          }
+        } catch (e) {
+          console.error(`Error fetching ${token.id} balance:`, e);
+        }
+      }
+
+      setHoldings(holdingsList);
     } catch (e) {
       console.error('Error fetching balances:', e);
       setError('Could not fetch wallet balances');
-      setHoldings(defaultHoldings);
     }
     
     setLoading(false);
   };
 
-  const displayHoldings = holdings.length > 0 ? holdings : defaultHoldings;
-  const totalValue = displayHoldings.reduce((sum, h) => sum + (h.amount * (h.price || 0)), 0);
+  const displayHoldings = holdings;
+  const totalValue = displayHoldings.reduce((sum, h) => sum + (h.value || 0), 0);
 
   const formatCurrency = (value) => {
     if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
@@ -118,10 +155,17 @@ export default function Portfolio() {
   };
 
   const formatAmount = (amount, token) => {
-    if (token === 'ETH') return amount.toFixed(4);
     if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`;
     if (amount >= 1000) return `${(amount / 1000).toFixed(2)}K`;
-    return amount.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    return amount.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  };
+
+  const formatPrice = (price) => {
+    if (!price) return '$0.00';
+    if (price < 0.01) return `< $0.01`;
+    if (price < 1) return `$${price.toFixed(4)}`;
+    if (price < 1000) return `$${price.toFixed(2)}`;
+    return `$${price.toLocaleString()}`;
   };
 
   return (
@@ -158,44 +202,55 @@ export default function Portfolio() {
           <div className="error-message">{error}</div>
         )}
 
+        {!walletConnected && (
+          <div className="connect-prompt">
+            Connect your wallet to see your real holdings
+          </div>
+        )}
+
         <div className="holdings-section">
-          <h2>Holdings</h2>
+          <h2>Holdings {walletConnected ? '' : '(Demo)'}</h2>
+          
           {loading ? (
             <div className="loading">Loading portfolio...</div>
-          ) : (
-            <div className="holdings-table">
-              {displayHoldings.map(holding => (
-                <div key={holding.token} className="holding-row">
-                  <div className="holding-token">
-                    <span className="token-emoji" style={{ color: holding.color }}>{holding.emoji}</span>
-                    <span className="token-name">{holding.token}</span>
+          ) : displayHoldings.length > 0 ? (
+            <>
+              <div className="holdings-table">
+                {displayHoldings.map(holding => (
+                  <div key={holding.id} className="holding-row">
+                    <div className="holding-token">
+                      <span className="token-emoji" style={{ color: holding.color }}>{holding.emoji}</span>
+                      <span className="token-name">{holding.id}</span>
+                    </div>
+                    <div className="holding-price">{formatPrice(holding.price)}</div>
+                    <div className="holding-amount">{formatAmount(holding.amount, holding.id)}</div>
+                    <div className="holding-value">{formatCurrency(holding.value || 0)}</div>
                   </div>
-                  <div className="holding-price">{formatCurrency(holding.price || 0)}</div>
-                  <div className="holding-amount">{formatAmount(holding.amount, holding.token)}</div>
-                  <div className="holding-value">{formatCurrency(holding.amount * (holding.price || 0))}</div>
+                ))}
+              </div>
+              
+              {totalValue > 0 && (
+                <div className="allocation-bar">
+                  {displayHoldings.map(h => {
+                    const percentage = ((h.value || 0) / totalValue * 100).toFixed(1);
+                    return parseFloat(percentage) > 0 ? (
+                      <div 
+                        key={h.id}
+                        className="allocation-segment"
+                        style={{ 
+                          width: `${percentage}%`,
+                          background: h.color,
+                          minWidth: parseFloat(percentage) > 1 ? '4px' : '0px'
+                        }}
+                        title={`${h.id}: ${percentage}%`}
+                      />
+                    ) : null;
+                  })}
                 </div>
-              ))}
-            </div>
-          )}
-          
-          {totalValue > 0 && (
-            <div className="allocation-bar">
-              {displayHoldings.map(h => {
-                const percentage = ((h.amount * (h.price || 0)) / totalValue * 100).toFixed(1);
-                return parseFloat(percentage) > 0 ? (
-                  <div 
-                    key={h.token}
-                    className="allocation-segment"
-                    style={{ 
-                      width: `${percentage}%`,
-                      background: h.color,
-                      minWidth: percentage > 1 ? '4px' : '0px'
-                    }}
-                    title={`${h.token}: ${percentage}%`}
-                  />
-                ) : null;
-              })}
-            </div>
+              )}
+            </>
+          ) : (
+            <div className="empty-state">No holdings found</div>
           )}
         </div>
       </div>
@@ -275,10 +330,22 @@ export default function Portfolio() {
           color: #fff;
         }
         
+        .connect-prompt {
+          text-align: center;
+          color: #888;
+          margin-bottom: 20px;
+        }
+        
         .loading {
           text-align: center;
           padding: 40px;
           color: #888;
+        }
+        
+        .empty-state {
+          text-align: center;
+          padding: 40px;
+          color: #666;
         }
         
         .error-message {
@@ -313,11 +380,10 @@ export default function Portfolio() {
         
         .holding-row {
           display: grid;
-          grid-template-columns: 1fr auto auto auto;
-          gap: 15px;
+          grid-template-columns: 1fr 1fr 1fr 1fr;
+          align-items: center;
           padding: 15px 0;
           border-bottom: 1px solid #2a2a3a;
-          align-items: center;
         }
         
         .holding-row:last-child {
@@ -331,7 +397,7 @@ export default function Portfolio() {
         }
         
         .token-emoji {
-          font-size: 1.3em;
+          font-size: 1.5em;
         }
         
         .token-name {
@@ -342,28 +408,23 @@ export default function Portfolio() {
         .holding-price {
           color: #888;
           font-size: 0.9em;
-          min-width: 80px;
-          text-align: right;
         }
         
         .holding-amount {
-          color: #888;
+          color: #fff;
           text-align: right;
-          font-size: 0.9em;
-          min-width: 70px;
         }
         
         .holding-value {
-          font-weight: bold;
           color: #10b981;
+          font-weight: 600;
           text-align: right;
-          min-width: 90px;
         }
         
         .allocation-bar {
           display: flex;
           height: 8px;
-          background: rgba(0,0,0,0.3);
+          background: #252530;
           border-radius: 4px;
           overflow: hidden;
           margin-top: 20px;
@@ -371,7 +432,6 @@ export default function Portfolio() {
         
         .allocation-segment {
           height: 100%;
-          transition: width 0.3s;
         }
       `}</style>
     </>
