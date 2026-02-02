@@ -3,7 +3,6 @@ import Dashboard from '../src/components/Dashboard';
 import Portfolio from '../src/components/Portfolio';
 import PriceChart from '../src/components/PriceChart';
 import TradingPanel from '../src/components/TradingPanel';
-<!-- DEPLOY_TRIGGER -->
 import MarketOverview from '../src/components/MarketOverview';
 import Positions from '../src/components/Positions';
 import OrderBook from '../src/components/OrderBook';
