@@ -2,75 +2,17 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function Staking() {
-  const [pools, setPools] = useState(null);
-  const [userStakes, setUserStakes] = useState({ ARYA: null, OPENWORK: null });
+  const [pools] = useState({
+    ARYA: { color: '#ff6b35', emoji: '🦞', apy: '25-45%', totalStaked: '1.25M' },
+    OPENWORK: { color: '#00d4ff', emoji: '⚡', apy: '20-32%', totalStaked: '3.5M' }
+  });
+  const [selectedPool, setSelectedPool] = useState('ARYA');
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
-  const [stakeAmount, setStakeAmount] = useState('');
-  const [selectedPool, setSelectedPool] = useState('ARYA');
-  const [selectedLockPeriod, setSelectedLockPeriod] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [txHash, setTxHash] = useState(null);
-
-  useEffect(() => {
-    fetchPools();
-    const interval = setInterval(fetchPools, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (walletConnected) {
-      fetchUserStakes();
-    }
-  }, [walletConnected]);
-
-  const fetchPools = async () => {
-    try {
-      setPools({
-        ARYA: {
-          totalStaked: 1250000,
-          apy: { 30: 25, 60: 30, 90: 45 },
-          lockPeriods: [
-            { duration: 30, label: '30 Days', multiplier: 1.0 },
-            { duration: 60, label: '60 Days', multiplier: 1.2 },
-            { duration: 90, label: '90 Days', multiplier: 1.5 }
-          ]
-        },
-        OPENWORK: {
-          totalStaked: 3500000,
-          apy: { 30: 20, 60: 24, 90: 32 },
-          lockPeriods: [
-            { duration: 30, label: '30 Days', multiplier: 1.0 },
-            { duration: 60, label: '60 Days', multiplier: 1.1 },
-            { duration: 90, label: '90 Days', multiplier: 1.3 }
-          ]
-        }
-      });
-    } catch (e) {
-      console.error('Error fetching pools:', e);
-    }
-  };
-
-  const fetchUserStakes = async () => {
-    setUserStakes({
-      ARYA: {
-        stakedAmount: 5000,
-        rewardEarned: 125.5,
-        lockTimeRemaining: 86400 * 15,
-        lockPeriodIndex: 0
-      },
-      OPENWORK: {
-        stakedAmount: 15000,
-        rewardEarned: 320.75,
-        lockTimeRemaining: 0,
-        lockPeriodIndex: 1
-      }
-    });
-  };
 
   const connectWallet = async () => {
     if (typeof window === 'undefined' || !window.ethereum) {
-      alert('MetaMask not installed');
+      alert('MetaMask not installed!');
       return;
     }
     try {
@@ -82,215 +24,234 @@ export default function Staking() {
     }
   };
 
-  const disconnectWallet = () => {
-    setWalletConnected(false);
-    setWalletAddress('');
-  };
-
-  const handleStake = async () => {
-    if (!stakeAmount || parseFloat(stakeAmount) <= 0) return;
-    setLoading(true);
-    setTimeout(() => {
-      const hash = '0x' + Math.random().toString(16).slice(2, 66);
-      setTxHash(hash);
-      setStakeAmount('');
-      fetchUserStakes();
-      setLoading(false);
-    }, 2000);
-  };
-
-  const poolConfig = {
-    ARYA: { color: '#ff6b35', emoji: '🦞' },
-    OPENWORK: { color: '#00d4ff', emoji: '⚡' }
-  };
-
   return (
-    <div>
+    <>
       <Head>
-        <title>🦞 Staking | ClawdbotArmy</title>
-        <meta name="description" content="Stake ARYA and OPENWORK tokens to earn rewards" />
+        <title>🔒 Staking | ClawdbotArmy</title>
+        <meta name="description" content="Stake ARYA and OPENWORK tokens" />
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       
       <div className="staking-page">
-        <div className="staking-header">
+        <header className="staking-header">
           <h1>🔒 Staking</h1>
-          <p>Stake ARYA and OPENWORK tokens to earn rewards</p>
-        </div>
+          <p>Stake tokens to earn rewards</p>
+        </header>
 
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          {walletConnected ? (
-            <div style={{ 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '15px',
-              padding: '15px 25px',
-              background: 'rgba(16, 185, 129, 0.15)',
-              border: '1px solid #10b981',
-              borderRadius: '12px'
-            }}>
-              <span style={{ color: '#10b981', fontSize: '1.2em' }}>●</span>
-              <span style={{ color: '#10b981', fontWeight: 'bold' }}>Connected</span>
-              <code style={{ background: '#252530', padding: '5px 10px', borderRadius: '6px', color: '#fff' }}>
-                {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}
-              </code>
-              <button 
-                onClick={disconnectWallet}
-                style={{ 
-                  padding: '8px 16px', 
-                  background: 'transparent', 
-                  border: '1px solid #444', 
-                  borderRadius: '8px', 
-                  color: '#888', 
-                  cursor: 'pointer'
-                }}
-              >
-                Disconnect
-              </button>
-            </div>
-          ) : (
-            <button 
-              onClick={connectWallet}
-              style={{ 
-                padding: '15px 40px', 
-                background: 'linear-gradient(135deg, #f6851b, #e2761b)', 
-                border: 'none', 
-                borderRadius: '12px', 
-                color: '#fff', 
-                fontSize: '1.1em', 
-                fontWeight: 'bold', 
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}
-            >
-              <span>🦊</span>
-              <span>Connect Wallet</span>
-            </button>
-          )}
-        </div>
-
+        {/* Pool Tabs */}
         <div className="staking-tabs">
-          {Object.entries(pools || {}).map(([token, pool]) => (
+          {Object.entries(pools).map(([token, pool]) => (
             <button
               key={token}
               className={`staking-tab ${selectedPool === token ? 'active' : ''}`}
               onClick={() => setSelectedPool(token)}
-              style={{ borderColor: selectedPool === token ? poolConfig[token].color : 'transparent' }}
+              style={{ '--pool-color': pool.color }}
             >
-              <span style={{ marginRight: '8px' }}>{poolConfig[token].emoji}</span>
+              <span>{pool.emoji}</span>
               <span>{token}</span>
             </button>
           ))}
         </div>
 
-        {pools && pools[selectedPool] && (
-          <div className="staking-grid">
-            <div className="staking-card pool-stats">
-              <h3>📊 Pool Stats</h3>
-              <div className="stat-grid">
-                <div className="stat-item">
-                  <span className="stat-label">Total Staked</span>
-                  <span className="stat-value" style={{ color: poolConfig[selectedPool].color }}>
-                    {pools[selectedPool].totalStaked.toLocaleString()} {selectedPool}
-                  </span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">Your Stake</span>
-                  <span className="stat-value">
-                    {userStakes[selectedPool]?.stakedAmount?.toLocaleString() || '0'} {selectedPool}
-                  </span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">APY (30d)</span>
-                  <span className="stat-value" style={{ color: '#10b981' }}>
-                    {pools[selectedPool].apy[30]}%
-                  </span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">Rewards</span>
-                  <span className="stat-value" style={{ color: '#f6851b' }}>
-                    {userStakes[selectedPool]?.rewardEarned?.toFixed(2) || '0'} {selectedPool}
-                  </span>
-                </div>
-              </div>
+        {/* Pool Card */}
+        <div className="staking-card">
+          <div className="staking-card-header">
+            <h3>
+              <span style={{ marginRight: '10px' }}>{pools[selectedPool].emoji}</span>
+              {selectedPool} Staking
+            </h3>
+            <span className="apy-badge">{pools[selectedPool].apy} APY</span>
+          </div>
+
+          <div className="pool-stats">
+            <div className="pool-stat">
+              <div className="pool-stat-value">{pools[selectedPool].totalStaked}</div>
+              <div className="pool-stat-label">Total Staked</div>
             </div>
-
-            <div className="staking-card lock-periods">
-              <h3>⏱️ Lock Periods</h3>
-              <div className="lock-options">
-                {pools[selectedPool].lockPeriods.map((period, index) => (
-                  <button
-                    key={period.duration}
-                    className={`lock-option ${selectedLockPeriod === index ? 'active' : ''}`}
-                    onClick={() => setSelectedLockPeriod(index)}
-                    style={{ 
-                      borderColor: selectedLockPeriod === index ? poolConfig[selectedPool].color : '#333'
-                    }}
-                  >
-                    <div className="lock-duration">{period.label}</div>
-                    <div className="lock-multiplier">{period.multiplier}x APY</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="staking-card stake-form">
-              <h3>🎯 Stake {selectedPool}</h3>
-              
-              <div className="form-group">
-                <label>Amount to Stake</label>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  value={stakeAmount}
-                  onChange={(e) => setStakeAmount(e.target.value)}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
-                <button 
-                  onClick={() => setStakeAmount((userStakes[selectedPool]?.stakedAmount || 0).toString())}
-                  style={{ 
-                    padding: '10px', 
-                    background: 'rgba(255,255,255,0.05)', 
-                    border: '1px solid rgba(255,255,255,0.1)', 
-                    borderRadius: '8px',
-                    color: '#888',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Max
-                </button>
-                <button 
-                  onClick={() => setStakeAmount('1000')}
-                  style={{ 
-                    padding: '10px', 
-                    background: 'rgba(255,255,255,0.05)', 
-                    border: '1px solid rgba(255,255,255,0.1)', 
-                    borderRadius: '8px',
-                    color: '#888',
-                    cursor: 'pointer'
-                  }}
-                >
-                  1000
-                </button>
-              </div>
-
-              <button 
-                className="stake-btn"
-                onClick={handleStake}
-                disabled={loading || !stakeAmount}
-              >
-                {loading ? '⏳ Processing...' : `Stake ${stakeAmount || 0} ${selectedPool}`}
-              </button>
+            <div className="pool-stat">
+              <div className="pool-stat-value">30 Days</div>
+              <div className="pool-stat-label">Min Lock</div>
             </div>
           </div>
-        )}
+
+          {/* Connect Wallet CTA */}
+          <div className="staking-cta">
+            {walletConnected ? (
+              <div className="wallet-connected">
+                <span className="wallet-dot">●</span>
+                <span>Connected</span>
+                <code>{walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</code>
+              </div>
+            ) : (
+              <button className="connect-btn" onClick={connectWallet}>
+                <span>🦊</span>
+                <span>Connect Wallet to Stake</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+
+      <style jsx>{`
+        .staking-page {
+          min-height: 100vh;
+          background: linear-gradient(180deg, #0a0a0f 0%, #151520 100%);
+          padding: 40px 20px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .staking-header {
+          text-align: center;
+          margin-bottom: 40px;
+        }
+        
+        .staking-header h1 {
+          font-size: 2.5em;
+          margin: 0 0 10px 0;
+          background: linear-gradient(135deg, #10b981, #00ff88);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        
+        .staking-header p {
+          color: #888;
+          margin: 0;
+        }
+        
+        .staking-tabs {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          margin-bottom: 30px;
+        }
+        
+        .staking-tab {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 15px 30px;
+          background: #1a1a24;
+          border: 2px solid #2a2a3a;
+          border-radius: 12px;
+          color: #888;
+          cursor: pointer;
+          transition: all 0.3s;
+          font-weight: 600;
+        }
+        
+        .staking-tab:hover {
+          background: #252530;
+        }
+        
+        .staking-tab.active {
+          border-color: var(--pool-color);
+          color: var(--pool-color);
+        }
+        
+        .staking-card {
+          background: linear-gradient(135deg, #1a1a24 0%, #151520 100%);
+          border-radius: 20px;
+          padding: 30px;
+          border: 1px solid #2a2a3a;
+          max-width: 450px;
+          margin: 0 auto;
+        }
+        
+        .staking-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 25px;
+        }
+        
+        .staking-card-header h3 {
+          margin: 0;
+          font-size: 1.4em;
+          color: #fff;
+        }
+        
+        .apy-badge {
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: #000;
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-size: 0.9em;
+          font-weight: bold;
+        }
+        
+        .pool-stats {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+          margin-bottom: 25px;
+        }
+        
+        .pool-stat {
+          background: rgba(0,0,0,0.2);
+          padding: 20px;
+          border-radius: 12px;
+          text-align: center;
+        }
+        
+        .pool-stat-value {
+          font-size: 1.5em;
+          font-weight: bold;
+          color: #10b981;
+          margin-bottom: 5px;
+        }
+        
+        .pool-stat-label {
+          font-size: 0.85em;
+          color: #888;
+        }
+        
+        .staking-cta {
+          text-align: center;
+        }
+        
+        .connect-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 16px 30px;
+          background: linear-gradient(135deg, #f6851b, #e2761b);
+          border: none;
+          border-radius: 12px;
+          color: #fff;
+          font-size: 1.1em;
+          font-weight: bold;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+        
+        .connect-btn:hover {
+          transform: translateY(-2px);
+        }
+        
+        .wallet-connected {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 15px 25px;
+          background: rgba(16, 185, 129, 0.15);
+          border: 1px solid #10b981;
+          border-radius: 12px;
+          color: #10b981;
+          font-weight: 600;
+        }
+        
+        .wallet-dot {
+          font-size: 1.2em;
+        }
+        
+        .wallet-connected code {
+          background: #252530;
+          padding: 5px 10px;
+          border-radius: 6px;
+          color: #fff;
+        }
+      `}</style>
+    </>
   );
 }

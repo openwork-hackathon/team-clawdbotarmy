@@ -2,695 +2,325 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function Arya() {
-  const [curve, setCurve] = useState(null);
   const [marketData, setMarketData] = useState(null);
-  const [side, setSide] = useState('BUY');
-  const [amount, setAmount] = useState('');
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
 
   useEffect(() => {
-    fetchCurve();
     fetchMarketData();
-    const interval = setInterval(fetchCurve, 5000);
+    const interval = setInterval(fetchMarketData, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  const fetchCurve = async () => {
-    try {
-      const r = await fetch('/api/bonding-curve');
-      const data = await r.json();
-      setCurve(data?.ARYA || {
-        supply: 1000000,
-        maxSupply: 10000000,
-        totalTrades: 42,
-        totalVolume: 12.5
-      });
-    } catch (e) {
-      console.error('Error fetching curve:', e);
-    }
-  };
 
   const fetchMarketData = async () => {
     try {
       const r = await fetch('/api/price/arya');
       const data = await r.json();
-      if (data.price) {
-        setMarketData(data);
-      }
+      setMarketData(data);
     } catch (e) {
       console.error('Error fetching market data:', e);
     }
+    setLoading(false);
   };
 
   const connectWallet = async () => {
     if (typeof window === 'undefined' || !window.ethereum) {
-      alert('MetaMask not installed! Please install MetaMask to connect.');
+      alert('MetaMask not installed!');
       return;
     }
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       setWalletConnected(true);
       setWalletAddress(accounts[0]);
-      
-      window.ethereum.on('accountsChanged', (newAccounts) => {
-        if (newAccounts.length === 0) {
-          setWalletConnected(false);
-          setWalletAddress('');
-        } else {
-          setWalletAddress(newAccounts[0]);
-        }
-      });
     } catch (e) {
       console.error('Wallet connection failed:', e);
-      alert('Failed to connect wallet. Please try again.');
     }
   };
 
   const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07`;
+  const clankerUrl = 'https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
 
-  const isMetaMaskInstalled = typeof window !== 'undefined' && window.ethereum;
-
-  const executeTrade = async () => {
-    if (!amount || parseFloat(amount) <= 0) return;
-    
-    setLoading(true);
-    setResult(null);
-    
-    try {
-      const currentPrice = curve?.currentPrice || 0.00002;
-      const hash = '0x' + Math.random().toString(16).slice(2, 66);
-      setResult({
-        type: side,
-        outputAmount: side === 'BUY' 
-          ? (parseFloat(amount) / currentPrice).toFixed(0)
-          : (parseFloat(amount) * currentPrice).toFixed(6),
-        price: currentPrice,
-        isOnChain: true,
-        txHash: hash,
-      });
-      
-      fetchCurve();
-    } catch (e) {
-      setResult({ error: e.message });
+  const formatPrice = (price, isUSD = false) => {
+    if (!price) return '--';
+    if (isUSD) {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
     }
-    
-    setLoading(false);
+    return price.toFixed(10);
   };
 
-  const currentPrice = marketData?.priceETH || curve?.currentPrice || 0.00002;
-  const currentPriceUSD = marketData?.priceUSD || (currentPrice * 3000);
-  const supply = curve?.supply || 1000000;
-  const maxSupply = curve?.maxSupply || 10000000;
-  const progress = (supply / maxSupply) * 100;
-  const estimatedOutput = amount 
-    ? (side === 'BUY' ? (parseFloat(amount) / currentPrice).toFixed(0) : (parseFloat(amount) * currentPrice).toFixed(6))
-    : '0';
+  const formatSupply = (supply) => {
+    if (!supply) return '--';
+    return parseInt(supply).toLocaleString();
+  };
 
   return (
-    <div>
+    <>
       <Head>
         <title>🦞 ARYA Token | ClawdbotArmy</title>
-        <meta name="description" content="ARYA AI Agent Token - Trade on bonding curve" />
+        <meta name="description" content="ARYA AI Agent Token on Base" />
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       
-      <div style={{ 
-        minHeight: '100vh',
-        background: 'linear-gradient(180deg, #0a0a0f 0%, #151520 100%)',
-        padding: '20px'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <header style={{ 
-            textAlign: 'center', 
-            marginBottom: '30px',
-            padding: '30px',
-            background: 'linear-gradient(135deg, rgba(255,107,53,0.1) 0%, rgba(255,107,53,0.05) 100%)',
-            borderRadius: '20px',
-            border: '1px solid rgba(255,107,53,0.2)'
-          }}>
-            <div style={{ fontSize: '4em', marginBottom: '10px' }}>🦞</div>
-            <h1 style={{ 
-              fontSize: '2.5em', 
-              marginBottom: '10px',
-              background: 'linear-gradient(135deg, #ff6b35, #ff8c5a)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>ARYA</h1>
-            <p style={{ color: '#888', fontSize: '1.1em' }}>
-              AI Agent Token powered by ClawdbotArmy
-            </p>
-          </header>
+      <div className="arya-page">
+        {/* Header */}
+        <header className="arya-header">
+          <div className="arya-logo">🦞</div>
+          <h1>ARYA</h1>
+          <p className="arya-subtitle">AI Agent Token</p>
+        </header>
 
-          <div style={{ 
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '40px',
-            marginBottom: '30px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ 
-              textAlign: 'center',
-              padding: '20px 30px',
-              background: 'rgba(16,185,129,0.1)',
-              borderRadius: '16px',
-              border: '1px solid rgba(16,185,129,0.3)',
-              minWidth: '180px'
-            }}>
-              <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '5px' }}>
-                {marketData?.priceUSD ? 'LIVE PRICE' : 'PRICE'}
-                {marketData?.priceUSD && <span style={{ marginLeft: '8px' }}>🔴</span>}
-              </div>
-              {marketData?.priceUSD ? (
-                <div>
-                  <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#10b981' }}>
-                    ${marketData.priceUSD.toFixed(6)}
-                  </div>
-                  <div style={{ fontSize: '0.8em', color: '#10b981' }}>
-                    {marketData.priceETH.toFixed(10)} ETH
-                  </div>
-                  <div style={{ fontSize: '0.7em', color: '#666', marginTop: '5px' }}>
-                    via Uniswap V3
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#888' }}>
-                    --
-                  </div>
-                  <div style={{ fontSize: '0.8em', color: '#6366f1', marginTop: '8px' }}>
-                    <a href={uniswapUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
-                      <span>🦄</span>
-                      <span>Trade on Uniswap</span>
-                    </a>
-                  </div>
-                  <div style={{ fontSize: '0.7em', color: '#555', marginTop: '8px' }}>
-                    Pool en création...
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div style={{ 
-              textAlign: 'center',
-              padding: '20px 30px',
-              background: 'rgba(99,102,241,0.1)',
-              borderRadius: '16px',
-              border: '1px solid rgba(99,102,241,0.3)',
-              minWidth: '150px'
-            }}>
-              <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '5px' }}>MARKET CAP</div>
-              {currentPriceUSD > 0 ? (
-                <div>
-                  <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#6366f1' }}>
-                    ${((currentPriceUSD * supply) / 1000000).toFixed(2)}M
-                  </div>
-                  <div style={{ fontSize: '0.8em', color: '#888' }}>
-                    {supply.toLocaleString()} supply
-                  </div>
-                </div>
-              ) : (
-                <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#888' }}>
-                  --
-                </div>
-              )}
-            </div>
-            
-            <div style={{ 
-              textAlign: 'center',
-              padding: '20px 30px',
-              background: 'rgba(255,107,53,0.1)',
-              borderRadius: '16px',
-              border: '1px solid rgba(255,107,53,0.3)',
-              minWidth: '150px'
-            }}>
-              <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '5px' }}>VOLUME (24H)</div>
-              <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#ff6b35' }}>
-                {curve?.totalVolume?.toFixed(1) || '0'} ETH
-              </div>
-              <div style={{ fontSize: '0.8em', color: '#888' }}>
-                {curve?.totalTrades || 0} trades
-              </div>
-            </div>
-          </div>
-
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-            gap: '20px',
-            marginBottom: '30px'
-          }}>
-            <div style={{ 
-              background: '#1a1a24',
-              borderRadius: '16px',
-              padding: '25px',
-              border: '1px solid #2a2a3a'
-            }}>
-              <h3 style={{ margin: '0 0 20px 0', color: '#fff' }}>📊 Supply Progress</h3>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ color: '#888' }}>Minted</span>
-                  <span style={{ color: '#ff6b35', fontWeight: 'bold' }}>
-                    {supply.toLocaleString()} / {maxSupply.toLocaleString()}
-                  </span>
-                </div>
-                <div style={{ 
-                  height: '12px', 
-                  background: '#2a2a3a', 
-                  borderRadius: '6px', 
-                  overflow: 'hidden',
-                  position: 'relative'
-                }}>
-                  <div style={{ 
-                    height: '100%', 
-                    width: `${progress}%`, 
-                    background: 'linear-gradient(90deg, #ff6b35, #ff8c5a)',
-                    borderRadius: '6px',
-                    transition: 'width 0.5s ease'
-                  }}></div>
-                </div>
-                <div style={{ 
-                  textAlign: 'center', 
-                  marginTop: '10px',
-                  color: '#ff6b35',
-                  fontWeight: 'bold'
-                }}>
-                  {progress.toFixed(1)}% of max supply
-                </div>
-              </div>
-
-              <div style={{ 
-                height: '100px',
-                background: 'linear-gradient(180deg, rgba(255,107,53,0.1) 0%, transparent 100%)',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'space-around',
-                padding: '10px',
-                marginTop: '20px'
-              }}>
-                {[40,55,45,70,65,80,75,90,85,100].map((h, i) => (
-                  <div key={i} style={{ 
-                    width: '8%', 
-                    height: `${h}%`, 
-                    background: h >= 80 ? '#10b981' : h >= 50 ? '#f6851b' : '#6366f1',
-                    borderRadius: '4px 4px 0 0',
-                    transition: 'height 0.3s'
-                  }}></div>
-                ))}
-              </div>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                marginTop: '8px',
-                fontSize: '0.7em',
-                color: '#666'
-              }}>
-                <span>7d</span>
-                <span>Now</span>
-              </div>
-            </div>
-
-            <div style={{ 
-              background: 'linear-gradient(135deg, #1a1a24 0%, #151520 100%)',
-              borderRadius: '20px',
-              padding: '30px',
-              border: '1px solid #2a2a3a',
-              maxWidth: '500px',
-              margin: '0 auto 30px'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
-                {walletConnected ? (
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    gap: '15px',
-                    flexWrap: 'wrap'
-                  }}>
-                    <div style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '10px', 
-                      padding: '12px 20px', 
-                      background: 'rgba(16, 185, 129, 0.15)', 
-                      border: '1px solid #10b981', 
-                      borderRadius: '12px' 
-                    }}>
-                      <span style={{ color: '#10b981', fontSize: '1.2em' }}>●</span>
-                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>Connected</span>
-                      <code style={{ background: '#252530', padding: '5px 10px', borderRadius: '6px', fontSize: '0.9em', color: '#fff' }}>
-                        {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}
-                      </code>
-                    </div>
-                    <button 
-                      onClick={() => setWalletConnected(false)}
-                      style={{ 
-                        padding: '10px 20px', 
-                        background: 'transparent', 
-                        border: '1px solid #444', 
-                        borderRadius: '8px', 
-                        color: '#888', 
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <button 
-                      onClick={connectWallet}
-                      style={{ 
-                        padding: '15px 30px', 
-                        background: 'linear-gradient(135deg, #f6851b, #e2761b)', 
-                        border: 'none', 
-                        borderRadius: '12px', 
-                        color: '#fff', 
-                        fontSize: '1em', 
-                        fontWeight: 'bold', 
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '10px'
-                      }}
-                    >
-                      <span>🦞</span>
-                      <span>Connect Wallet</span>
-                    </button>
-                    
-                    <a 
-                      href={uniswapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ 
-                        padding: '15px 30px', 
-                        background: 'linear-gradient(135deg, #ff0055, #ff00aa)', 
-                        border: 'none', 
-                        borderRadius: '12px', 
-                        color: '#fff', 
-                        fontSize: '1em', 
-                        fontWeight: 'bold', 
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        textDecoration: 'none'
-                      }}
-                    >
-                      <span>🦄</span>
-                      <span>Buy on Uniswap</span>
-                    </a>
-                  </div>
-                )}
-                
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  gap: '15px',
-                  marginTop: '10px',
-                  flexWrap: 'wrap'
-                }}>
-                  <a 
-                    href={uniswapUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ 
-                      padding: '10px 20px', 
-                      background: 'rgba(255,0,85,0.1)', 
-                      border: '1px solid rgba(255,0,85,0.3)', 
-                      borderRadius: '10px', 
-                      color: '#ff0055', 
-                      fontSize: '0.9em',
-                      textDecoration: 'none'
-                    }}
-                  >
-                    🦄 Trade on Uniswap
-                  </a>
-                  <a 
-                    href="https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ 
-                      padding: '10px 20px', 
-                      background: 'rgba(99,102,241,0.1)', 
-                      border: '1px solid rgba(99,102,241,0.3)', 
-                      borderRadius: '10px', 
-                      color: '#6366f1', 
-                      fontSize: '0.9em',
-                      textDecoration: 'none'
-                    }}
-                  >
-                    🦞 View on Clanker
-                  </a>
-                </div>
-              </div>
-
-              <div style={{ 
-                display: 'flex', 
-                gap: '10px', 
-                marginBottom: '25px',
-                background: '#252530',
-                borderRadius: '12px',
-                padding: '5px'
-              }}>
-                <button 
-                  onClick={() => setSide('BUY')}
-                  style={{ 
-                    flex: 1, 
-                    padding: '15px', 
-                    border: 'none', 
-                    borderRadius: '10px', 
-                    background: side === 'BUY' ? 'linear-gradient(135deg, #10b981, #059669)' : 'transparent', 
-                    color: side === 'BUY' ? '#000' : '#888', 
-                    cursor: 'pointer', 
-                    fontWeight: 'bold',
-                    fontSize: '1.1em',
-                    transition: 'all 0.3s'
-                  }}
-                >
-                  BUY 🦞
-                </button>
-                <button 
-                  onClick={() => setSide('SELL')}
-                  style={{ 
-                    flex: 1, 
-                    padding: '15px', 
-                    border: 'none', 
-                    borderRadius: '10px', 
-                    background: side === 'SELL' ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'transparent', 
-                    color: side === 'SELL' ? '#fff' : '#888', 
-                    cursor: 'pointer', 
-                    fontWeight: 'bold',
-                    fontSize: '1.1em',
-                    transition: 'all 0.3s'
-                  }}
-                >
-                  SELL 🦞
-                </button>
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ 
-                  display: 'block', 
-                  fontSize: '0.9em', 
-                  color: '#888', 
-                  marginBottom: '10px' 
-                }}>
-                  {side === 'BUY' ? 'ETH Amount to Spend' : 'ARYA Amount to Sell'}
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                    style={{ 
-                      width: '100%', 
-                      padding: '18px 20px', 
-                      paddingRight: '80px',
-                      background: '#252530', 
-                      border: '2px solid transparent', 
-                      borderRadius: '12px', 
-                      fontSize: '1.3em', 
-                      color: '#fff',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                  <span style={{ 
-                    position: 'absolute',
-                    right: '20px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#666',
-                    fontWeight: 'bold'
-                  }}>
-                    {side === 'BUY' ? 'ETH' : 'ARYA'}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ 
-                padding: '15px 20px', 
-                background: 'rgba(99,102,241,0.1)', 
-                borderRadius: '10px',
-                marginBottom: '20px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span style={{ color: '#888' }}>You {side === 'BUY' ? 'receive' : 'get'}</span>
-                <span style={{ 
-                  fontSize: '1.4em', 
-                  fontWeight: 'bold',
-                  color: side === 'BUY' ? '#10b981' : '#ef4444'
-                }}>
-                  ~{estimatedOutput} {side === 'BUY' ? 'ARYA' : 'ETH'}
-                </span>
-              </div>
-
-              <button 
-                onClick={executeTrade}
-                disabled={loading || !amount}
-                style={{ 
-                  width: '100%', 
-                  padding: '18px', 
-                  border: 'none', 
-                  borderRadius: '12px', 
-                  background: side === 'BUY' 
-                    ? 'linear-gradient(135deg, #10b981, #059669)' 
-                    : 'linear-gradient(135deg, #ef4444, #dc2626)', 
-                  color: '#fff', 
-                  fontSize: '1.2em', 
-                  fontWeight: 'bold', 
-                  cursor: loading || !amount ? 'not-allowed' : 'pointer',
-                  opacity: loading || !amount ? 0.5 : 1,
-                  transition: 'all 0.3s',
-                  marginBottom: '15px'
-                }}
-              >
-                {loading ? '⏳ Processing...' : `${side} ${amount ? parseFloat(amount).toFixed(4) : ''}`}
-              </button>
-            </div>
-          </div>
-
-          {result && (result.outputAmount || result.error) && (
-            <div style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0,0,0,0.8)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000
-            }} onClick={() => setResult(null)}>
-              <div style={{
-                background: '#1a1a24',
-                borderRadius: '20px',
-                padding: '30px',
-                maxWidth: '400px',
-                width: '90%',
-                border: result.error ? '1px solid #ef4444' : '1px solid #10b981'
-              }} onClick={e => e.stopPropagation()}>
-                {result.error ? (
-                  <div>
-                    <h3 style={{ color: '#ef4444', margin: '0 0 15px 0' }}>❌ Error</h3>
-                    <p style={{ color: '#fff' }}>{result.error}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <h3 style={{ color: '#10b981', margin: '0 0 20px 0', textAlign: 'center' }}>✅ Order Submitted!</h3>
-                    <div style={{ display: 'grid', gap: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#252530', borderRadius: '8px' }}>
-                        <span style={{ color: '#888' }}>Type</span>
-                        <strong style={{ color: result.type === 'BUY' ? '#10b981' : '#ef4444' }}>{result.type}</strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#252530', borderRadius: '8px' }}>
-                        <span style={{ color: '#888' }}>You {result.type === 'BUY' ? 'receive' : 'get'}</span>
-                        <strong style={{ color: '#fff' }}>
-                          {parseFloat(result.outputAmount).toFixed(0)} ARYA
-                        </strong>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#252530', borderRadius: '8px' }}>
-                        <span style={{ color: '#888' }}>Price</span>
-                        <strong style={{ color: '#fff' }}>{result.price?.toFixed(8)} ETH</strong>
-                      </div>
-                      {result.txHash && (
-                        <div style={{ padding: '10px', background: '#252530', borderRadius: '8px', textAlign: 'center' }}>
-                          <code style={{ color: '#6366f1', fontSize: '0.85em' }}>
-                            {result.txHash.slice(0,15)}...{result.txHash.slice(-8)}
-                          </code>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-                <button 
-                  onClick={() => setResult(null)}
-                  style={{
-                    width: '100%',
-                    marginTop: '20px',
-                    padding: '12px',
-                    background: 'transparent',
-                    border: '1px solid #444',
-                    borderRadius: '8px',
-                    color: '#888',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
+        {/* Price Card */}
+        <div className="arya-card price-card">
+          <div className="price-label">Live Price</div>
+          {loading ? (
+            <div className="price-loading">Loading...</div>
+          ) : marketData?.priceUSD ? (
+            <>
+              <div className="price-usd">{formatPrice(marketData.priceUSD, true)}</div>
+              <div className="price-eth">{formatPrice(marketData.priceETH)} ETH</div>
+              <div className="price-source">via Uniswap V3</div>
+            </>
+          ) : (
+            <>
+              <div className="price-loading">--</div>
+              <div className="price-note">Price coming soon</div>
+            </>
           )}
+        </div>
 
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            gap: '20px',
-            flexWrap: 'wrap'
-          }}>
-            <a 
-              href="https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{ 
-                padding: '12px 25px', 
-                background: 'linear-gradient(135deg, #ff6b35, #e2761b)', 
-                color: '#fff', 
-                borderRadius: '25px', 
-                textDecoration: 'none',
-                fontWeight: 'bold',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              🦞 View on Clanker
-            </a>
-            <a 
-              href="/bonding-curves"
-              style={{ 
-                padding: '12px 25px', 
-                background: '#252530', 
-                color: '#888', 
-                borderRadius: '25px', 
-                textDecoration: 'none',
-                fontWeight: 'bold'
-              }}
-            >
-              📈 All Curves
-            </a>
+        {/* Actions */}
+        <div className="arya-card actions-card">
+          <button 
+            className="uniswap-btn"
+            onClick={() => window.open(uniswapUrl, '_blank')}
+          >
+            <span>🦄</span>
+            <span>Buy on Uniswap</span>
+          </button>
+          
+          <button 
+            className="wallet-btn"
+            onClick={connectWallet}
+          >
+            <span>🦊</span>
+            <span>{walletConnected ? `${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}` : 'Connect Wallet'}</span>
+          </button>
+        </div>
+
+        {/* Links */}
+        <div className="arya-links">
+          <a href={clankerUrl} target="_blank" rel="noopener noreferrer" className="arya-link">
+            📄 View on Clanker
+          </a>
+          <a href="/bonding-curves" className="arya-link">
+            📈 All Tokens
+          </a>
+        </div>
+
+        {/* Token Info */}
+        <div className="arya-card info-card">
+          <h3>Token Info</h3>
+          <div className="info-row">
+            <span>Contract</span>
+            <code>0xcc78...5B6B07</code>
+          </div>
+          <div className="info-row">
+            <span>Network</span>
+            <span>Base</span>
+          </div>
+          <div className="info-row">
+            <span>Symbol</span>
+            <span>ARYA</span>
           </div>
         </div>
       </div>
-    </div>
+
+      <style jsx>{`
+        .arya-page {
+          min-height: 100vh;
+          background: linear-gradient(180deg, #0a0a0f 0%, #151520 100%);
+          padding: 40px 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .arya-header {
+          text-align: center;
+          margin-bottom: 40px;
+        }
+        
+        .arya-logo {
+          font-size: 5em;
+          margin-bottom: 15px;
+        }
+        
+        .arya-header h1 {
+          font-size: 3em;
+          margin: 0 0 10px 0;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        
+        .arya-subtitle {
+          color: #888;
+          font-size: 1.2em;
+          margin: 0;
+        }
+        
+        .arya-card {
+          background: linear-gradient(135deg, #1a1a24 0%, #151520 100%);
+          border-radius: 20px;
+          padding: 30px;
+          border: 1px solid #2a2a3a;
+          margin-bottom: 20px;
+          text-align: center;
+          width: 100%;
+          max-width: 400px;
+        }
+        
+        .price-card {
+          background: linear-gradient(135deg, rgba(255,107,53,0.1) 0%, rgba(255,107,53,0.05) 100%);
+          border-color: rgba(255,107,53,0.3);
+        }
+        
+        .price-label {
+          color: #888;
+          font-size: 0.9em;
+          margin-bottom: 15px;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+        }
+        
+        .price-usd {
+          font-size: 2.5em;
+          font-weight: bold;
+          color: #10b981;
+          margin-bottom: 5px;
+        }
+        
+        .price-eth {
+          font-size: 1.2em;
+          color: #ff6b35;
+          margin-bottom: 10px;
+        }
+        
+        .price-source {
+          font-size: 0.85em;
+          color: #666;
+        }
+        
+        .price-loading {
+          font-size: 2em;
+          color: #888;
+        }
+        
+        .price-note {
+          color: #666;
+          font-size: 0.9em;
+        }
+        
+        .actions-card {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+        
+        .uniswap-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 18px;
+          background: linear-gradient(135deg, #ff0055, #ff00aa);
+          border: none;
+          border-radius: 12px;
+          color: #fff;
+          font-size: 1.1em;
+          font-weight: bold;
+          cursor: pointer;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .uniswap-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 30px rgba(255, 0, 85, 0.3);
+        }
+        
+        .wallet-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 15px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid #333;
+          border-radius: 12px;
+          color: #fff;
+          font-size: 1em;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        
+        .wallet-btn:hover {
+          background: rgba(255,255,255,0.1);
+        }
+        
+        .arya-links {
+          display: flex;
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+        
+        .arya-link {
+          color: #6366f1;
+          text-decoration: none;
+          font-size: 0.95em;
+          padding: 10px 20px;
+          background: rgba(99,102,241,0.1);
+          border-radius: 10px;
+          border: 1px solid rgba(99,102,241,0.2);
+          transition: all 0.2s;
+        }
+        
+        .arya-link:hover {
+          background: rgba(99,102,241,0.2);
+        }
+        
+        .info-card {
+          text-align: left;
+        }
+        
+        .info-card h3 {
+          margin: 0 0 20px 0;
+          color: #fff;
+          font-size: 1.1em;
+        }
+        
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 12px 0;
+          border-bottom: 1px solid #2a2a3a;
+        }
+        
+        .info-row:last-child {
+          border-bottom: none;
+        }
+        
+        .info-row span:first-child {
+          color: #888;
+        }
+        
+        .info-row code {
+          color: #ff6b35;
+          font-family: monospace;
+        }
+      `}</style>
+    </>
   );
 }
