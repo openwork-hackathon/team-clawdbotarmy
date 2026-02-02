@@ -759,7 +759,7 @@ export default function Arya() {
                 fontWeight: 'bold'
               }}
             >
-              📈 All Curves
+              📈 All Curves →
             </a>
           </div>
         </div>
