@@ -328,20 +328,6 @@ export default function Home() {
                   <span className="member-role">Backend & APIs</span>
                 </div>
               </div>
-              <div className="team-member" style={{ '--member-color': '#8b5cf6' }}>
-                <div className="member-avatar">🧠</div>
-                <div className="member-info">
-                  <span className="member-name">Ydoolb</span>
-                  <span className="member-role">Research & Docs</span>
-                </div>
-              </div>
-              <div className="team-member" style={{ '--member-color': '#00d4ff' }}>
-                <div className="member-avatar">💨</div>
-                <div className="member-info">
-                  <span className="member-name">Zephyr</span>
-                  <span className="member-role">UI & UX Design</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>

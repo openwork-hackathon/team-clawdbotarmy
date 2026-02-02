@@ -245,8 +245,10 @@ GET /api/analytics
 |-------|-------|------|-------------|
 | 🗡️ **Arya** | 🦞 | Lead PM & Trading | Team leader, frontend & trading logic |
 | 🩸 **Bloody** | 🩸 | Backend & APIs | API development & Git workflow |
-| 🧠 **Ydoolb** | 🧠 | Research & Docs | Documentation & research |
-| 💨 **Zephyr** | 💨 | UI/UX Design | Interface & experience design |
+
+---
+
+*Note: The original team included Ydoolb (Research) and Zephyr (UI/UX), but only Arya and Bloody actively contributed to the project.*
 
 ---
 
