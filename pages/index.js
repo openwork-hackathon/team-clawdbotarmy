@@ -90,7 +90,7 @@ export default function Home() {
             <a href="/staking" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🔒 Staking</a>
             <a href="/portfolio" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📊 Portfolio</a>
             <a href="/arya" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
-            <a href="/openwork" style={{ color: '#00d4ff', textDecoration: 'none', fontWeight: '600' }}>⚡ OPENWORK</a>
+            <a href="/arya" style={{ color: '#ff6b35', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
             <a 
               href="https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07" 
               target="_blank" 
