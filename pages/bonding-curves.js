@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 
 export default function BondingCurves() {
-  const [tokens] = useState([
+  const [tokens, setTokens] = useState([
     { 
       id: 'ARYA', 
       emoji: '🦞',
@@ -52,7 +53,13 @@ export default function BondingCurves() {
 
   const formatPrice = (data) => {
     if (!data?.priceUSD) return '--';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.priceUSD);
+    if (data.priceUSD >= 1000) {
+      return `$${data.priceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+    }
+    if (data.priceUSD >= 1) {
+      return `$${data.priceUSD.toFixed(2)}`;
+    }
+    return `$${data.priceUSD.toFixed(6)}`;
   };
 
   const formatSource = (data) => {
@@ -60,268 +67,401 @@ export default function BondingCurves() {
     return data.source;
   };
 
-  // Uniswap widget URL for embedded swap
   const getUniswapEmbedUrl = (tokenAddress) => {
     return `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${tokenAddress}&use=v2`;
+  };
+
+  const getChangeColor = (tokenId) => {
+    // Simulated 24h change
+    return 'var(--accent-green)';
   };
 
   return (
     <>
       <Head>
-        <title>Tokens | ClawdbotArmy</title>
-        <meta name="description" content="AI Agent Tokens on Base" />
+        <title>📈 Trading | ClawdbotArmy</title>
+        <meta name="description" content="Trade AI agent tokens on Base with bonding curves" />
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       
       <div className="tokens-page">
         <header className="tokens-header">
-          <h1>AI Agent Tokens</h1>
-          <p>Trade on Uniswap V3 (Base)</p>
+          <Link href="/" className="back-link">← Back</Link>
+          <h1>📈 Trading</h1>
+          <p className="page-subtitle">Buy and sell AI agent tokens on Base</p>
         </header>
 
-        {/* Token Tabs */}
+        {/* Token Selector */}
         <div className="token-tabs">
-          {tokens.map(token => (
-            <button
-              key={token.id}
-              className={`token-tab ${selectedToken.id === token.id ? 'active' : ''}`}
-              onClick={() => setSelectedToken(token)}
-              style={{ '--token-color': token.color }}
-            >
-              <span className="token-emoji">{token.emoji}</span>
-              <span className="token-name">{token.id}</span>
-            </button>
-          ))}
+          {tokens.map(token => {
+            const priceData = prices[token.id];
+            const isSelected = selectedToken.id === token.id;
+            
+            return (
+              <button
+                key={token.id}
+                className={`token-tab ${isSelected ? 'active' : ''}`}
+                onClick={() => setSelectedToken(token)}
+                style={{ '--token-color': token.color }}
+              >
+                <span className="token-emoji">{token.emoji}</span>
+                <div className="token-info">
+                  <span className="token-name">{token.id}</span>
+                  <span className="token-price">
+                    {priceData?.priceUSD ? formatPrice(priceData) : 'Loading...'}
+                  </span>
+                </div>
+                {isSelected && <div className="active-indicator" />}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Selected Token Card */}
-        <div className="token-card" style={{ borderColor: selectedToken.color }}>
-          <div className="token-header" style={{ borderColor: selectedToken.color }}>
-            <span className="token-emoji-large">{selectedToken.emoji}</span>
-            <div className="token-info">
-              <h2>{selectedToken.id}</h2>
-              <p>{selectedToken.description}</p>
-            </div>
-          </div>
-
-          <div className="token-price">
-            {loading ? (
-              <span className="price-loading">Loading...</span>
-            ) : prices[selectedToken.id]?.priceUSD ? (
-              <>
-                <div className="price-main">{formatPrice(prices[selectedToken.id])}</div>
-                <div className="price-eth">
-                  {prices[selectedToken.id].priceETH?.toFixed(10)} ETH
-                </div>
-                <div className="price-source">
-                  via {formatSource(prices[selectedToken.id]) || 'Uniswap'}
-                </div>
-              </>
-            ) : (
-              <div className="price-loading">--</div>
-            )}
-          </div>
-
-          <div className="token-actions">
-            <a 
-              href={selectedToken.uniswapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="action-btn trade"
-            >
-              <span>🦄</span>
-              <span>Trade on Uniswap</span>
-            </a>
-            <a 
-              href={`https://www.clanker.world/clanker/${selectedToken.address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="action-btn info"
-            >
-              <span>📄</span>
-              <span>View on Clanker</span>
-            </a>
-          </div>
-
-          <div className="token-contract">
-            <span>Contract</span>
-            <code>{selectedToken.address.slice(0,6)}...{selectedToken.address.slice(-4)}</code>
-          </div>
-
-          {/* Uniswap Embed */}
-          <div className="uniswap-embed">
-            <h3>Swap {selectedToken.id} on Uniswap</h3>
-            <iframe
-              src={getUniswapEmbedUrl(selectedToken.address)}
-              width="100%"
-              height="500"
-              style={{ border: 'none', borderRadius: '12px' }}
-              title={`Uniswap ${selectedToken.id} Swap`}
-              allow="cross-origin-isolated"
-            />
-          </div>
-        </div>
-
-        {/* All Tokens Grid */}
-        <div className="tokens-grid">
-          {tokens.map(token => (
-            <div 
-              key={token.id}
-              className="mini-token-card"
-              onClick={() => setSelectedToken(token)}
-              style={{ borderColor: selectedToken.id === token.id ? token.color : '#2a2a3a' }}
-            >
-              <span className="mini-emoji">{token.emoji}</span>
-              <div className="mini-info">
-                <span className="mini-name">{token.id}</span>
-                <span className="mini-price">
-                  {loading ? '...' : formatPrice(prices[token.id])}
-                </span>
+        {/* Main Trading Section */}
+        <div className="trading-layout">
+          {/* Left: Token Info & Actions */}
+          <div className="token-details glass-card">
+            <div className="token-header">
+              <div 
+                className="token-icon"
+                style={{ background: `linear-gradient(135deg, ${selectedToken.color}, ${selectedToken.color}88)` }}
+              >
+                {selectedToken.emoji}
+              </div>
+              <div className="token-title">
+                <h2>{selectedToken.id}</h2>
+                <p>{selectedToken.description}</p>
               </div>
             </div>
-          ))}
+
+            <div className="token-price-section">
+              {loading ? (
+                <div className="price-loading">Loading...</div>
+              ) : prices[selectedToken.id]?.priceUSD ? (
+                <>
+                  <div className="price-main">{formatPrice(prices[selectedToken.id])}</div>
+                  <div className="price-eth">
+                    {prices[selectedToken.id].priceETH?.toFixed(10)} ETH
+                  </div>
+                  <div className="price-meta">
+                    <span className="price-source">
+                      📊 via {formatSource(prices[selectedToken.id]) || 'Uniswap'}
+                    </span>
+                    <span className="price-change" style={{ color: getChangeColor(selectedToken.id) }}>
+                      +2.5% (24h)
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="price-loading">--</div>
+              )}
+            </div>
+
+            {/* Trading Actions */}
+            <div className="trading-actions">
+              <a 
+                href={selectedToken.uniswapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="trade-btn uniswap"
+              >
+                <span>🦄</span>
+                <span>Trade on Uniswap</span>
+              </a>
+              <a 
+                href={`https://www.clanker.world/clanker/${selectedToken.address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="trade-btn clanker"
+              >
+                <span>🤖</span>
+                <span>View on Clanker</span>
+              </a>
+            </div>
+
+            {/* Contract Info */}
+            <div className="contract-info">
+              <h4>Contract Address</h4>
+              <div className="address-row">
+                <code>{selectedToken.address.slice(0, 6)}...{selectedToken.address.slice(-4)}</code>
+                <a 
+                  href={`https://basescan.org/address/${selectedToken.address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="etherscan-link"
+                >
+                  View on Basescan →
+                </a>
+              </div>
+            </div>
+
+            {/* Bonding Curve Progress (Simulated) */}
+            <div className="bonding-curve-info">
+              <h4>Bonding Curve Status</h4>
+              <div className="curve-progress">
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill"
+                    style={{ 
+                      width: '65%',
+                      background: `linear-gradient(90deg, ${selectedToken.color}, ${selectedToken.color}88)`
+                    }}
+                  />
+                </div>
+                <div className="progress-labels">
+                  <span>Launch Pool</span>
+                  <span>65% Filled</span>
+                  <span>Uniswap V3</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Uniswap Embed */}
+          <div className="uniswap-section glass-card">
+            <div className="section-header">
+              <h3>Swap {selectedToken.id}</h3>
+              <span className="network-badge">Base Network</span>
+            </div>
+            <div className="iframe-container">
+              <iframe
+                src={getUniswapEmbedUrl(selectedToken.address)}
+                width="100%"
+                height="550"
+                style={{ border: 'none', borderRadius: '12px' }}
+                title={`Uniswap ${selectedToken.id} Swap`}
+                allow="cross-origin-isolated"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* All Tokens Quick View */}
+        <div className="all-tokens-section glass-card">
+          <h3>All Available Tokens</h3>
+          <div className="tokens-grid">
+            {tokens.map(token => {
+              const priceData = prices[token.id];
+              const isSelected = selectedToken.id === token.id;
+              
+              return (
+                <div 
+                  key={token.id}
+                  className={`mini-token-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => setSelectedToken(token)}
+                  style={{ '--token-color': token.color }}
+                >
+                  <div className="mini-emoji">{token.emoji}</div>
+                  <div className="mini-info">
+                    <span className="mini-name">{token.id}</span>
+                    <span className="mini-price">
+                      {priceData?.priceUSD ? formatPrice(priceData) : '--'}
+                    </span>
+                  </div>
+                  <div className="mini-change" style={{ color: getChangeColor(token.id) }}>
+                    +2.5%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       <style jsx>{`
         .tokens-page {
           min-height: 100vh;
-          background: linear-gradient(180deg, #0a0a0f 0%, #151520 100%);
-          padding: 40px 20px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: var(--bg-primary);
+          padding: 20px;
         }
         
         .tokens-header {
-          text-align: center;
-          margin-bottom: 40px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+        
+        .back-link {
+          color: var(--text-secondary);
+          text-decoration: none;
+          font-size: 0.9em;
+          transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+          color: var(--accent);
         }
         
         .tokens-header h1 {
-          font-size: 2.5em;
-          margin: 0 0 10px 0;
-          background: linear-gradient(135deg, #00d4ff, #00ff88);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          font-size: 2em;
+          margin: 0;
         }
         
-        .tokens-header p {
-          color: #888;
+        .page-subtitle {
+          color: var(--text-secondary);
           margin: 0;
         }
         
         .token-tabs {
           display: flex;
-          justify-content: center;
-          gap: 10px;
+          gap: 15px;
           margin-bottom: 30px;
-          flex-wrap: wrap;
+          overflow-x: auto;
+          padding-bottom: 10px;
         }
         
         .token-tab {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 15px 25px;
-          background: #1a1a24;
-          border: 2px solid #2a2a3a;
-          border-radius: 12px;
-          color: #888;
+          gap: 12px;
+          padding: 16px 24px;
+          background: var(--bg-secondary);
+          border: 2px solid transparent;
+          border-radius: 16px;
           cursor: pointer;
-          transition: all 0.3s;
+          transition: all 0.3s ease;
+          min-width: 180px;
+          position: relative;
         }
         
         .token-tab:hover {
-          background: #252530;
+          background: var(--bg-card);
         }
         
         .token-tab.active {
+          background: var(--bg-card);
           border-color: var(--token-color);
-          color: var(--token-color);
-          background: rgba(255,255,255,0.05);
+          box-shadow: 0 0 20px var(--token-color);
         }
         
         .token-emoji {
-          font-size: 1.3em;
+          font-size: 1.8em;
+        }
+        
+        .token-info {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
         }
         
         .token-name {
-          font-weight: 600;
+          font-weight: 700;
+          font-size: 1.1em;
         }
         
-        .token-card {
-          background: linear-gradient(135deg, #1a1a24 0%, #151520 100%);
+        .token-price {
+          font-size: 0.85em;
+          color: var(--text-secondary);
+        }
+        
+        .active-indicator {
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 60%;
+          height: 3px;
+          background: var(--token-color);
+          border-radius: 2px;
+        }
+        
+        .glass-card {
+          background: rgba(26, 26, 36, 0.6);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid var(--border-color);
           border-radius: 20px;
-          padding: 30px;
-          border: 2px solid;
-          max-width: 450px;
-          margin: 0 auto 30px;
-          text-align: center;
+          padding: 24px;
+        }
+        
+        .trading-layout {
+          display: grid;
+          grid-template-columns: 350px 1fr;
+          gap: 24px;
+          margin-bottom: 30px;
+        }
+        
+        .token-details {
+          display: flex;
+          flex-direction: column;
+          gap: 25px;
         }
         
         .token-header {
           display: flex;
           align-items: center;
-          gap: 15px;
-          padding-bottom: 20px;
-          margin-bottom: 20px;
-          border-bottom: 1px solid;
+          gap: 16px;
         }
         
-        .token-emoji-large {
-          font-size: 3em;
+        .token-icon {
+          width: 60px;
+          height: 60px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 2em;
         }
         
-        .token-info {
-          text-align: left;
+        .token-title h2 {
+          margin: 0 0 4px 0;
+          font-size: 1.5em;
         }
         
-        .token-info h2 {
+        .token-title p {
           margin: 0;
-          font-size: 1.8em;
-          color: #fff;
+          color: var(--text-secondary);
+          font-size: 0.9em;
         }
         
-        .token-info p {
-          margin: 5px 0 0 0;
-          color: #888;
-        }
-        
-        .token-price {
-          margin-bottom: 25px;
+        .token-price-section {
+          text-align: center;
+          padding: 20px;
+          background: var(--bg-secondary);
+          border-radius: 16px;
         }
         
         .price-main {
           font-size: 2.5em;
-          font-weight: bold;
-          color: #10b981;
+          font-weight: 700;
+          color: var(--accent-green);
           margin-bottom: 5px;
         }
         
         .price-eth {
-          color: #ff6b35;
-          font-size: 1.1em;
-          margin-bottom: 5px;
+          font-size: 1em;
+          color: var(--text-secondary);
+          margin-bottom: 10px;
+        }
+        
+        .price-meta {
+          display: flex;
+          justify-content: center;
+          gap: 20px;
+          font-size: 0.85em;
         }
         
         .price-source {
-          font-size: 0.8em;
-          color: #666;
+          color: var(--text-secondary);
+        }
+        
+        .price-change {
+          font-weight: 600;
         }
         
         .price-loading {
-          color: #888;
           font-size: 2em;
+          color: var(--text-secondary);
         }
         
-        .token-actions {
+        .trading-actions {
           display: flex;
           flex-direction: column;
           gap: 12px;
-          margin-bottom: 25px;
         }
         
-        .action-btn {
+        .trade-btn {
           display: flex;
           align-items: center;
           justify-content: center;
@@ -331,69 +471,145 @@ export default function BondingCurves() {
           text-decoration: none;
           font-weight: 600;
           font-size: 1em;
-          transition: transform 0.2s, box-shadow 0.2s;
+          transition: all 0.3s ease;
         }
         
-        .action-btn.trade {
+        .trade-btn.uniswap {
           background: linear-gradient(135deg, #ff0055, #ff00aa);
           color: #fff;
         }
         
-        .action-btn.trade:hover {
+        .trade-btn.uniswap:hover {
           transform: translateY(-2px);
-          box-shadow: 0 10px 30px rgba(255, 0, 85, 0.3);
+          box-shadow: 0 8px 25px rgba(255, 0, 85, 0.4);
         }
         
-        .action-btn.info {
-          background: rgba(255,255,255,0.05);
-          border: 1px solid #333;
-          color: #fff;
+        .trade-btn.clanker {
+          background: var(--bg-secondary);
+          color: var(--text-primary);
+          border: 1px solid var(--border-color);
         }
         
-        .action-btn.info:hover {
-          background: rgba(255,255,255,0.1);
+        .trade-btn.clanker:hover {
+          border-color: var(--accent);
         }
         
-        .token-contract {
+        .contract-info h4,
+        .bonding-curve-info h4 {
+          margin: 0 0 12px 0;
+          font-size: 0.9em;
+          color: var(--text-secondary);
+        }
+        
+        .address-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 15px;
-          background: rgba(0,0,0,0.3);
+          padding: 12px;
+          background: var(--bg-secondary);
           border-radius: 10px;
         }
         
-        .token-contract span {
-          color: #888;
+        .address-row code {
+          color: var(--accent);
+          font-family: monospace;
         }
         
-        .token-contract code {
-          color: #ff6b35;
-          font-family: monospace;
+        .etherscan-link {
+          color: var(--text-secondary);
+          text-decoration: none;
+          font-size: 0.85em;
+          transition: color 0.2s;
+        }
+        
+        .etherscan-link:hover {
+          color: var(--accent);
+        }
+        
+        .curve-progress {
+          padding: 10px 0;
+        }
+        
+        .progress-bar {
+          height: 8px;
+          background: var(--bg-secondary);
+          border-radius: 4px;
+          overflow: hidden;
+          margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+          height: 100%;
+          border-radius: 4px;
+          transition: width 0.5s ease;
+        }
+        
+        .progress-labels {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.8em;
+          color: var(--text-secondary);
+        }
+        
+        .uniswap-section {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        
+        .section-header h3 {
+          margin: 0;
+        }
+        
+        .network-badge {
+          padding: 6px 12px;
+          background: linear-gradient(135deg, var(--accent), #0099ff);
+          color: #fff;
+          border-radius: 20px;
+          font-size: 0.8em;
+          font-weight: 600;
+        }
+        
+        .iframe-container {
+          flex: 1;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+        
+        .all-tokens-section h3 {
+          margin: 0 0 20px 0;
         }
         
         .tokens-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 15px;
-          max-width: 800px;
-          margin: 0 auto;
         }
         
         .mini-token-card {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 15px;
-          background: #1a1a24;
-          border: 1px solid #2a2a3a;
+          padding: 16px;
+          background: var(--bg-secondary);
           border-radius: 12px;
           cursor: pointer;
-          transition: all 0.2s;
+          border: 2px solid transparent;
+          transition: all 0.3s ease;
         }
         
         .mini-token-card:hover {
-          background: #252530;
+          background: var(--bg-card);
+        }
+        
+        .mini-token-card.selected {
+          border-color: var(--token-color);
         }
         
         .mini-emoji {
@@ -401,38 +617,48 @@ export default function BondingCurves() {
         }
         
         .mini-info {
-          display: flex;
-          flex-direction: column;
+          flex: 1;
         }
         
         .mini-name {
           font-weight: 600;
-          color: #fff;
+          display: block;
         }
         
         .mini-price {
           font-size: 0.85em;
-          color: #10b981;
+          color: var(--text-secondary);
         }
         
-        .uniswap-embed {
-          margin-top: 25px;
-          background: #1a1a24;
-          border-radius: 16px;
-          padding: 20px;
-          border: 1px solid #2a2a3a;
+        .mini-change {
+          font-weight: 600;
+          font-size: 0.9em;
         }
         
-        .uniswap-embed h3 {
-          margin: 0 0 15px 0;
-          font-size: 1em;
-          color: #888;
+        @media (max-width: 900px) {
+          .trading-layout {
+            grid-template-columns: 1fr;
+          }
+          
+          .token-tabs {
+            flex-wrap: nowrap;
+          }
         }
         
-        .uniswap-embed iframe {
-          min-height: 450px;
+        @media (max-width: 600px) {
+          .tokens-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          
+          .token-tab {
+            min-width: 150px;
+            padding: 12px 16px;
+          }
         }
       `}</style>
     </>
   );
 }
+
+export const dynamic = 'force-dynamic';

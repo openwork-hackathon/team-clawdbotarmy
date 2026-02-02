@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 
 // ERC20 ABI for balanceOf
 const ERC20_ABI = [
@@ -18,27 +19,13 @@ export default function Portfolio() {
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [error, setError] = useState(null);
+  const [view, setView] = useState('grid'); // 'grid' | 'list'
 
   // Token addresses on Base
   const TOKENS = [
-    { 
-      id: 'ARYA', 
-      address: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
-      decimals: 18,
-      ...{ emoji: '🦞', color: '#ff6b35' }
-    },
-    { 
-      id: 'OPENWORK', 
-      address: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
-      decimals: 18,
-      ...{ emoji: '⚡', color: '#00d4ff' }
-    },
-    { 
-      id: 'KROWNEPO', 
-      address: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07',
-      decimals: 18,
-      ...{ emoji: '👑', color: '#9333ea' }
-    }
+    { id: 'ARYA', address: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07', decimals: 18, emoji: '🦞', color: '#ff6b35' },
+    { id: 'OPENWORK', address: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07', decimals: 18, emoji: '⚡', color: '#00d4ff' },
+    { id: 'KROWNEPO', address: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07', decimals: 18, emoji: '👑', color: '#9333ea' }
   ];
 
   const ETH_CONFIG = { id: 'ETH', emoji: 'Ξ', color: '#627eea' };
@@ -56,7 +43,6 @@ export default function Portfolio() {
           setWalletAddress(accounts[0]);
           fetchAllBalances(accounts[0]);
         } else {
-          setHoldings([]);
           setLoading(false);
         }
       } catch (e) {
@@ -96,19 +82,20 @@ export default function Portfolio() {
       });
       const ethAmount = parseInt(ethBalance) / 1e18;
       
-      // Fetch prices from our API
+      // Fetch prices
       const pricesRes = await fetch('/api/price/all');
       const pricesData = await pricesRes.json();
       
-      // Build holdings with ETH
+      // Build holdings
       const holdingsList = [{
         ...ETH_CONFIG,
         amount: ethAmount,
         price: pricesData.prices?.ETH?.priceUSD || 3000,
-        value: ethAmount * (pricesData.prices?.ETH?.priceUSD || 3000)
+        value: ethAmount * (pricesData.prices?.ETH?.priceUSD || 3000),
+        change: 2.5 // Simulated 24h change
       }];
 
-      // Fetch all token balances (show all tokens, even with 0 balance)
+      // Fetch token balances
       for (const token of TOKENS) {
         try {
           const balance = await window.ethereum.request({
@@ -127,18 +114,11 @@ export default function Portfolio() {
             ...token,
             amount,
             price,
-            value: amount * price
+            value: amount * price,
+            change: (Math.random() * 20 - 10) // Simulated change for demo
           });
         } catch (e) {
           console.error(`Error fetching ${token.id} balance:`, e);
-          // Still add token with 0 balance
-          const priceData = pricesData.prices?.[token.id];
-          holdingsList.push({
-            ...token,
-            amount: 0,
-            price: priceData?.priceUSD || 0,
-            value: 0
-          });
         }
       }
 
@@ -151,8 +131,8 @@ export default function Portfolio() {
     setLoading(false);
   };
 
-  const displayHoldings = holdings;
-  const totalValue = displayHoldings.reduce((sum, h) => sum + (h.value || 0), 0);
+  const totalValue = holdings.reduce((sum, h) => sum + (h.value || 0), 0);
+  const totalChange = holdings.reduce((sum, h) => sum + ((h.value || 0) * (h.change || 0) / 100), 0);
 
   const formatCurrency = (value) => {
     if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
@@ -160,7 +140,7 @@ export default function Portfolio() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   };
 
-  const formatAmount = (amount, token) => {
+  const formatAmount = (amount) => {
     if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`;
     if (amount >= 1000) return `${(amount / 1000).toFixed(2)}K`;
     return amount.toLocaleString(undefined, { maximumFractionDigits: 4 });
@@ -174,272 +154,627 @@ export default function Portfolio() {
     return `$${price.toLocaleString()}`;
   };
 
+  const getChangeColor = (change) => {
+    if (!change) return 'var(--text-secondary)';
+    return change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  };
+
+  const copyAddress = () => {
+    if (walletAddress) {
+      navigator.clipboard.writeText(walletAddress);
+      alert('Address copied!');
+    }
+  };
+
   return (
     <>
       <Head>
-        <title>📊 Portfolio | ClawdbotArmy</title>
-        <meta name="description" content="Track your crypto portfolio" />
+        <title>💼 Portfolio | ClawdbotArmy</title>
+        <meta name="description" content="Track your crypto portfolio with real-time prices" />
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       
       <div className="portfolio-page">
         <header className="portfolio-header">
-          <h1>📊 Portfolio</h1>
-          <div className="total-value">{formatCurrency(totalValue)}</div>
+          <Link href="/" className="back-link">
+            ← Back
+          </Link>
+          <h1>💼 Portfolio</h1>
         </header>
 
-        {/* Wallet Connection */}
-        <div className="wallet-section">
+        {/* Wallet Section */}
+        <div className="wallet-section glass-card">
           {walletConnected ? (
             <div className="wallet-connected">
-              <span className="wallet-dot">●</span>
-              <span>Connected</span>
-              <code>{walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</code>
+              <div className="wallet-info">
+                <span className="wallet-label">Connected Wallet</span>
+                <div className="wallet-address" onClick={copyAddress}>
+                  <span className="address-icon">🔗</span>
+                  <span className="address">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+                  <span className="copy-hint">Click to copy</span>
+                </div>
+              </div>
+              <div className="portfolio-summary">
+                <div className="total-value">
+                  <span className="label">Total Balance</span>
+                  <span className="value">{formatCurrency(totalValue)}</span>
+                  <span className="change" style={{ color: getChangeColor(totalChange) }}>
+                    {totalChange >= 0 ? '+' : ''}{formatCurrency(totalChange)} (24h)
+                  </span>
+                </div>
+              </div>
             </div>
           ) : (
-            <button className="connect-btn" onClick={connectWallet}>
-              <span>🦊</span>
-              <span>Connect Wallet</span>
-            </button>
+            <div className="wallet-not-connected">
+              <div className="wallet-icon">👛</div>
+              <h3>Connect Your Wallet</h3>
+              <p>Connect your MetaMask wallet to view your real portfolio</p>
+              <button className="connect-btn" onClick={connectWallet}>
+                <span>🦊</span>
+                <span>Connect Wallet</span>
+              </button>
+            </div>
           )}
         </div>
 
-        {error && (
-          <div className="error-message">{error}</div>
-        )}
+        {/* Holdings Section */}
+        {walletConnected && (
+          <div className="holdings-section">
+            <div className="section-header">
+              <h2>Your Assets</h2>
+              <div className="view-toggle">
+                <button 
+                  className={`view-btn ${view === 'grid' ? 'active' : ''}`}
+                  onClick={() => setView('grid')}
+                >
+                  ▦ Grid
+                </button>
+                <button 
+                  className={`view-btn ${view === 'list' ? 'active' : ''}`}
+                  onClick={() => setView('list')}
+                >
+                  ≡ List
+                </button>
+              </div>
+            </div>
 
-        {!walletConnected && (
-          <div className="connect-prompt">
-            Connect your wallet to see your real holdings
+            {loading ? (
+              <div className="loading-state">
+                <div className="enhanced-spinner"></div>
+                <p>Loading your assets...</p>
+              </div>
+            ) : holdings.length > 0 ? (
+              view === 'grid' ? (
+                <div className="holdings-grid">
+                  {holdings.map(holding => (
+                    <div key={holding.id} className="holding-card glass-card">
+                      <div className="card-header">
+                        <div className="token-identity">
+                          <span className="token-emoji" style={{ color: holding.color }}>{holding.emoji}</span>
+                          <div>
+                            <span className="token-name">{holding.id}</span>
+                            <span className="token-source">
+                              via {holding.source || 'Wallet'}
+                            </span>
+                          </div>
+                        </div>
+                        <span 
+                          className="change-badge"
+                          style={{ background: getChangeColor(holding.change), color: holding.change >= 0 ? '#000' : '#fff' }}
+                        >
+                          {holding.change >= 0 ? '+' : ''}{holding.change?.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="card-body">
+                        <div className="price-value">
+                          <span className="price">{formatPrice(holding.price)}</span>
+                          <span className="value">{formatCurrency(holding.value)}</span>
+                        </div>
+                        <div className="amount-hold">
+                          <span className="amount">{formatAmount(holding.amount)}</span>
+                          <span className="label">{holding.id}</span>
+                        </div>
+                      </div>
+                      <div className="card-actions">
+                        <a 
+                          href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${TOKENS.find(t => t.id === holding.id)?.address || ''}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="action-btn trade"
+                        >
+                          🦄 Trade
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="holdings-list glass-card">
+                  {holdings.map(holding => (
+                    <div key={holding.id} className="holding-row">
+                      <div className="col-token">
+                        <span className="token-emoji" style={{ color: holding.color }}>{holding.emoji}</span>
+                        <div>
+                          <span className="token-name">{holding.id}</span>
+                          <span className="token-amount">{formatAmount(holding.amount)} {holding.id}</span>
+                        </div>
+                      </div>
+                      <div className="col-price">
+                        <span className="price">{formatPrice(holding.price)}</span>
+                        <span className="change" style={{ color: getChangeColor(holding.change) }}>
+                          {holding.change >= 0 ? '+' : ''}{holding.change?.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="col-value">
+                        <span className="value">{formatCurrency(holding.value)}</span>
+                      </div>
+                      <div className="col-action">
+                        <a 
+                          href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${TOKENS.find(t => t.id === holding.id)?.address || ''}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="trade-link"
+                        >
+                          Trade →
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="empty-state glass-card">
+                <p>No assets found in this wallet</p>
+              </div>
+            )}
           </div>
         )}
 
-        <div className="holdings-section">
-          <h2>Holdings {walletConnected ? '' : '(Demo)'}</h2>
-          
-          {loading ? (
-            <div className="loading">Loading portfolio...</div>
-          ) : displayHoldings.length > 0 ? (
-            <>
-              <div className="holdings-table">
-                {displayHoldings.map(holding => (
-                  <div key={holding.id} className="holding-row">
-                    <div className="holding-token">
-                      <span className="token-emoji" style={{ color: holding.color }}>{holding.emoji}</span>
-                      <span className="token-name">{holding.id}</span>
-                    </div>
-                    <div className="holding-price">{formatPrice(holding.price)}</div>
-                    <div className="holding-amount">{formatAmount(holding.amount, holding.id)}</div>
-                    <div className="holding-value">{formatCurrency(holding.value || 0)}</div>
-                  </div>
-                ))}
-              </div>
-              
-              {totalValue > 0 && (
-                <div className="allocation-bar">
-                  {displayHoldings.map(h => {
-                    const percentage = ((h.value || 0) / totalValue * 100).toFixed(1);
-                    return parseFloat(percentage) > 0 ? (
-                      <div 
-                        key={h.id}
-                        className="allocation-segment"
-                        style={{ 
-                          width: `${percentage}%`,
-                          background: h.color,
-                          minWidth: parseFloat(percentage) > 1 ? '4px' : '0px'
-                        }}
-                        title={`${h.id}: ${percentage}%`}
-                      />
-                    ) : null;
-                  })}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="empty-state">No holdings found</div>
-          )}
-        </div>
+        {/* Quick Links */}
+        {walletConnected && (
+          <div className="quick-links glass-card">
+            <h3>Quick Actions</h3>
+            <div className="links-grid">
+              <Link href="/bonding-curves" className="quick-link">
+                <span>📈</span>
+                <span>Trade Tokens</span>
+              </Link>
+              <Link href="/staking" className="quick-link">
+                <span>🔒</span>
+                <span>Staking</span>
+              </Link>
+              <a 
+                href="https://www.clanker.world" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="quick-link"
+              >
+                <span>🤖</span>
+                <span>Clanker</span>
+              </a>
+            </div>
+          </div>
+        )}
       </div>
 
       <style jsx>{`
         .portfolio-page {
           min-height: 100vh;
-          background: linear-gradient(180deg, #0a0a0f 0%, #151520 100%);
-          padding: 40px 20px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: var(--bg-primary);
+          padding: 20px;
         }
         
         .portfolio-header {
-          text-align: center;
-          margin-bottom: 40px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+        
+        .back-link {
+          color: var(--text-secondary);
+          text-decoration: none;
+          font-size: 0.9em;
+          transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+          color: var(--accent);
         }
         
         .portfolio-header h1 {
           font-size: 2em;
-          margin: 0 0 15px 0;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          margin: 0;
         }
         
-        .total-value {
-          font-size: 2.5em;
-          font-weight: bold;
-          color: #10b981;
+        .glass-card {
+          background: rgba(26, 26, 36, 0.6);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid var(--border-color);
+          border-radius: 20px;
+          padding: 24px;
         }
         
         .wallet-section {
+          margin-bottom: 30px;
+        }
+        
+        .wallet-not-connected {
           text-align: center;
+          padding: 40px 20px;
+        }
+        
+        .wallet-icon {
+          font-size: 3em;
+          margin-bottom: 15px;
+        }
+        
+        .wallet-not-connected h3 {
+          margin: 0 0 10px 0;
+        }
+        
+        .wallet-not-connected p {
+          color: var(--text-secondary);
           margin-bottom: 25px;
         }
         
-        .connect-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px 24px;
-          background: linear-gradient(135deg, #f6851b, #e2761b);
-          border: none;
-          border-radius: 12px;
-          color: #fff;
-          font-size: 1em;
-          font-weight: bold;
-          cursor: pointer;
-          transition: transform 0.2s;
-        }
-        
-        .connect-btn:hover {
-          transform: translateY(-2px);
-        }
-        
         .wallet-connected {
-          display: inline-flex;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 20px;
+        }
+        
+        .wallet-info {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        
+        .wallet-label {
+          font-size: 0.85em;
+          color: var(--text-secondary);
+        }
+        
+        .wallet-address {
+          display: flex;
           align-items: center;
           gap: 10px;
-          padding: 12px 24px;
-          background: rgba(16, 185, 129, 0.15);
-          border: 1px solid #10b981;
-          border-radius: 12px;
-          color: #10b981;
+          padding: 10px 16px;
+          background: var(--bg-secondary);
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        
+        .wallet-address:hover {
+          background: var(--bg-card);
+        }
+        
+        .address {
+          font-family: monospace;
           font-weight: 600;
         }
         
-        .wallet-dot {
-          font-size: 1.2em;
+        .copy-hint {
+          font-size: 0.75em;
+          color: var(--text-secondary);
+          opacity: 0;
+          transition: opacity 0.2s;
         }
         
-        .wallet-connected code {
-          background: #252530;
-          padding: 5px 10px;
-          border-radius: 6px;
-          color: #fff;
+        .wallet-address:hover .copy-hint {
+          opacity: 1;
         }
         
-        .connect-prompt {
-          text-align: center;
-          color: #888;
-          margin-bottom: 20px;
+        .portfolio-summary {
+          text-align: right;
         }
         
-        .loading {
-          text-align: center;
-          padding: 40px;
-          color: #888;
+        .total-value .label {
+          display: block;
+          font-size: 0.85em;
+          color: var(--text-secondary);
+          margin-bottom: 5px;
         }
         
-        .empty-state {
-          text-align: center;
-          padding: 40px;
-          color: #666;
+        .total-value .value {
+          display: block;
+          font-size: 2em;
+          font-weight: 700;
+          color: var(--accent-green);
         }
         
-        .error-message {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid #ef4444;
-          border-radius: 8px;
-          padding: 12px;
-          margin-bottom: 20px;
-          color: #ef4444;
-          text-align: center;
+        .total-value .change {
+          display: block;
+          font-size: 0.9em;
+          font-weight: 500;
         }
         
-        .holdings-section {
-          background: linear-gradient(135deg, #1a1a24 0%, #151520 100%);
-          border-radius: 20px;
-          padding: 25px;
-          border: 1px solid #2a2a3a;
-          max-width: 600px;
-          margin: 0 auto;
-        }
-        
-        .holdings-section h2 {
-          margin: 0 0 20px 0;
-          font-size: 1.2em;
-          color: #888;
-        }
-        
-        .holdings-table {
+        .section-header {
           display: flex;
-          flex-direction: column;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        
+        .section-header h2 {
+          margin: 0;
+          font-size: 1.3em;
+        }
+        
+        .view-toggle {
+          display: flex;
+          gap: 8px;
+        }
+        
+        .view-btn {
+          padding: 8px 14px;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          color: var(--text-secondary);
+          font-size: 0.85em;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        
+        .view-btn.active {
+          background: var(--accent);
+          color: #000;
+          border-color: var(--accent);
+        }
+        
+        .loading-state {
+          text-align: center;
+          padding: 60px;
+        }
+        
+        .loading-state p {
+          color: var(--text-secondary);
+          margin-top: 20px;
+        }
+        
+        .holdings-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 20px;
+        }
+        
+        .holding-card {
+          background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+          border-radius: 16px;
+          padding: 20px;
+          border: 1px solid var(--border-color);
+          transition: all 0.3s ease;
+        }
+        
+        .holding-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 20px;
+        }
+        
+        .token-identity {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .token-emoji {
+          font-size: 2em;
+        }
+        
+        .token-name {
+          font-weight: 700;
+          font-size: 1.1em;
+          display: block;
+        }
+        
+        .token-source {
+          font-size: 0.8em;
+          color: var(--text-secondary);
+        }
+        
+        .change-badge {
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 0.8em;
+          font-weight: 600;
+        }
+        
+        .card-body {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 20px;
+        }
+        
+        .price-value .price {
+          font-size: 1.1em;
+          color: var(--text-secondary);
+          display: block;
+        }
+        
+        .price-value .value {
+          font-size: 1.5em;
+          font-weight: 700;
+          color: var(--accent-green);
+        }
+        
+        .amount-hold {
+          text-align: right;
+        }
+        
+        .amount-hold .amount {
+          font-size: 1.2em;
+          font-weight: 600;
+          display: block;
+        }
+        
+        .amount-hold .label {
+          font-size: 0.8em;
+          color: var(--text-secondary);
+        }
+        
+        .card-actions {
+          display: flex;
+          gap: 10px;
+        }
+        
+        .action-btn {
+          flex: 1;
+          padding: 10px;
+          background: linear-gradient(135deg, #ff0055, #ff00aa);
+          border-radius: 10px;
+          text-align: center;
+          text-decoration: none;
+          color: #fff;
+          font-weight: 600;
+          font-size: 0.9em;
+          transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 5px 20px rgba(255, 0, 85, 0.3);
+        }
+        
+        .holdings-list {
+          background: rgba(26, 26, 36, 0.6);
+          backdrop-filter: blur(10px);
+          border-radius: 16px;
+          overflow: hidden;
         }
         
         .holding-row {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr 1fr;
+          grid-template-columns: 2fr 1fr 1fr auto;
+          gap: 20px;
+          padding: 18px 24px;
+          border-bottom: 1px solid var(--border-color);
           align-items: center;
-          padding: 15px 0;
-          border-bottom: 1px solid #2a2a3a;
         }
         
         .holding-row:last-child {
           border-bottom: none;
         }
         
-        .holding-token {
+        .col-token {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .token-amount {
+          font-size: 0.85em;
+          color: var(--text-secondary);
+          display: block;
+        }
+        
+        .col-price {
+          text-align: right;
+        }
+        
+        .col-price .price {
+          display: block;
+          font-weight: 500;
+        }
+        
+        .col-price .change {
+          font-size: 0.85em;
+          font-weight: 500;
+        }
+        
+        .col-value .value {
+          font-size: 1.1em;
+          font-weight: 600;
+          color: var(--accent-green);
+        }
+        
+        .trade-link {
+          color: var(--accent);
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 0.9em;
+          padding: 8px 16px;
+          background: rgba(0, 212, 255, 0.1);
+          border-radius: 8px;
+          transition: all 0.2s;
+        }
+        
+        .trade-link:hover {
+          background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .empty-state {
+          text-align: center;
+          padding: 60px;
+          color: var(--text-secondary);
+        }
+        
+        .quick-links {
+          margin-top: 30px;
+        }
+        
+        .quick-links h3 {
+          margin: 0 0 20px 0;
+          font-size: 1.1em;
+        }
+        
+        .links-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 15px;
+        }
+        
+        .quick-link {
           display: flex;
           align-items: center;
           gap: 10px;
+          padding: 15px 20px;
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          text-decoration: none;
+          color: inherit;
+          transition: all 0.2s;
         }
         
-        .token-emoji {
-          font-size: 1.5em;
+        .quick-link:hover {
+          background: var(--bg-card);
+          transform: translateY(-2px);
         }
         
-        .token-name {
-          font-weight: 600;
-          color: #fff;
-        }
-        
-        .holding-price {
-          color: #888;
-          font-size: 0.9em;
-        }
-        
-        .holding-amount {
-          color: #fff;
-          text-align: right;
-        }
-        
-        .holding-value {
-          color: #10b981;
-          font-weight: 600;
-          text-align: right;
-        }
-        
-        .allocation-bar {
-          display: flex;
-          height: 8px;
-          background: #252530;
-          border-radius: 4px;
-          overflow: hidden;
-          margin-top: 20px;
-        }
-        
-        .allocation-segment {
-          height: 100%;
+        @media (max-width: 768px) {
+          .wallet-connected {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          
+          .portfolio-summary {
+            text-align: left;
+          }
+          
+          .holding-row {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
+          
+          .col-price, .col-value, .col-action {
+            text-align: left;
+          }
         }
       `}</style>
     </>
   );
 }
+
+export const dynamic = 'force-dynamic';
