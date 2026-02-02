@@ -1,4 +1,4 @@
-// Bonding Curve for Multiple Tokens
+// Bonding Curve for Multiple Tokens - Updated 2026-02-02
 import { 
   getTokenInfo, 
   getAllTokens, 
