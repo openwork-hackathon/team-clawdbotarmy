@@ -7,3 +7,10 @@ node_modules
 .DS_Store
 coverage
 .turbo
+
+# Foundry
+out/
+cache/
+broadcast/
+lib/
+

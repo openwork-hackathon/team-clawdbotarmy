@@ -11,10 +11,18 @@ const CLANKER_CONTRACTS = {
   }
 };
 
+// Deployed bonding curve contracts (Base mainnet)
+export const BONDING_CURVE_CONTRACTS = {
+  AryaBondingCurve: '0xD05E0a3B454800c13495afc3AB7A6E55b5a63d89',
+  OpenWorkBondingCurve: null, // To be deployed
+  MultiTokenBondingCurve: null, // To be deployed
+};
+
 // Known Clanker tokens
 const CLANKER_TOKENS = {
   ARYA: {
     address: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
+    bondingCurve: '0xD05E0a3B454800c13495afc3AB7A6E55b5a63d89', // Deployed bonding curve contract
     name: 'ARYA',
     symbol: 'ARYA',
     decimals: 18,

@@ -35,7 +35,7 @@ Unified contract supporting multiple tokens with configurable parameters.
 
 | Network | AryaBondingCurve | OpenWorkBondingCurve | MultiTokenBondingCurve |
 |---------|------------------|----------------------|------------------------|
-| Base Mainnet | `0x...` | `0x...` | `0x...` |
+| Base Mainnet | `0xD05E0a3B454800c13495afc3AB7A6E55b5a63d89` | `0x...` | `0x...` |
 | Base Sepolia | `0x...` | `0x...` | `0x...` |
 
 ## Deployment

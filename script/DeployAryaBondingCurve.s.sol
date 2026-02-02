@@ -35,8 +35,8 @@ contract DeployAryaBondingCurve is Script {
         vm.stopBroadcast();
         
         console2.log(" AryaBondingCurve deployed!");
-        console2.log("📄 Contract:", address(curve));
-        console2.log("🪙 ARYA Token:", ARYA_TOKEN);
+        console2.log(unicode"[Contract] Contract:", address(curve));
+        console2.log(unicode"[Token] ARYA Token:", ARYA_TOKEN);
         console2.log("");
         console2.log("Next steps:");
         console2.log("1. Verify on Basescan:");
