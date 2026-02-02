@@ -55,7 +55,6 @@ export default function Arya() {
       setWalletConnected(true);
       setWalletAddress(accounts[0]);
       
-      // Listen for account changes
       window.ethereum.on('accountsChanged', (newAccounts) => {
         if (newAccounts.length === 0) {
           setWalletConnected(false);
@@ -70,35 +69,9 @@ export default function Arya() {
     }
   };
 
-  // Direct Uniswap trade via MetaMask
-  const buyOnUniswap = () => {
-    if (!walletConnected) {
-      alert('Please connect your wallet first!');
-      return;
-    }
-    // Open Uniswap with pre-filled ARYA token
-    window.open(uniswapUrl, '_blank');
-  };
+  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07`;
 
-  // Swap directly via MetaMask (contract interaction)
-  const swapViaMetaMask = async () => {
-    if (!walletConnected || !window.ethereum) {
-      alert('Please connect your wallet first!');
-      return;
-    }
-    
-    try {
-      // The contract address for ARYA on Base
-      const aryaTokenAddress = '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
-      
-      // For a direct swap, we'd need to interact with the Uniswap router
-      // For simplicity, we'll open Uniswap which handles the swap
-      window.open(uniswapUrl, '_blank');
-    } catch (e) {
-      console.error('Swap error:', e);
-      alert('Error initiating swap. Please try Uniswap directly.');
-    }
-  };
+  const isMetaMaskInstalled = typeof window !== 'undefined' && window.ethereum;
 
   const executeTrade = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
@@ -136,14 +109,8 @@ export default function Arya() {
     ? (side === 'BUY' ? (parseFloat(amount) / currentPrice).toFixed(0) : (parseFloat(amount) * currentPrice).toFixed(6))
     : '0';
 
-  // Uniswap URL for buying ARYA on Base
-  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07`;
-
-  // Check if MetaMask is installed
-  const isMetaMaskInstalled = typeof window !== 'undefined' && window.ethereum;
-
   return (
-    <>
+    <div>
       <Head>
         <title>🦞 ARYA Token | ClawdbotArmy</title>
         <meta name="description" content="ARYA AI Agent Token - Trade on bonding curve" />
@@ -156,7 +123,6 @@ export default function Arya() {
         padding: '20px'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          {/* Header */}
           <header style={{ 
             textAlign: 'center', 
             marginBottom: '30px',
@@ -179,7 +145,6 @@ export default function Arya() {
             </p>
           </header>
 
-          {/* Price Banner */}
           <div style={{ 
             display: 'flex',
             justifyContent: 'center',
@@ -187,7 +152,6 @@ export default function Arya() {
             marginBottom: '30px',
             flexWrap: 'wrap'
           }}>
-            {/* Live Price from Uniswap */}
             <div style={{ 
               textAlign: 'center',
               padding: '20px 30px',
@@ -201,7 +165,7 @@ export default function Arya() {
                 {marketData?.priceUSD && <span style={{ marginLeft: '8px' }}>🔴</span>}
               </div>
               {marketData?.priceUSD ? (
-                <>
+                <div>
                   <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#10b981' }}>
                     ${marketData.priceUSD.toFixed(6)}
                   </div>
@@ -211,9 +175,9 @@ export default function Arya() {
                   <div style={{ fontSize: '0.7em', color: '#666', marginTop: '5px' }}>
                     via Uniswap V3
                   </div>
-                </>
+                </div>
               ) : (
-                <>
+                <div>
                   <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#888' }}>
                     --
                   </div>
@@ -226,11 +190,10 @@ export default function Arya() {
                   <div style={{ fontSize: '0.7em', color: '#555', marginTop: '8px' }}>
                     Pool en création...
                   </div>
-                </>
+                </div>
               )}
             </div>
             
-            {/* Market Cap */}
             <div style={{ 
               textAlign: 'center',
               padding: '20px 30px',
@@ -241,20 +204,21 @@ export default function Arya() {
             }}>
               <div style={{ fontSize: '0.9em', color: '#888', marginBottom: '5px' }}>MARKET CAP</div>
               {currentPriceUSD > 0 ? (
-                <>
+                <div>
                   <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#6366f1' }}>
                     ${((currentPriceUSD * supply) / 1000000).toFixed(2)}M
                   </div>
                   <div style={{ fontSize: '0.8em', color: '#888' }}>
                     {supply.toLocaleString()} supply
                   </div>
-                </>
+                </div>
               ) : (
                 <div style={{ fontSize: '1.5em', fontWeight: 'bold', color: '#888' }}>
                   --
                 </div>
               )}
             </div>
+            
             <div style={{ 
               textAlign: 'center',
               padding: '20px 30px',
@@ -273,14 +237,12 @@ export default function Arya() {
             </div>
           </div>
 
-          {/* Main Grid */}
           <div style={{ 
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
             gap: '20px',
             marginBottom: '30px'
           }}>
-            {/* Supply Progress */}
             <div style={{ 
               background: '#1a1a24',
               borderRadius: '16px',
@@ -321,7 +283,6 @@ export default function Arya() {
                 </div>
               </div>
 
-              {/* Mini Chart */}
               <div style={{ 
                 height: '100px',
                 background: 'linear-gradient(180deg, rgba(255,107,53,0.1) 0%, transparent 100%)',
@@ -354,302 +315,269 @@ export default function Arya() {
               </div>
             </div>
 
-          {/* Trade Card */}
-          <div style={{ 
-            background: 'linear-gradient(135deg, #1a1a24 0%, #151520 100%)',
-            borderRadius: '20px',
-            padding: '30px',
-            border: '1px solid #2a2a3a',
-            maxWidth: '500px',
-            margin: '0 auto 30px'
-          }}>
-            {/* Wallet Connection + Actions */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
-              {walletConnected ? (
+            <div style={{ 
+              background: 'linear-gradient(135deg, #1a1a24 0%, #151520 100%)',
+              borderRadius: '20px',
+              padding: '30px',
+              border: '1px solid #2a2a3a',
+              maxWidth: '500px',
+              margin: '0 auto 30px'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
+                {walletConnected ? (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    gap: '15px',
+                    flexWrap: 'wrap'
+                  }}>
+                    <div style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '10px', 
+                      padding: '12px 20px', 
+                      background: 'rgba(16, 185, 129, 0.15)', 
+                      border: '1px solid #10b981', 
+                      borderRadius: '12px' 
+                    }}>
+                      <span style={{ color: '#10b981', fontSize: '1.2em' }}>●</span>
+                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>Connected</span>
+                      <code style={{ background: '#252530', padding: '5px 10px', borderRadius: '6px', fontSize: '0.9em', color: '#fff' }}>
+                        {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}
+                      </code>
+                    </div>
+                    <button 
+                      onClick={() => setWalletConnected(false)}
+                      style={{ 
+                        padding: '10px 20px', 
+                        background: 'transparent', 
+                        border: '1px solid #444', 
+                        borderRadius: '8px', 
+                        color: '#888', 
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button 
+                      onClick={connectWallet}
+                      style={{ 
+                        padding: '15px 30px', 
+                        background: 'linear-gradient(135deg, #f6851b, #e2761b)', 
+                        border: 'none', 
+                        borderRadius: '12px', 
+                        color: '#fff', 
+                        fontSize: '1em', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}
+                    >
+                      <span>🦞</span>
+                      <span>Connect Wallet</span>
+                    </button>
+                    
+                    <a 
+                      href={uniswapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ 
+                        padding: '15px 30px', 
+                        background: 'linear-gradient(135deg, #ff0055, #ff00aa)', 
+                        border: 'none', 
+                        borderRadius: '12px', 
+                        color: '#fff', 
+                        fontSize: '1em', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      <span>🦄</span>
+                      <span>Buy on Uniswap</span>
+                    </a>
+                  </div>
+                )}
+                
                 <div style={{ 
                   display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
+                  justifyContent: 'center', 
                   gap: '15px',
+                  marginTop: '10px',
                   flexWrap: 'wrap'
                 }}>
-                  <div style={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    gap: '10px', 
-                    padding: '12px 20px', 
-                    background: 'rgba(16, 185, 129, 0.15)', 
-                    border: '1px solid #10b981', 
-                    borderRadius: '12px' 
-                  }}>
-                    <span style={{ color: '#10b981', fontSize: '1.2em' }}>●</span>
-                    <span style={{ color: '#10b981', fontWeight: 'bold' }}>Connected</span>
-                    <code style={{ background: '#252530', padding: '5px 10px', borderRadius: '6px', fontSize: '0.9em', color: '#fff' }}>
-                      {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}
-                    </code>
-                  </div>
-                  <button 
-                    onClick={() => setWalletConnected(false)}
-                    style={{ 
-                      padding: '10px 20px', 
-                      background: 'transparent', 
-                      border: '1px solid #444', 
-                      borderRadius: '8px', 
-                      color: '#888', 
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Disconnect
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <button 
-                    onClick={connectWallet}
-                    style={{ 
-                      padding: '15px 30px', 
-                      background: 'linear-gradient(135deg, #f6851b, #e2761b)', 
-                      border: 'none', 
-                      borderRadius: '12px', 
-                      color: '#fff', 
-                      fontSize: '1em', 
-                      fontWeight: 'bold', 
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}
-                  >
-                    <span>🦞</span>
-                    <span>Connect Wallet</span>
-                  </button>
-                  
                   <a 
                     href={uniswapUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ 
-                      padding: '15px 30px', 
-                      background: 'linear-gradient(135deg, #ff0055, #ff00aa)', 
-                      border: 'none', 
-                      borderRadius: '12px', 
-                      color: '#fff', 
-                      fontSize: '1em', 
-                      fontWeight: 'bold', 
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '10px',
+                      padding: '10px 20px', 
+                      background: 'rgba(255,0,85,0.1)', 
+                      border: '1px solid rgba(255,0,85,0.3)', 
+                      borderRadius: '10px', 
+                      color: '#ff0055', 
+                      fontSize: '0.9em',
                       textDecoration: 'none'
                     }}
                   >
-                    <span>🦄</span>
-                    <span>Buy on Uniswap</span>
+                    🦄 Trade on Uniswap
+                  </a>
+                  <a 
+                    href="https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ 
+                      padding: '10px 20px', 
+                      background: 'rgba(99,102,241,0.1)', 
+                      border: '1px solid rgba(99,102,241,0.3)', 
+                      borderRadius: '10px', 
+                      color: '#6366f1', 
+                      fontSize: '0.9em',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    🦞 View on Clanker
                   </a>
                 </div>
-              )}
-              
-              {/* Quick Links */}
+              </div>
+
               <div style={{ 
                 display: 'flex', 
-                justifyContent: 'center', 
-                gap: '15px',
-                marginTop: '10px',
-                flexWrap: 'wrap'
+                gap: '10px', 
+                marginBottom: '25px',
+                background: '#252530',
+                borderRadius: '12px',
+                padding: '5px'
               }}>
-                <a 
-                  href={uniswapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button 
+                  onClick={() => setSide('BUY')}
                   style={{ 
-                    padding: '10px 20px', 
-                    background: 'rgba(255,0,85,0.1)', 
-                    border: '1px solid rgba(255,0,85,0.3)', 
+                    flex: 1, 
+                    padding: '15px', 
+                    border: 'none', 
                     borderRadius: '10px', 
-                    color: '#ff0055', 
-                    fontSize: '0.9em',
-                    textDecoration: 'none'
+                    background: side === 'BUY' ? 'linear-gradient(135deg, #10b981, #059669)' : 'transparent', 
+                    color: side === 'BUY' ? '#000' : '#888', 
+                    cursor: 'pointer', 
+                    fontWeight: 'bold',
+                    fontSize: '1.1em',
+                    transition: 'all 0.3s'
                   }}
                 >
-                  🦄 Trade on Uniswap
-                </a>
-                <a 
-                  href="https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  BUY 🦞
+                </button>
+                <button 
+                  onClick={() => setSide('SELL')}
                   style={{ 
-                    padding: '10px 20px', 
-                    background: 'rgba(99,102,241,0.1)', 
-                    border: '1px solid rgba(99,102,241,0.3)', 
+                    flex: 1, 
+                    padding: '15px', 
+                    border: 'none', 
                     borderRadius: '10px', 
-                    color: '#6366f1', 
-                    fontSize: '0.9em',
-                    textDecoration: 'none'
+                    background: side === 'SELL' ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'transparent', 
+                    color: side === 'SELL' ? '#fff' : '#888', 
+                    cursor: 'pointer', 
+                    fontWeight: 'bold',
+                    fontSize: '1.1em',
+                    transition: 'all 0.3s'
                   }}
                 >
-                  🦞 View on Clanker
-                </a>
+                  SELL 🦞
+                </button>
               </div>
-            </div>
 
-            {/* BUY/SELL Toggle */}
-            <div style={{ 
-              display: 'flex', 
-              gap: '10px', 
-              marginBottom: '25px',
-              background: '#252530',
-              borderRadius: '12px',
-              padding: '5px'
-            }}>
-              <button 
-                onClick={() => setSide('BUY')}
-                style={{ 
-                  flex: 1, 
-                  padding: '15px', 
-                  border: 'none', 
-                  borderRadius: '10px', 
-                  background: side === 'BUY' ? 'linear-gradient(135deg, #10b981, #059669)' : 'transparent', 
-                  color: side === 'BUY' ? '#000' : '#888', 
-                  cursor: 'pointer', 
-                  fontWeight: 'bold',
-                  fontSize: '1.1em',
-                  transition: 'all 0.3s'
-                }}
-              >
-                BUY 🦞
-              </button>
-              <button 
-                onClick={() => setSide('SELL')}
-                style={{ 
-                  flex: 1, 
-                  padding: '15px', 
-                  border: 'none', 
-                  borderRadius: '10px', 
-                  background: side === 'SELL' ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'transparent', 
-                  color: side === 'SELL' ? '#fff' : '#888', 
-                  cursor: 'pointer', 
-                  fontWeight: 'bold',
-                  fontSize: '1.1em',
-                  transition: 'all 0.3s'
-                }}
-              >
-                SELL 🦞
-              </button>
-            </div>
-
-            {/* Amount Input */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block', 
-                fontSize: '0.9em', 
-                color: '#888', 
-                marginBottom: '10px' 
-              }}>
-                {side === 'BUY' ? 'ETH Amount to Spend' : 'ARYA Amount to Sell'}
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={e => setAmount(e.target.value)}
-                  style={{ 
-                    width: '100%', 
-                    padding: '18px 20px', 
-                    paddingRight: '80px',
-                    background: '#252530', 
-                    border: '2px solid transparent', 
-                    borderRadius: '12px', 
-                    fontSize: '1.3em', 
-                    color: '#fff',
-                    boxSizing: 'border-box'
-                  }}
-                />
-                <span style={{ 
-                  position: 'absolute',
-                  right: '20px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#666',
-                  fontWeight: 'bold'
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: '0.9em', 
+                  color: '#888', 
+                  marginBottom: '10px' 
                 }}>
-                  {side === 'BUY' ? 'ETH' : 'ARYA'}
+                  {side === 'BUY' ? 'ETH Amount to Spend' : 'ARYA Amount to Sell'}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="number"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={e => setAmount(e.target.value)}
+                    style={{ 
+                      width: '100%', 
+                      padding: '18px 20px', 
+                      paddingRight: '80px',
+                      background: '#252530', 
+                      border: '2px solid transparent', 
+                      borderRadius: '12px', 
+                      fontSize: '1.3em', 
+                      color: '#fff',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <span style={{ 
+                    position: 'absolute',
+                    right: '20px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#666',
+                    fontWeight: 'bold'
+                  }}>
+                    {side === 'BUY' ? 'ETH' : 'ARYA'}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ 
+                padding: '15px 20px', 
+                background: 'rgba(99,102,241,0.1)', 
+                borderRadius: '10px',
+                marginBottom: '20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span style={{ color: '#888' }}>You {side === 'BUY' ? 'receive' : 'get'}</span>
+                <span style={{ 
+                  fontSize: '1.4em', 
+                  fontWeight: 'bold',
+                  color: side === 'BUY' ? '#10b981' : '#ef4444'
+                }}>
+                  ~{estimatedOutput} {side === 'BUY' ? 'ARYA' : 'ETH'}
                 </span>
               </div>
-            </div>
 
-            {/* Output */}
-            <div style={{ 
-              padding: '15px 20px', 
-              background: 'rgba(99,102,241,0.1)', 
-              borderRadius: '10px',
-              marginBottom: '20px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <span style={{ color: '#888' }}>You {side === 'BUY' ? 'receive' : 'get'}</span>
-              <span style={{ 
-                fontSize: '1.4em', 
-                fontWeight: 'bold',
-                color: side === 'BUY' ? '#10b981' : '#ef4444'
-              }}>
-                ~{estimatedOutput} {side === 'BUY' ? 'ARYA' : 'ETH'}
-              </span>
+              <button 
+                onClick={executeTrade}
+                disabled={loading || !amount}
+                style={{ 
+                  width: '100%', 
+                  padding: '18px', 
+                  border: 'none', 
+                  borderRadius: '12px', 
+                  background: side === 'BUY' 
+                    ? 'linear-gradient(135deg, #10b981, #059669)' 
+                    : 'linear-gradient(135deg, #ef4444, #dc2626)', 
+                  color: '#fff', 
+                  fontSize: '1.2em', 
+                  fontWeight: 'bold', 
+                  cursor: loading || !amount ? 'not-allowed' : 'pointer',
+                  opacity: loading || !amount ? 0.5 : 1,
+                  transition: 'all 0.3s',
+                  marginBottom: '15px'
+                }}
+              >
+                {loading ? '⏳ Processing...' : `${side} ${amount ? parseFloat(amount).toFixed(4) : ''}`}
+              </button>
             </div>
-
-            {/* Trade Button */}
-            <button 
-              onClick={executeTrade}
-              disabled={loading || !amount}
-              style={{ 
-                width: '100%', 
-                padding: '18px', 
-                border: 'none', 
-                borderRadius: '12px', 
-                background: side === 'BUY' 
-                  ? 'linear-gradient(135deg, #10b981, #059669)' 
-                  : 'linear-gradient(135deg, #ef4444, #dc2626)', 
-                color: '#fff', 
-                fontSize: '1.2em', 
-                fontWeight: 'bold', 
-                cursor: loading || !amount ? 'not-allowed' : 'pointer',
-                opacity: loading || !amount ? 0.5 : 1,
-                transition: 'all 0.3s',
-                marginBottom: '15px'
-              }}
-            >
-              {loading ? '⏳ Processing...' : `${side} ${amount ? parseFloat(amount).toFixed(4) : ''}`}
-            </button>
-            
-            {/* MetaMask Swap Button */}
-            <button 
-              onClick={swapViaMetaMask}
-              disabled={!walletConnected}
-              style={{ 
-                width: '100%', 
-                padding: '14px', 
-                border: '2px solid #f6851b', 
-                borderRadius: '12px', 
-                background: 'transparent',
-                color: '#f6851b', 
-                fontSize: '1em', 
-                fontWeight: 'bold', 
-                cursor: !walletConnected ? 'not-allowed' : 'pointer',
-                opacity: !walletConnected ? 0.5 : 1,
-                transition: 'all 0.3s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px'
-              }}
-            >
-              <span>🦊</span>
-              <span>{walletConnected ? 'Swap with MetaMask' : 'Connect wallet to swap'}</span>
-            </button>
           </div>
 
-          {/* Result Modal */}
           {result && (result.outputAmount || result.error) && (
             <div style={{
               position: 'fixed',
@@ -672,12 +600,12 @@ export default function Arya() {
                 border: result.error ? '1px solid #ef4444' : '1px solid #10b981'
               }} onClick={e => e.stopPropagation()}>
                 {result.error ? (
-                  <>
+                  <div>
                     <h3 style={{ color: '#ef4444', margin: '0 0 15px 0' }}>❌ Error</h3>
                     <p style={{ color: '#fff' }}>{result.error}</p>
-                  </>
+                  </div>
                 ) : (
-                  <>
+                  <div>
                     <h3 style={{ color: '#10b981', margin: '0 0 20px 0', textAlign: 'center' }}>✅ Order Submitted!</h3>
                     <div style={{ display: 'grid', gap: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#252530', borderRadius: '8px' }}>
@@ -702,7 +630,7 @@ export default function Arya() {
                         </div>
                       )}
                     </div>
-                  </>
+                  </div>
                 )}
                 <button 
                   onClick={() => setResult(null)}
@@ -723,7 +651,6 @@ export default function Arya() {
             </div>
           )}
 
-          {/* Footer Links */}
           <div style={{ 
             display: 'flex', 
             justifyContent: 'center', 
@@ -759,11 +686,11 @@ export default function Arya() {
                 fontWeight: 'bold'
               }}
             >
-              📈 All Curves →
+              📈 All Curves
             </a>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
