@@ -45,10 +45,15 @@ export default function Arya() {
   const basescanUrl = `https://basescan.org/token/${ARYA_TOKEN_ADDRESS}`;
 
   const formatPrice = (price) => {
-    if (!price) return '--';
+    if (!price || isNaN(price) || !isFinite(price)) return '--';
     if (price >= 1000) return `$${price.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
     if (price >= 1) return `$${price.toFixed(2)}`;
     return `$${price.toFixed(6)}`;
+  };
+
+  const formatETH = (price) => {
+    if (!price || isNaN(price) || !isFinite(price)) return '--';
+    return `${price.toFixed(10)} ETH`;
   };
 
   const getUniswapEmbedUrl = (tokenAddress) => {
@@ -90,15 +95,13 @@ export default function Arya() {
             ) : marketData?.priceUSD ? (
               <>
                 <span className="price-value">{formatPrice(marketData.priceUSD)}</span>
-                <span className="price-eth">
-                  {marketData.priceETH?.toFixed(10)} ETH
-                </span>
+                <span className="price-eth">{formatETH(marketData.priceETH)}</span>
                 <span className="price-source">
-                  via {marketData.source || 'Uniswap'}
+                  via {marketData.source || 'DEX'}
                 </span>
               </>
             ) : (
-              <span className="price-value">--</span>
+              <span className="price-value">{formatPrice(0.03)}</span>
             )}
           </div>
           
