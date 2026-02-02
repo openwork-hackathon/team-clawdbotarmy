@@ -26,14 +26,14 @@ const CLANKER_TOKENS = {
     twitter: '@arya_ai'
   },
   OPENWORK: {
-    address: null, // Not yet deployed on Clanker
+    address: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
     name: 'OpenWork Protocol',
     symbol: 'OPENWORK',
     decimals: 18,
     color: '#00d4ff',
     emoji: '⚡',
     description: 'OpenWork Protocol Token',
-    clankerUrl: null,
+    clankerUrl: 'https://www.clanker.world/clanker/0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
     website: 'https://www.openwork.bot',
     twitter: '@openwork_bot'
   }

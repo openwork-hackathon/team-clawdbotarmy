@@ -27,7 +27,7 @@ const TOKEN_CONFIGS = {
     a: 0.00000000001,
     b: 0.00001,
     maxSupply: 50000000,
-    clankerAddress: null
+    clankerAddress: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07'
   }
 };
 
