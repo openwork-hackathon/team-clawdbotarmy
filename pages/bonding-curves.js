@@ -52,7 +52,7 @@ export default function BondingCurves() {
   };
 
   const formatPrice = (data) => {
-    if (!data?.priceUSD) return '--';
+    if (!data?.priceUSD || isNaN(data.priceUSD) || !isFinite(data.priceUSD)) return '--';
     if (data.priceUSD >= 1000) {
       return `$${data.priceUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
     }
@@ -60,6 +60,11 @@ export default function BondingCurves() {
       return `$${data.priceUSD.toFixed(2)}`;
     }
     return `$${data.priceUSD.toFixed(6)}`;
+  };
+
+  const formatETH = (priceETH) => {
+    if (!priceETH || isNaN(priceETH) || !isFinite(priceETH)) return '--';
+    return `${priceETH.toFixed(10)} ETH`;
   };
 
   const formatSource = (data) => {
@@ -141,7 +146,7 @@ export default function BondingCurves() {
                 <>
                   <div className="price-main">{formatPrice(prices[selectedToken.id])}</div>
                   <div className="price-eth">
-                    {prices[selectedToken.id].priceETH?.toFixed(10)} ETH
+                    {formatETH(prices[selectedToken.id]?.priceETH)}
                   </div>
                   <div className="price-meta">
                     <span className="price-source">
