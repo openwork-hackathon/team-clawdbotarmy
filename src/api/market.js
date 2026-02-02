@@ -36,18 +36,11 @@ async function getPrices(coinIds) {
  */
 async function getMarketChart(coinId, days = 7, timeframe = '1d') {
   try {
-    // CoinGecko API: for intraday data, use 'hourly' vs 'daily' data
-    // For 1d, 7d, 30d, 90d, 180d, 365d - use days parameter
-    // For intraday (1m, 5m, 15m, 1h, 4h) - we need sparkline or OHLC
-    
     let prices = [];
     
-    // For short timeframes, we need to use a different endpoint
     if (['1m', '5m', '15m', '1h', '4h'].includes(timeframe)) {
       // Use OHLC endpoint for intraday data
-      const daysMap = {
-        '1m': 1, '5m': 1, '15m': 1, '1h': 1, '4h': 3
-      };
+      const daysMap = { '1m': 1, '5m': 1, '15m': 1, '1h': 1, '4h': 3 };
       
       try {
         const ohlcResponse = await axios.get(
@@ -60,19 +53,13 @@ async function getMarketChart(coinId, days = 7, timeframe = '1d') {
           }
         );
         
-        // Convert OHLC data to [timestamp, price] format
         const ohlcData = ohlcResponse.data || [];
-        const intervalMs = timeframe === '1m' ? 60000 : 
-                          timeframe === '5m' ? 300000 : 
-                          timeframe === '15m' ? 900000 : 
-                          timeframe === '1h' ? 3600000 : 14400000;
+        const sampleRate = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '4h': 240 };
         
-        // Sample data at the requested interval
-        prices = ohlcData.filter((_, i) => i % getSampleRate(timeframe) === 0)
-          .map(d => [d[0], d[4]]); // Use close price
+        prices = ohlcData.filter((_, i) => i % (sampleRate[timeframe] || 1) === 0)
+          .map(d => [d[0], d[4]]);
       } catch (e) {
         console.error('OHLC error, falling back:', e.message);
-        // Fallback to regular chart
         const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}/market_chart`, {
           params: { vs_currency: 'usd', days: days }
         });
@@ -96,18 +83,8 @@ async function getMarketChart(coinId, days = 7, timeframe = '1d') {
   }
 }
 
-// Helper to sample OHLC data for different timeframes
-function getSampleRate(timeframe) {
-  const rates = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '4h': 240 };
-  return rates[timeframe] || 1;
-}
-
 /**
  * Get OHLC data for detailed charts
- * @param {String} coinId - Coin ID  
- * @param {String} timeframe - 1m, 5m, 15m, 1h, 4h, 1d
- * @param {Number} days - Number of days
- * @returns {Array} OHLC data [[time, open, high, low, close], ...]
  */
 async function getOHLC(coinId, timeframe = '1h', days = 1) {
   try {
@@ -127,6 +104,41 @@ async function getOHLC(coinId, timeframe = '1h', days = 1) {
   }
 }
 
+/**
+ * Get basic coin info
+ */
+async function getCoinInfo(coinId) {
+  try {
+    const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}`, {
+      params: {
+        localization: false,
+        tickers: false,
+        market_data: true,
+        community_data: false,
+        developer_data: false,
+        sparkline: false
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching coin info:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Get trending coins
+ */
+async function getTrending() {
+  try {
+    const response = await axios.get(`${COINGECKO_BASE}/search/trending`);
+    return response.data.coins || [];
+  } catch (error) {
+    console.error('Error fetching trending:', error.message);
+    return [];
+  }
+}
+
 module.exports = {
   getPrices,
   getMarketChart,
@@ -134,3 +146,60 @@ module.exports = {
   getCoinInfo,
   getTrending
 };
+
+/**
+ * Get coin info (name, symbol, description, etc.)
+ * @param {String} coinId - Coin ID
+ * @returns {Object} Coin information
+ */
+async function getCoinInfo(coinId) {
+  try {
+    const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}`, {
+      params: {
+        localization: false,
+        tickers: false,
+        market_data: true,
+        community_data: false,
+        developer_data: false,
+        sparkline: false
+      }
+    });
+    
+    const data = response.data;
+    return {
+      id: data.id,
+      name: data.name,
+      symbol: data.symbol,
+      description: data.description?.en?.substring(0, 200) + '...',
+      currentPrice: data.market_data?.current_price?.usd,
+      priceChange24h: data.market_data?.price_change_percentage_24h,
+      marketCap: data.market_data?.market_cap?.usd,
+      volume24h: data.market_data?.total_volume?.usd,
+      high24h: data.market_data?.high_24h?.usd,
+      low24h: data.market_data?.low_24h?.usd
+    };
+  } catch (error) {
+    console.error('Error fetching coin info:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Get trending coins
+ * @returns {Array} Trending coins
+ */
+async function getTrending() {
+  try {
+    const response = await axios.get(`${COINGECKO_BASE}/search/trending`);
+    return response.data.coins?.slice(0, 10).map(c => ({
+      id: c.item.id,
+      name: c.item.name,
+      symbol: c.item.symbol,
+      marketCapRank: c.item.market_cap_rank,
+      thumb: c.item.thumb
+    })) || [];
+  } catch (error) {
+    console.error('Error fetching trending:', error.message);
+    return [];
+  }
+}
