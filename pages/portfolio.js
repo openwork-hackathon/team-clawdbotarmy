@@ -25,7 +25,8 @@ export default function Portfolio() {
   const TOKENS = [
     { id: 'ARYA', address: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07', decimals: 18, emoji: '🦞', color: '#ff6b35' },
     { id: 'OPENWORK', address: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07', decimals: 18, emoji: '⚡', color: '#00d4ff' },
-    { id: 'KROWNEPO', address: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07', decimals: 18, emoji: '👑', color: '#9333ea' }
+    { id: 'KROWNEPO', address: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07', decimals: 18, emoji: '👑', color: '#9333ea' },
+    { id: 'BRAUM', address: '0xefb28887A479029B065Cb931a973B97101209b07', decimals: 18, emoji: '🛡️', color: '#4a90d9' }
   ];
 
   const ETH_CONFIG = { id: 'ETH', emoji: 'Ξ', color: '#627eea' };

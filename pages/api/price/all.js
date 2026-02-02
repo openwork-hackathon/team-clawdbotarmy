@@ -26,7 +26,8 @@ const TOKENS = {
   ARYA: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
   OPENWORK: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
   KROWNEPO: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07',
-  ETH: '0x4200000000000000000000000000000000000006'
+  ETH: '0x4200000000000000000000000000000000000006',
+  BRAUM: '0xefb28887A479029B065Cb931a973B97101209b07'
 };
 
 // External API endpoints
@@ -87,10 +88,10 @@ export default async function handler(req, res) {
     }
     
     // Step 2: Fetch Uniswap V3 pool data for other tokens
-    // Only fetches pools for OPENWORK and KROWNEPO
+    // Only fetches pools for OPENWORK, KROWNEPO, and BRAUM
     const poolQuery = `{
       pools(where: {
-        token1_in: ["${TOKENS.OPENWORK}","${TOKENS.KROWNEPO}"]
+        token1_in: ["${TOKENS.OPENWORK}","${TOKENS.KROWNEPO}","${TOKENS.BRAUM}"]
       }) {
         id
         token1Price
@@ -140,7 +141,8 @@ export default async function handler(req, res) {
         // UPDATE these values when deploying new tokens!
         const fallbackPrice = symbol === 'ARYA' ? 0.00001 : 
                               symbol === 'OPENWORK' ? 0.0001 : 
-                              symbol === 'KROWNEPO' ? 0.000001 : 0.00001;
+                              symbol === 'KROWNEPO' ? 0.000001 : 
+                              symbol === 'BRAUM' ? 0.000001 : 0.00001;
         
         prices[symbol] = {
           source: 'Bonding Curve (Est.)',

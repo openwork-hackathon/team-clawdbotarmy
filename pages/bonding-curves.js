@@ -27,6 +27,14 @@ export default function BondingCurves() {
       address: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07',
       description: 'KROWNEPO Token',
       uniswapUrl: 'https://app.uniswap.org/swap?chain=base&inputCurrency=0xAFe8861b074B8C2551055a20A2a4f39E45037B07'
+    },
+    { 
+      id: 'BRAUM', 
+      emoji: '🛡️',
+      color: '#4a90d9',
+      address: '0xefb28887A479029B065Cb931a973B97101209b07',
+      description: 'Warrior Token',
+      uniswapUrl: 'https://app.uniswap.org/swap?chain=base&inputCurrency=0xefb28887A479029B065Cb931a973B97101209b07'
     }
   ]);
   const [selectedToken, setSelectedToken] = useState(tokens[0]);
