@@ -36,6 +36,18 @@ const CLANKER_TOKENS = {
     clankerUrl: 'https://www.clanker.world/clanker/0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
     website: 'https://www.openwork.bot',
     twitter: '@openwork_bot'
+  },
+  KROWNEPO: {
+    address: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07',
+    name: 'KROWNEPO',
+    symbol: 'KROWNEPO',
+    decimals: 18,
+    color: '#9333ea',
+    emoji: '👑',
+    description: 'KROWNEPO Token',
+    clankerUrl: 'https://www.clanker.world/clanker/0xAFe8861b074B8C2551055a20A2a4f39E45037B07',
+    website: '',
+    twitter: ''
   }
 };
 

@@ -28,6 +28,16 @@ const TOKEN_CONFIGS = {
     b: 0.00001,
     maxSupply: 50000000,
     clankerAddress: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07'
+  },
+  KROWNEPO: {
+    name: 'KROWNEPO',
+    symbol: 'KROWNEPO',
+    initialSupply: 1000000,
+    initialReserve: 0.01,
+    a: 0.00000000001,
+    b: 0.00001,
+    maxSupply: 10000000,
+    clankerAddress: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07'
   }
 };
 
@@ -41,6 +51,12 @@ const curveStates = {
   OPENWORK: {
     supply: TOKEN_CONFIGS.OPENWORK.initialSupply,
     reserve: TOKEN_CONFIGS.OPENWORK.initialReserve,
+    totalTrades: 0,
+    totalVolume: 0
+  },
+  KROWNEPO: {
+    supply: TOKEN_CONFIGS.KROWNEPO.initialSupply,
+    reserve: TOKEN_CONFIGS.KROWNEPO.initialReserve,
     totalTrades: 0,
     totalVolume: 0
   }

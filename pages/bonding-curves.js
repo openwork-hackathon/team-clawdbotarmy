@@ -52,9 +52,11 @@ export default function BondingCurves() {
   const checkUniswapPool = async () => {
     setCheckingPool(true);
     try {
-      // ARYA token address on Base
+      // Token addresses on Base
       const tokenAddress = selectedToken === 'ARYA' 
         ? '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
+        : selectedToken === 'KROWNEPO'
+        ? '0xAFe8861b074B8C2551055a20A2a4f39E45037B07'
         : null;
       
       if (tokenAddress) {
@@ -64,7 +66,7 @@ export default function BondingCurves() {
           fee: 3000,
           token0: tokenAddress,
           token1: UNISWAP_V3_BASE.weth,
-          label: 'ARYA/ETH (0.3%)',
+          label: `${selectedToken}/ETH (0.3%)`,
           url: `https://app.uniswap.org/explore/pools/base/${tokenAddress.toLowerCase()}`
         });
       } else {
@@ -133,6 +135,8 @@ export default function BondingCurves() {
         // Uniswap V3 trading
         const tokenAddress = selectedToken === 'ARYA' 
           ? '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
+          : selectedToken === 'KROWNEPO'
+          ? '0xAFe8861b074B8C2551055a20A2a4f39E45037B07'
           : null;
         
         if (!tokenAddress) {
@@ -233,6 +237,13 @@ export default function BondingCurves() {
       color: '#00d4ff',
       curve: openwork,
       description: 'OpenWork Protocol Token'
+    },
+    { 
+      id: 'KROWNEPO', 
+      emoji: '[KROWNEPO]',
+      color: '#9333ea',
+      curve: curves?.KROWNEPO || {},
+      description: 'KROWNEPO Token'
     }
   ];
 
