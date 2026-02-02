@@ -16,22 +16,22 @@ const TOKEN_CONFIGS = {
   ARYA: {
     name: 'ARYA',
     symbol: 'ARYA',
-    initialSupply: 1000000,  // 1M supply
-    initialReserve: 0.01,    // 0.01 ETH reserve
-    a: 0.00000000001, // slope: very gentle (1e-11)
-    b: 0.00001, // Base price (ETH) - starts at 0.00001 ETH
+    initialSupply: 1000000,
+    initialReserve: 0.01,
+    a: 0.00000000001,
+    b: 0.00001,
     maxSupply: 10000000,
     clankerAddress: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
   },
   OPENWORK: {
     name: 'OpenWork Protocol',
     symbol: 'OPENWORK',
-    initialSupply: 5000000,  // 5M supply
-    initialReserve: 0.05,    // 0.05 ETH reserve
-    a: 0.00000000001, // Same gentle slope
-    b: 0.00001, // Same base price
+    initialSupply: 5000000,
+    initialReserve: 0.05,
+    a: 0.00000000001,
+    b: 0.00001,
     maxSupply: 50000000,
-    clankerAddress: null // Not yet deployed
+    clankerAddress: null
   }
 };
 
@@ -60,8 +60,6 @@ export function getTokenConfig(token) {
 export function getTokenPrice(token, supply) {
   const config = getTokenConfig(token);
   if (!config) return 0;
-  
-  // Linear bonding curve: price = a * supply + b
   return config.a * supply + config.b;
 }
 
@@ -69,22 +67,17 @@ export function getTokenPrice(token, supply) {
 export function getBuyAmount(ethAmount, token, currentSupply) {
   const config = getTokenConfig(token);
   if (!config) return 0;
-  
   const startPrice = getTokenPrice(token, currentSupply);
   const endPrice = getTokenPrice(token, currentSupply + 1000000);
-  
-  // Simple linear approximation
   return ethAmount / ((startPrice + endPrice) / 2);
 }
 
-// Calculate sell amount (Tokens -> ETH)  
+// Calculate sell amount (Tokens -> ETH)
 export function getSellAmount(tokenAmount, token, currentSupply) {
   const config = getTokenConfig(token);
   if (!config) return 0;
-  
   const startPrice = getTokenPrice(token, currentSupply);
   const endPrice = getTokenPrice(token, currentSupply - tokenAmount);
-  
   return tokenAmount * ((startPrice + endPrice) / 2);
 }
 
@@ -94,7 +87,6 @@ export function getSlippage(amount, supply, token, isBuy) {
   const avgPrice = isBuy 
     ? getTokenPrice(token, supply + amount)
     : getTokenPrice(token, supply - amount);
-  
   if (midPrice === 0) return 0;
   return Math.abs((avgPrice - midPrice) / midPrice * 100);
 }
@@ -103,7 +95,6 @@ export function getSlippage(amount, supply, token, isBuy) {
 export function getCurveState(token) {
   const config = getTokenConfig(token);
   if (!config) return null;
-  
   const stateKey = token.toUpperCase();
   const state = curveStates[stateKey] || {
     supply: config.initialSupply,
@@ -112,8 +103,6 @@ export function getCurveState(token) {
     totalVolume: 0
   };
   const price = getTokenPrice(token, state.supply);
-  
-  // Check if token is deployed on Clanker
   const isDeployed = isTokenDeployed(token);
   const clankerUrl = getTokenClankerUrl(token);
   const tradingUrl = getTradingUrl(token);
@@ -123,14 +112,12 @@ export function getCurveState(token) {
     currentPrice: price,
     token: config.symbol,
     curveType: 'linear',
-    formula: `price = ${config.a} * supply + ${config.b} ETH`,
+    formula: 'price = ' + config.a + ' * supply + ' + config.b + ' ETH',
     maxSupply: config.maxSupply,
-    // Clanker integration
     isDeployed,
     clankerAddress: config.clankerAddress,
     clankerUrl,
     tradingUrl,
-    // Token info
     tokenInfo: getTokenInfo(token)
   };
 }
@@ -139,10 +126,8 @@ export function getCurveState(token) {
 export function executeTrade(type, amount, token) {
   const config = getTokenConfig(token);
   if (!config) throw new Error('Unknown token');
-  
   const stateKey = token.toUpperCase();
   
-  // Initialize state if needed
   if (!curveStates[stateKey]) {
     curveStates[stateKey] = {
       supply: config.initialSupply,
@@ -153,20 +138,15 @@ export function executeTrade(type, amount, token) {
   }
   
   const state = curveStates[stateKey];
-  
-  // Check if token is deployed on Clanker
   const isDeployed = isTokenDeployed(token);
   
   if (type === 'BUY') {
     const tokens = getBuyAmount(amount, token, state.supply);
-    
     if (state.supply + tokens > config.maxSupply) {
       throw new Error('Max supply reached');
     }
-    
     const slippage = getSlippage(tokens, state.supply, token, true);
     const oldPrice = getTokenPrice(token, state.supply);
-    
     state.supply += tokens;
     state.reserve += amount;
     state.totalTrades++;
@@ -189,14 +169,11 @@ export function executeTrade(type, amount, token) {
   } 
   else if (type === 'SELL') {
     const eth = getSellAmount(amount, token, state.supply);
-    
     if (eth > state.reserve) {
       throw new Error('Insufficient reserve');
     }
-    
     const slippage = getSlippage(amount, state.supply, token, false);
     const oldPrice = getTokenPrice(token, state.supply);
-    
     state.supply -= amount;
     state.reserve -= eth;
     state.totalTrades++;
