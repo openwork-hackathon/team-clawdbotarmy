@@ -76,12 +76,12 @@ export default function BondingCurves() {
   };
 
   const formatSource = (data) => {
-    if (!data?.source) return '';
+    if (!data?.source) return 'Uniswap V3';
     return data.source;
   };
 
-  const isEstimated = (data) => {
-    return data?.sourceType === 'estimated';
+  const hasLiquidity = (data) => {
+    return data?.hasLiquidity !== false;
   };
 
   const getUniswapEmbedUrl = (tokenAddress) => {
@@ -110,10 +110,10 @@ export default function BondingCurves() {
 
         {/* Price Disclaimer */}
         <div className="price-disclaimer">
-          <span className="disclaimer-icon">⚠️</span>
+          <span className="disclaimer-icon">🔗</span>
           <span className="disclaimer-text">
-            Token prices shown are <strong>bonding curve estimates</strong>. 
-            Trade on Uniswap for real-time market prices.
+            Prices shown are from <strong>Uniswap V3 (Base)</strong>. 
+            Some tokens may have no liquidity yet — trade via bonding curve or Clanker.
           </span>
         </div>
 
@@ -170,12 +170,12 @@ export default function BondingCurves() {
                     {formatETH(prices[selectedToken.id]?.priceETH)}
                   </div>
                   <div className="price-meta">
-                    <span className={`price-source ${isEstimated(prices[selectedToken.id]) ? 'estimated' : ''}`}>
-                      {isEstimated(prices[selectedToken.id]) ? '⚠️ ' : '📊 '}
-                      {formatSource(prices[selectedToken.id]) || 'Uniswap'}
+                    <span className={`price-source ${!hasLiquidity(prices[selectedToken.id]) ? 'no-liquidity' : ''}`}>
+                      {!hasLiquidity(prices[selectedToken.id]) ? '🔒 ' : '📊 '}
+                      {formatSource(prices[selectedToken.id])}
                     </span>
-                    {isEstimated(prices[selectedToken.id]) && (
-                      <span className="price-note">Estimated — trade on Uniswap for real price</span>
+                    {!hasLiquidity(prices[selectedToken.id]) && (
+                      <span className="price-note">No liquidity pool — bonding curve only</span>
                     )}
                     <span className="price-change" style={{ color: getChangeColor(selectedToken.id) }}>
                       +2.5% (24h)
@@ -457,8 +457,8 @@ export default function BondingCurves() {
           align-items: center;
           gap: 10px;
           padding: 12px 16px;
-          background: rgba(255, 193, 7, 0.1);
-          border: 1px solid rgba(255, 193, 7, 0.3);
+          background: rgba(0, 212, 255, 0.1);
+          border: 1px solid rgba(0, 212, 255, 0.3);
           border-radius: 10px;
           margin-bottom: 20px;
           font-size: 0.85em;
@@ -469,7 +469,7 @@ export default function BondingCurves() {
         }
         
         .disclaimer-text {
-          color: #ffc107;
+          color: var(--accent);
         }
         
         .price-main {
@@ -497,7 +497,7 @@ export default function BondingCurves() {
           color: var(--text-secondary);
         }
         
-        .price-source.estimated {
+        .price-source.no-liquidity {
           color: #ffc107;
         }
         

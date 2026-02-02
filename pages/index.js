@@ -242,20 +242,21 @@ export default function Home() {
                     </span>
                     <div>
                       <span className="token-name">{token.id}</span>
-                      <span className={`token-source ${token.sourceType === 'estimated' ? 'estimated' : ''}`}>
-                        {token.sourceType === 'estimated' ? '⚠️ ' : ''}{token.source || 'Uniswap'}
+                      <span className={`token-source ${!token.hasLiquidity ? 'no-liquidity' : ''}`}>
+                        {!token.hasLiquidity ? '🔒 ' : '📊 '}
+                        {token.source || 'Uniswap V3'}
                       </span>
                     </div>
                   </div>
                   <div className="token-price-info">
-                    <span className={`token-price ${token.sourceType === 'estimated' ? 'estimated-price' : ''}`}>
+                    <span className={`token-price ${!token.hasLiquidity ? 'no-liquidity-price' : ''}`}>
                       {token.priceUSD ? formatPrice(token.priceUSD) : '$0.00'}
                     </span>
                     <span 
                       className="token-change"
                       style={{ color: getChangeColor(0) }}
                     >
-                      {token.sourceType === 'estimated' ? 'Est.' : '--%'}
+                      {!token.hasLiquidity ? 'No LP' : '--%'}
                     </span>
                   </div>
                 </a>
@@ -753,7 +754,7 @@ export default function Home() {
           color: var(--text-secondary);
         }
         
-        .token-source.estimated {
+        .token-source.no-liquidity {
           color: #ffc107;
         }
         
@@ -767,7 +768,7 @@ export default function Home() {
           display: block;
         }
         
-        .token-price.estimated-price {
+        .token-price.no-liquidity-price {
           color: #ffc107;
         }
         

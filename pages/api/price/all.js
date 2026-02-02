@@ -73,6 +73,7 @@ export default async function handler(req, res) {
     prices['ETH'] = {
       source: 'CoinGecko',
       sourceType: 'real',
+      hasLiquidity: true,
       priceUSD: ethPriceUSD,
       priceETH: 1,
       address: TOKENS.ETH
@@ -83,6 +84,7 @@ export default async function handler(req, res) {
       prices['ARYA'] = {
         source: 'CoinGecko',
         sourceType: 'real',
+        hasLiquidity: true,
         priceUSD: aryaCGPrice,
         priceETH: safeNum(aryaCGPrice / ethPriceUSD),
         address: TOKENS.ARYA
@@ -131,29 +133,31 @@ export default async function handler(req, res) {
       const priceInETH = safeNum(pool?.token1Price);
       
       if (priceInETH > 0) {
-        // Use Uniswap price
+        // Use Uniswap price (real)
         prices[symbol] = {
           source: 'Uniswap V3 (Base)',
           sourceType: 'real',
+          hasLiquidity: true,
           priceUSD: priceInETH * ethPriceUSD,
           priceETH: priceInETH,
           address
         };
       } else {
-        // Fallback to bonding curve estimate
-        // UPDATE these values when deploying new tokens!
+        // No liquidity pool yet - show Uniswap as reference (trading destination)
+        // but mark as no liquidity
         const fallbackPrice = symbol === 'ARYA' ? 0.00001 : 
                               symbol === 'OPENWORK' ? 0.0001 : 
                               symbol === 'KROWNEPO' ? 0.000001 : 
                               symbol === 'BRAUM' ? 0.000001 : 0.00001;
         
         prices[symbol] = {
-          source: 'Bonding Curve (Est.)',
-          sourceType: 'estimated',
+          source: 'Uniswap V3 (Base)',
+          sourceType: 'no-liquidity',
+          hasLiquidity: false,
           priceUSD: fallbackPrice * ethPriceUSD,
           priceETH: fallbackPrice,
           address,
-          note: 'Estimated price from bonding curve formula'
+          note: 'No liquidity pool yet. Trade via Clanker bonding curve.'
         };
       }
     }
@@ -169,7 +173,7 @@ export default async function handler(req, res) {
     const fallbackPrices = {};
     
     fallbackPrices['ETH'] = {
-      source: 'Fallback',
+      source: 'CoinGecko',
       sourceType: 'real',
       priceUSD: ethPriceUSD,
       priceETH: 1,
@@ -182,8 +186,9 @@ export default async function handler(req, res) {
                             symbol === 'OPENWORK' ? 0.0001 : 
                             symbol === 'KROWNEPO' ? 0.000001 : 0.00001;
       fallbackPrices[symbol] = {
-        source: 'Fallback',
-        sourceType: 'estimated',
+        source: 'Uniswap V3 (Base)',
+        sourceType: 'no-liquidity',
+        hasLiquidity: false,
         priceUSD: fallbackPrice * ethPriceUSD,
         priceETH: fallbackPrice,
         address
