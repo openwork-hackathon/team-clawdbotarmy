@@ -108,7 +108,7 @@ export default function Portfolio() {
         value: ethAmount * (pricesData.prices?.ETH?.priceUSD || 3000)
       }];
 
-      // Fetch token balances
+      // Fetch all token balances (show all tokens, even with 0 balance)
       for (const token of TOKENS) {
         try {
           const balance = await window.ethereum.request({
@@ -123,16 +123,22 @@ export default function Portfolio() {
           const priceData = pricesData.prices?.[token.id];
           const price = priceData?.priceUSD || 0;
           
-          if (amount > 0) {
-            holdingsList.push({
-              ...token,
-              amount,
-              price,
-              value: amount * price
-            });
-          }
+          holdingsList.push({
+            ...token,
+            amount,
+            price,
+            value: amount * price
+          });
         } catch (e) {
           console.error(`Error fetching ${token.id} balance:`, e);
+          // Still add token with 0 balance
+          const priceData = pricesData.prices?.[token.id];
+          holdingsList.push({
+            ...token,
+            amount: 0,
+            price: priceData?.priceUSD || 0,
+            value: 0
+          });
         }
       }
 
