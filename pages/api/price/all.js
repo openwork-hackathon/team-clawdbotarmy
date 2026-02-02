@@ -72,6 +72,7 @@ export default async function handler(req, res) {
     // Add ETH price
     prices['ETH'] = {
       source: 'CoinGecko',
+      sourceType: 'real',
       priceUSD: ethPriceUSD,
       priceETH: 1,
       address: TOKENS.ETH
@@ -81,6 +82,7 @@ export default async function handler(req, res) {
     if (aryaCGPrice > 0) {
       prices['ARYA'] = {
         source: 'CoinGecko',
+        sourceType: 'real',
         priceUSD: aryaCGPrice,
         priceETH: safeNum(aryaCGPrice / ethPriceUSD),
         address: TOKENS.ARYA
@@ -132,6 +134,7 @@ export default async function handler(req, res) {
         // Use Uniswap price
         prices[symbol] = {
           source: 'Uniswap V3 (Base)',
+          sourceType: 'real',
           priceUSD: priceInETH * ethPriceUSD,
           priceETH: priceInETH,
           address
@@ -146,10 +149,11 @@ export default async function handler(req, res) {
         
         prices[symbol] = {
           source: 'Bonding Curve (Est.)',
+          sourceType: 'estimated',
           priceUSD: fallbackPrice * ethPriceUSD,
           priceETH: fallbackPrice,
           address,
-          note: 'Estimated from bonding curve'
+          note: 'Estimated price from bonding curve formula'
         };
       }
     }
@@ -166,6 +170,7 @@ export default async function handler(req, res) {
     
     fallbackPrices['ETH'] = {
       source: 'Fallback',
+      sourceType: 'real',
       priceUSD: ethPriceUSD,
       priceETH: 1,
       address: TOKENS.ETH
@@ -178,6 +183,7 @@ export default async function handler(req, res) {
                             symbol === 'KROWNEPO' ? 0.000001 : 0.00001;
       fallbackPrices[symbol] = {
         source: 'Fallback',
+        sourceType: 'estimated',
         priceUSD: fallbackPrice * ethPriceUSD,
         priceETH: fallbackPrice,
         address

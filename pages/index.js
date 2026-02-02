@@ -242,20 +242,20 @@ export default function Home() {
                     </span>
                     <div>
                       <span className="token-name">{token.id}</span>
-                      <span className="token-source">
-                        via {token.source || 'Uniswap'}
+                      <span className={`token-source ${token.sourceType === 'estimated' ? 'estimated' : ''}`}>
+                        {token.sourceType === 'estimated' ? '⚠️ ' : ''}{token.source || 'Uniswap'}
                       </span>
                     </div>
                   </div>
                   <div className="token-price-info">
-                    <span className="token-price">
+                    <span className={`token-price ${token.sourceType === 'estimated' ? 'estimated-price' : ''}`}>
                       {token.priceUSD ? formatPrice(token.priceUSD) : '$0.00'}
                     </span>
                     <span 
                       className="token-change"
                       style={{ color: getChangeColor(0) }}
                     >
-                      --%
+                      {token.sourceType === 'estimated' ? 'Est.' : '--%'}
                     </span>
                   </div>
                 </a>
@@ -753,6 +753,10 @@ export default function Home() {
           color: var(--text-secondary);
         }
         
+        .token-source.estimated {
+          color: #ffc107;
+        }
+        
         .token-price-info {
           text-align: right;
         }
@@ -761,6 +765,10 @@ export default function Home() {
           font-weight: 600;
           font-family: monospace;
           display: block;
+        }
+        
+        .token-price.estimated-price {
+          color: #ffc107;
         }
         
         .token-change {

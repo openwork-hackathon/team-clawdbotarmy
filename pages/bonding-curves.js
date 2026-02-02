@@ -80,6 +80,10 @@ export default function BondingCurves() {
     return data.source;
   };
 
+  const isEstimated = (data) => {
+    return data?.sourceType === 'estimated';
+  };
+
   const getUniswapEmbedUrl = (tokenAddress) => {
     return `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${tokenAddress}&use=v2`;
   };
@@ -103,6 +107,15 @@ export default function BondingCurves() {
           <h1>📈 Trading</h1>
           <p className="page-subtitle">Buy and sell AI agent tokens on Base</p>
         </header>
+
+        {/* Price Disclaimer */}
+        <div className="price-disclaimer">
+          <span className="disclaimer-icon">⚠️</span>
+          <span className="disclaimer-text">
+            Token prices shown are <strong>bonding curve estimates</strong>. 
+            Trade on Uniswap for real-time market prices.
+          </span>
+        </div>
 
         {/* Token Selector */}
         <div className="token-tabs">
@@ -157,9 +170,13 @@ export default function BondingCurves() {
                     {formatETH(prices[selectedToken.id]?.priceETH)}
                   </div>
                   <div className="price-meta">
-                    <span className="price-source">
-                      📊 via {formatSource(prices[selectedToken.id]) || 'Uniswap'}
+                    <span className={`price-source ${isEstimated(prices[selectedToken.id]) ? 'estimated' : ''}`}>
+                      {isEstimated(prices[selectedToken.id]) ? '⚠️ ' : '📊 '}
+                      {formatSource(prices[selectedToken.id]) || 'Uniswap'}
                     </span>
+                    {isEstimated(prices[selectedToken.id]) && (
+                      <span className="price-note">Estimated — trade on Uniswap for real price</span>
+                    )}
                     <span className="price-change" style={{ color: getChangeColor(selectedToken.id) }}>
                       +2.5% (24h)
                     </span>
@@ -435,6 +452,26 @@ export default function BondingCurves() {
           border-radius: 16px;
         }
         
+        .price-disclaimer {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 16px;
+          background: rgba(255, 193, 7, 0.1);
+          border: 1px solid rgba(255, 193, 7, 0.3);
+          border-radius: 10px;
+          margin-bottom: 20px;
+          font-size: 0.85em;
+        }
+        
+        .disclaimer-icon {
+          font-size: 1.2em;
+        }
+        
+        .disclaimer-text {
+          color: #ffc107;
+        }
+        
         .price-main {
           font-size: 2.5em;
           font-weight: 700;
@@ -450,13 +487,23 @@ export default function BondingCurves() {
         
         .price-meta {
           display: flex;
+          flex-wrap: wrap;
           justify-content: center;
-          gap: 20px;
+          gap: 12px;
           font-size: 0.85em;
         }
         
         .price-source {
           color: var(--text-secondary);
+        }
+        
+        .price-source.estimated {
+          color: #ffc107;
+        }
+        
+        .price-note {
+          font-size: 0.8em;
+          color: #ffc107;
         }
         
         .price-change {
