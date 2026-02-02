@@ -24,10 +24,14 @@ contract DeployOpenWorkBondingCurve is Script {
         console2.log(" Deploying OpenWorkBondingCurve to Base...");
         
         // Get OPENWORK token from env or use placeholder
-        openworkToken = vm.envAddress("OPENWORK_TOKEN", address(0));
+        try vm.envAddress("OPENWORK_TOKEN") returns (address token) {
+            openworkToken = token;
+        } catch {
+            openworkToken = address(0);
+        }
         
         if (openworkToken == address(0)) {
-            console2.log("⚠️  Warning: OPENWORK_TOKEN not set. Set with:");
+            console2.log(unicode"[Warning]  Warning: OPENWORK_TOKEN not set. Set with:");
             console2.log("   export OPENWORK_TOKEN=0x...");
             console2.log("   Using address(0) for now (will need to configure later)");
         } else {
@@ -47,8 +51,8 @@ contract DeployOpenWorkBondingCurve is Script {
         vm.stopBroadcast();
         
         console2.log(" OpenWorkBondingCurve deployed!");
-        console2.log("📄 Contract:", address(curve));
-        console2.log("🪙 OPENWORK Token:", openworkToken);
+        console2.log(unicode"[Contract] Contract:", address(curve));
+        console2.log(unicode"[Token] OPENWORK Token:", openworkToken);
         console2.log("");
         console2.log("Token Parameters:");
         console2.log("  - Initial Supply: 5M OPENWORK");

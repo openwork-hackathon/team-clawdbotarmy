@@ -40,7 +40,7 @@ contract DeployMultiTokenBondingCurve is Script {
         
         console2.log("");
         console2.log(" MultiTokenBondingCurve deployed!");
-        console2.log("📄 Contract:", address(curve));
+        console2.log(unicode"[Contract] Contract:", address(curve));
         console2.log("");
         console2.log("Features:");
         console2.log("  - Single contract for all tokens");
