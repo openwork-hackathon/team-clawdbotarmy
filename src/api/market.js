@@ -43,12 +43,18 @@ async function getMarketChart(coinId, days = 7, timeframe = '1d') {
       const daysMap = { '1m': 1, '5m': 1, '15m': 1, '1h': 1, '4h': 3 };
       
       try {
+        // Add timestamp to prevent any caching
+        const cacheBuster = Date.now();
         const ohlcResponse = await axios.get(
           `${COINGECKO_BASE}/coins/${coinId}/ohlc`,
           {
             params: {
               vs_currency: 'usd',
-              days: daysMap[timeframe] || 1
+              days: daysMap[timeframe] || 1,
+              _cb: cacheBuster
+            },
+            headers: {
+              'Cache-Control': 'no-cache'
             }
           }
         );
@@ -68,11 +74,16 @@ async function getMarketChart(coinId, days = 7, timeframe = '1d') {
         prices = response.data.prices || [];
       }
     } else {
-      // Daily/weekly data
+      // Daily/weekly data - add cache-buster
+      const cacheBuster = Date.now();
       const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}/market_chart`, {
         params: {
           vs_currency: 'usd',
-          days: days
+          days: days,
+          _cb: cacheBuster
+        },
+        headers: {
+          'Cache-Control': 'no-cache'
         }
       });
       prices = response.data.prices || [];
