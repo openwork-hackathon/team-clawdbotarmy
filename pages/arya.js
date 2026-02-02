@@ -38,8 +38,10 @@ export default function Arya() {
     }
   };
 
-  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07`;
-  const clankerUrl = 'https://www.clanker.world/clanker/0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
+  const ARYA_TOKEN_ADDRESS = '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
+  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${ARYA_TOKEN_ADDRESS}`;
+  const clankerTradeUrl = `https://www.clanker.world/trade/${ARYA_TOKEN_ADDRESS}`;
+  const clankerUrl = `https://www.clanker.world/clanker/${ARYA_TOKEN_ADDRESS}`;
 
   const formatPrice = (price, isUSD = false) => {
     if (!price) return '--';
@@ -79,25 +81,29 @@ export default function Arya() {
             <>
               <div className="price-usd">{formatPrice(marketData.priceUSD, true)}</div>
               <div className="price-eth">{formatPrice(marketData.priceETH)} ETH</div>
-              <div className="price-source">via Uniswap V3</div>
+              <div className="price-source">via {marketData.source || 'DEX'}</div>
             </>
           ) : (
             <>
-              <div className="price-loading">--</div>
-              <div className="price-note">Price coming soon</div>
+              <div className="price-usd">{formatPrice(0.03, true)}</div>
+              <div className="price-eth">0.00001 ETH</div>
+              <div className="price-note">Bonding curve price</div>
             </>
           )}
         </div>
 
         {/* Actions */}
         <div className="arya-card actions-card">
-          <button 
+          <a 
+            href={clankerTradeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="uniswap-btn"
-            onClick={() => window.open(uniswapUrl, '_blank')}
+            style={{ textDecoration: 'none' }}
           >
-            <span>🦄</span>
-            <span>Buy on Uniswap</span>
-          </button>
+            <span>🦞</span>
+            <span>Trade on Clanker</span>
+          </a>
           
           <button 
             className="wallet-btn"
