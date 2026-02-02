@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useWallet } from '../src/hooks/useWallet';
 
 // ERC20 ABI for balanceOf
 const ERC20_ABI = [
@@ -14,11 +15,9 @@ const ERC20_ABI = [
 ];
 
 export default function Portfolio() {
+  const { account, isConnected, connect, error: walletError } = useWallet();
   const [holdings, setHoldings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
-  const [error, setError] = useState(null);
   const [view, setView] = useState('grid'); // 'grid' | 'list'
 
   // Token addresses on Base
@@ -32,42 +31,18 @@ export default function Portfolio() {
   const ETH_CONFIG = { id: 'ETH', emoji: 'Ξ', color: '#627eea' };
 
   useEffect(() => {
-    checkWalletConnection();
-  }, []);
-
-  const checkWalletConnection = async () => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setWalletConnected(true);
-          setWalletAddress(accounts[0]);
-          fetchAllBalances(accounts[0]);
-        } else {
-          setLoading(false);
-        }
-      } catch (e) {
-        console.error('Error checking wallet:', e);
-        setLoading(false);
-      }
+    if (isConnected && account) {
+      fetchAllBalances(account);
     } else {
       setLoading(false);
     }
-  };
+  }, [isConnected, account]);
 
-  const connectWallet = async () => {
-    if (typeof window === 'undefined' || !window.ethereum) {
-      alert('MetaMask not installed!');
-      return;
-    }
+  const handleConnect = async () => {
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      setWalletConnected(true);
-      setWalletAddress(accounts[0]);
-      fetchAllBalances(accounts[0]);
+      await connect();
     } catch (e) {
       console.error('Wallet connection failed:', e);
-      setError('Failed to connect wallet');
     }
   };
 
@@ -210,8 +185,8 @@ export default function Portfolio() {
   };
 
   const copyAddress = () => {
-    if (walletAddress) {
-      navigator.clipboard.writeText(walletAddress);
+    if (account) {
+      navigator.clipboard.writeText(account);
       alert('Address copied!');
     }
   };
@@ -234,13 +209,13 @@ export default function Portfolio() {
 
         {/* Wallet Section */}
         <div className="wallet-section glass-card">
-          {walletConnected ? (
+          {isConnected ? (
             <div className="wallet-connected">
               <div className="wallet-info">
                 <span className="wallet-label">Connected Wallet</span>
                 <div className="wallet-address" onClick={copyAddress}>
                   <span className="address-icon">🔗</span>
-                  <span className="address">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+                  <span className="address">{account.slice(0, 6)}...{account.slice(-4)}</span>
                   <span className="copy-hint">Click to copy</span>
                 </div>
               </div>
@@ -268,7 +243,7 @@ export default function Portfolio() {
         </div>
 
         {/* Holdings Section */}
-        {walletConnected && (
+        {isConnected && (
           <div className="holdings-section">
             <div className="section-header">
               <h2>Your Assets</h2>
@@ -381,7 +356,7 @@ export default function Portfolio() {
         )}
 
         {/* Quick Links */}
-        {walletConnected && (
+        {isConnected && (
           <div className="quick-links glass-card">
             <h3>Quick Actions</h3>
             <div className="links-grid">

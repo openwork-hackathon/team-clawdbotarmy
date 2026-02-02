@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useWallet } from '../src/hooks/useWallet';
 
 // ERC20 ABI for balanceOf
 const ERC20_ABI = [
@@ -14,6 +15,8 @@ const ERC20_ABI = [
 ];
 
 export default function Staking() {
+  const { account, isConnected, connect, error: walletError } = useWallet();
+  
   const [pools] = useState([
     { 
       id: 'ARYA', 
@@ -51,8 +54,6 @@ export default function Staking() {
   ]);
   
   const [selectedPool, setSelectedPool] = useState(pools[0]);
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
   const [stakeAmount, setStakeAmount] = useState('');
   const [aryaBalance, setAryaBalance] = useState(0);
   const [hasArya, setHasArya] = useState(false);
@@ -60,8 +61,10 @@ export default function Staking() {
   const [activeTab, setActiveTab] = useState('stake'); // 'stake' | 'rewards'
 
   useEffect(() => {
-    checkWalletConnection();
-  }, []);
+    if (isConnected && account) {
+      checkAryaBalance(account);
+    }
+  }, [isConnected, account]);
 
   useEffect(() => {
     // Calculate estimated rewards based on ARYA holding status
@@ -75,21 +78,6 @@ export default function Staking() {
       setEstimatedRewards(0);
     }
   }, [stakeAmount, selectedPool, hasArya]);
-
-  const checkWalletConnection = async () => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setWalletConnected(true);
-          setWalletAddress(accounts[0]);
-          checkAryaBalance(accounts[0]);
-        }
-      } catch (e) {
-        console.error('Error checking wallet:', e);
-      }
-    }
-  };
 
   const checkAryaBalance = async (address) => {
     try {
@@ -109,16 +97,9 @@ export default function Staking() {
     }
   };
 
-  const connectWallet = async () => {
-    if (typeof window === 'undefined' || !window.ethereum) {
-      alert('MetaMask not installed!');
-      return;
-    }
+  const handleConnect = async () => {
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      setWalletConnected(true);
-      setWalletAddress(accounts[0]);
-      checkAryaBalance(accounts[0]);
+      await connect();
     } catch (e) {
       console.error('Wallet connection failed:', e);
     }
@@ -152,7 +133,7 @@ export default function Staking() {
         </header>
 
         {/* ARYA Holder Banner */}
-        {walletConnected && (
+        {isConnected && (
           <div className={`holder-banner ${hasArya ? 'holder' : 'non-holder'}`}>
             <div className="holder-info">
               <span className="holder-icon">{hasArya ? '🦞' : '💰'}</span>
@@ -325,13 +306,13 @@ export default function Staking() {
                   )}
 
                   <div className="staking-actions">
-                    {walletConnected ? (
+                    {isConnected ? (
                       <button className="stake-btn" style={{ background: selectedPool.color }}>
                         <span>🔒</span>
                         <span>Stake {selectedPool.id}</span>
                       </button>
                     ) : (
-                      <button className="connect-btn" onClick={connectWallet}>
+                      <button className="connect-btn" onClick={handleConnect}>
                         <span>🦊</span>
                         <span>Connect Wallet</span>
                       </button>
@@ -400,12 +381,12 @@ export default function Staking() {
               <h2>🎁 Your Staking Rewards</h2>
             </div>
             
-            {!walletConnected ? (
+            {!isConnected ? (
               <div className="rewards-cta">
                 <div className="cta-icon">🔓</div>
                 <h3>Connect Your Wallet</h3>
                 <p>View your accumulated rewards and claim them</p>
-                <button className="connect-btn" onClick={connectWallet}>
+                <button className="connect-btn" onClick={handleConnect}>
                   <span>🦊</span>
                   <span>Connect Wallet</span>
                 </button>
