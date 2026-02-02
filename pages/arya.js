@@ -25,8 +25,7 @@ export default function Arya() {
         supply: 1000000,
         maxSupply: 10000000,
         totalTrades: 42,
-        totalVolume: 12.5,
-        formula: 'price = 1e-11 × supply + 0.00001'
+        totalVolume: 12.5
       });
     } catch (e) {
       console.error('Error fetching curve:', e);
@@ -304,48 +303,6 @@ export default function Arya() {
                 <span>Now</span>
               </div>
             </div>
-
-            {/* Formula */}
-            <div style={{ 
-              background: '#1a1a24',
-              borderRadius: '16px',
-              padding: '25px',
-              border: '1px solid #2a2a3a'
-            }}>
-              <h3 style={{ margin: '0 0 20px 0', color: '#fff' }}>📈 Bonding Curve</h3>
-              
-              <div style={{ 
-                background: 'linear-gradient(135deg, #1a1a24 0%, #252530 100%)',
-                borderRadius: '12px',
-                padding: '20px',
-                marginBottom: '20px',
-                border: '1px solid #3a3a4a'
-              }}>
-                <code style={{ 
-                  color: '#ff6b35', 
-                  fontSize: '1.1em',
-                  fontFamily: 'monospace'
-                }}>
-                  price = 1e-11 × supply + 0.00001 ETH
-                </code>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <div style={{ padding: '15px', background: '#252530', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '0.8em', color: '#888' }}>Base Price</div>
-                  <div style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#10b981' }}>
-                    0.00001 ETH
-                  </div>
-                </div>
-                <div style={{ padding: '15px', background: '#252530', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '0.8em', color: '#888' }}>Slope</div>
-                  <div style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#6366f1' }}>
-                    1e-11
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Trade Card */}
           <div style={{ 
