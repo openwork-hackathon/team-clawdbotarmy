@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
+// Enable dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function Portfolio() {
   const [portfolio, setPortfolio] = useState(null);
   const [holdings, setHoldings] = useState([]);

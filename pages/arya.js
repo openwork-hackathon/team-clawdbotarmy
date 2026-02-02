@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
+// Enable dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function Arya() {
   const [curve, setCurve] = useState(null);
   const [side, setSide] = useState('BUY');

@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
+// Enable dynamic rendering for wallet-dependent page
+export const dynamic = 'force-dynamic';
+
 export default function Staking() {
   const [pools, setPools] = useState(null);
   const [userStakes, setUserStakes] = useState({ ARYA: null, OPENWORK: null });

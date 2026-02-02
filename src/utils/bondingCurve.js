@@ -16,10 +16,10 @@ const TOKEN_CONFIGS = {
   ARYA: {
     name: 'ARYA',
     symbol: 'ARYA',
-    initialSupply: 1000000,
-    initialReserve: 10, // ETH
-    a: 0.00001, // Slope
-    b: 0.5, // Base price (ETH)
+    initialSupply: 50000,  // Start with 50K for 0.001 ETH price
+    initialReserve: 0.05,  // Small reserve
+    a: 0.00000001, // Very gentle slope
+    b: 0.001, // Base price (ETH) - 0.001 ETH per token
     maxSupply: 10000000,
     clankerAddress: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
   },
