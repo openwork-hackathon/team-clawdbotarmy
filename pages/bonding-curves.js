@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function BondingCurves() {
-  const [tokens, setTokens] = useState([
+  const [tokens] = useState([
     { 
       id: 'ARYA', 
       emoji: '🦞',
@@ -10,14 +10,6 @@ export default function BondingCurves() {
       address: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
       description: 'AI Agent Token',
       uniswapUrl: 'https://app.uniswap.org/swap?chain=base&inputCurrency=0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07'
-    },
-    { 
-      id: 'OPENWORK', 
-      emoji: '⚡',
-      color: '#00d4ff',
-      address: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
-      description: 'OpenWork Protocol',
-      uniswapUrl: 'https://app.uniswap.org/swap?chain=base&inputCurrency=0x299c30dd5974bf4d5bfe42c340ca40462816ab07'
     },
     { 
       id: 'KROWNEPO', 
@@ -40,25 +32,24 @@ export default function BondingCurves() {
 
   const fetchPrices = async () => {
     setLoading(true);
-    const newPrices = {};
-    
-    for (const token of tokens) {
-      try {
-        const r = await fetch(`/api/price/${token.id.toLowerCase()}`);
-        const data = await r.json();
-        newPrices[token.id] = data;
-      } catch (e) {
-        newPrices[token.id] = null;
-      }
+    try {
+      const r = await fetch('/api/price/all');
+      const data = await r.json();
+      setPrices(data.prices || {});
+    } catch (e) {
+      console.error('Error fetching prices:', e);
     }
-    
-    setPrices(newPrices);
     setLoading(false);
   };
 
   const formatPrice = (data) => {
     if (!data?.priceUSD) return '--';
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.priceUSD);
+  };
+
+  const formatSource = (data) => {
+    if (!data?.source) return '';
+    return data.source;
   };
 
   // Uniswap widget URL for embedded swap
@@ -111,7 +102,12 @@ export default function BondingCurves() {
             ) : prices[selectedToken.id]?.priceUSD ? (
               <>
                 <div className="price-main">{formatPrice(prices[selectedToken.id])}</div>
-                <div className="price-eth">{prices[selectedToken.id].priceETH?.toFixed(10)} ETH</div>
+                <div className="price-eth">
+                  {prices[selectedToken.id].priceETH?.toFixed(10)} ETH
+                </div>
+                <div className="price-source">
+                  via {formatSource(prices[selectedToken.id]) || 'Uniswap'}
+                </div>
               </>
             ) : (
               <div className="price-loading">--</div>
@@ -297,6 +293,12 @@ export default function BondingCurves() {
         .price-eth {
           color: #ff6b35;
           font-size: 1.1em;
+          margin-bottom: 5px;
+        }
+        
+        .price-source {
+          font-size: 0.8em;
+          color: #666;
         }
         
         .price-loading {
