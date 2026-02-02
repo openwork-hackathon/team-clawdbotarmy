@@ -1,17 +1,13 @@
 // Bonding Curve for Multiple Tokens
-// Integrated with Clanker for real on-chain trading
-
 import { 
   getTokenInfo, 
   getAllTokens, 
   isTokenDeployed, 
   getTokenClankerUrl,
   getTradingUrl,
-  estimateTrade,
-  CLANKER_TOKENS
+  estimateTrade
 } from './clanker';
 
-// Token configurations (mirrors Clanker deployment params)
 const TOKEN_CONFIGS = {
   ARYA: {
     name: 'ARYA',
@@ -35,7 +31,6 @@ const TOKEN_CONFIGS = {
   }
 };
 
-// Global curve state (in-memory for demo)
 const curveStates = {
   ARYA: {
     supply: TOKEN_CONFIGS.ARYA.initialSupply,
@@ -51,19 +46,16 @@ const curveStates = {
   }
 };
 
-// Get token configuration
 export function getTokenConfig(token) {
   return TOKEN_CONFIGS[token.toUpperCase()] || null;
 }
 
-// Get current price for a token (linear bonding curve)
 export function getTokenPrice(token, supply) {
   const config = getTokenConfig(token);
   if (!config) return 0;
   return config.a * supply + config.b;
 }
 
-// Calculate buy amount (ETH -> Tokens)
 export function getBuyAmount(ethAmount, token, currentSupply) {
   const config = getTokenConfig(token);
   if (!config) return 0;
@@ -72,7 +64,6 @@ export function getBuyAmount(ethAmount, token, currentSupply) {
   return ethAmount / ((startPrice + endPrice) / 2);
 }
 
-// Calculate sell amount (Tokens -> ETH)
 export function getSellAmount(tokenAmount, token, currentSupply) {
   const config = getTokenConfig(token);
   if (!config) return 0;
@@ -81,7 +72,6 @@ export function getSellAmount(tokenAmount, token, currentSupply) {
   return tokenAmount * ((startPrice + endPrice) / 2);
 }
 
-// Calculate slippage percentage
 export function getSlippage(amount, supply, token, isBuy) {
   const midPrice = getTokenPrice(token, supply);
   const avgPrice = isBuy 
@@ -91,7 +81,6 @@ export function getSlippage(amount, supply, token, isBuy) {
   return Math.abs((avgPrice - midPrice) / midPrice * 100);
 }
 
-// Get curve state for a token
 export function getCurveState(token) {
   const config = getTokenConfig(token);
   if (!config) return null;
@@ -112,7 +101,6 @@ export function getCurveState(token) {
     currentPrice: price,
     token: config.symbol,
     curveType: 'linear',
-    formula: 'price = ' + config.a + ' * supply + ' + config.b + ' ETH',
     maxSupply: config.maxSupply,
     isDeployed,
     clankerAddress: config.clankerAddress,
@@ -122,7 +110,6 @@ export function getCurveState(token) {
   };
 }
 
-// Execute a trade (simulation mode - for real trades, use on-chain)
 export function executeTrade(type, amount, token) {
   const config = getTokenConfig(token);
   if (!config) throw new Error('Unknown token');
@@ -161,9 +148,6 @@ export function executeTrade(type, amount, token) {
       slippage: slippage.toFixed(2),
       newSupply: state.supply,
       isSimulated: !isDeployed,
-      message: isDeployed 
-        ? 'Ready for on-chain execution via Clanker'
-        : 'Simulation mode - Token not yet deployed on Clanker',
       timestamp: new Date().toISOString()
     };
   } 
@@ -188,9 +172,6 @@ export function executeTrade(type, amount, token) {
       slippage: slippage.toFixed(2),
       newSupply: state.supply,
       isSimulated: !isDeployed,
-      message: isDeployed
-        ? 'Ready for on-chain execution via Clanker'
-        : 'Simulation mode - Token not yet deployed on Clanker',
       timestamp: new Date().toISOString()
     };
   }
@@ -198,7 +179,6 @@ export function executeTrade(type, amount, token) {
   throw new Error('Invalid trade type');
 }
 
-// Get all token stats
 export function getAllCurveStates() {
   return {
     ARYA: getCurveState('ARYA'),
@@ -206,10 +186,8 @@ export function getAllCurveStates() {
   };
 }
 
-// Get token info from Clanker module
 export { getTokenInfo, getAllTokens, isTokenDeployed, getTokenClankerUrl, getTradingUrl };
 
-// Estimate trade with Clanker integration
 export function estimateTradeWithClanker(tokenSymbol, side, inputAmount) {
   const state = getCurveState(tokenSymbol);
   return estimateTrade(tokenSymbol, side, inputAmount, state.supply);
