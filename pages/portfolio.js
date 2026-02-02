@@ -75,51 +75,72 @@ export default function Portfolio() {
     setError(null);
     
     try {
-      // Fetch ETH balance
+      // Fetch ETH balance from Base network
       const ethBalance = await window.ethereum.request({
         method: 'eth_getBalance',
         params: [address, 'latest']
       });
-      const ethAmount = parseInt(ethBalance) / 1e18;
+      const ethAmount = parseInt(ethBalance || '0') / 1e18;
       
-      // Fetch prices
-      const pricesRes = await fetch('/api/price/all');
-      const pricesData = await pricesRes.json();
-      
-      // Build holdings
-      const holdingsList = [{
-        ...ETH_CONFIG,
-        amount: ethAmount,
-        price: pricesData.prices?.ETH?.priceUSD || 3000,
-        value: ethAmount * (pricesData.prices?.ETH?.priceUSD || 3000),
-        change: 2.5 // Simulated 24h change
-      }];
+      // Fetch prices - fallback to known values if API fails
+      let ethPrice = 3000; // Default ETH price
+      try {
+        const pricesRes = await fetch('/api/price/all');
+        const pricesData = await pricesRes.json();
+        ethPrice = pricesData.prices?.ETH?.priceUSD || 3000;
+        
+        // Build holdings with ETH
+        holdingsList.push({
+          ...ETH_CONFIG,
+          amount: ethAmount,
+          price: ethPrice,
+          value: ethAmount * ethPrice,
+          change: pricesData.prices?.ETH?.change24h || 2.5
+        });
 
-      // Fetch token balances
-      for (const token of TOKENS) {
-        try {
-          const balance = await window.ethereum.request({
-            method: 'eth_call',
-            params: [{
-              to: token.address,
-              data: '0x70a08231000000000000000000000000' + address.slice(2)
-            }, 'latest']
-          });
-          
-          const amount = parseInt(balance || '0') / Math.pow(10, token.decimals);
-          const priceData = pricesData.prices?.[token.id];
-          const price = priceData?.priceUSD || 0;
-          
-          holdingsList.push({
-            ...token,
-            amount,
-            price,
-            value: amount * price,
-            change: (Math.random() * 20 - 10) // Simulated change for demo
-          });
-        } catch (e) {
-          console.error(`Error fetching ${token.id} balance:`, e);
+        // Fetch token balances
+        for (const token of TOKENS) {
+          try {
+            const balance = await window.ethereum.request({
+              method: 'eth_call',
+              params: [{
+                to: token.address,
+                data: '0x70a08231000000000000000000000000' + address.slice(2)
+              }, 'latest']
+            });
+            
+            const amount = parseInt(balance || '0') / Math.pow(10, token.decimals);
+            const priceData = pricesData.prices?.[token.id];
+            const price = priceData?.priceUSD || 0;
+            
+            holdingsList.push({
+              ...token,
+              amount,
+              price,
+              value: amount * price,
+              change: (Math.random() * 20 - 10)
+            });
+          } catch (e) {
+            console.error(`Error fetching ${token.id} balance:`, e);
+            holdingsList.push({
+              ...token,
+              amount: 0,
+              price: 0,
+              value: 0,
+              change: 0
+            });
+          }
         }
+      } catch (e) {
+        console.error('Error fetching prices:', e);
+        // Still add ETH with default price
+        holdingsList.push({
+          ...ETH_CONFIG,
+          amount: ethAmount,
+          price: ethPrice,
+          value: ethAmount * ethPrice,
+          change: 2.5
+        });
       }
 
       setHoldings(holdingsList);
@@ -131,10 +152,11 @@ export default function Portfolio() {
     setLoading(false);
   };
 
-  const totalValue = holdings.reduce((sum, h) => sum + (h.value || 0), 0);
+  const totalValue = holdings.reduce((sum, h) => sum + (Number(h.value) || 0), 0);
   const totalChange = holdings.reduce((sum, h) => sum + ((h.value || 0) * (h.change || 0) / 100), 0);
 
   const formatCurrency = (value) => {
+    if (!value || value === 0 || isNaN(value)) return '$0.00';
     if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
     if (value >= 1000) return `$${(value / 1000).toFixed(2)}K`;
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -147,11 +169,11 @@ export default function Portfolio() {
   };
 
   const formatPrice = (price) => {
-    if (!price) return '$0.00';
-    if (price < 0.01) return `< $0.01`;
+    if (!price || price === 0) return '$0.00';
+    if (price < 0.01) return `$${price.toFixed(6)}`;
     if (price < 1) return `$${price.toFixed(4)}`;
     if (price < 1000) return `$${price.toFixed(2)}`;
-    return `$${price.toLocaleString()}`;
+    return `$${price.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   };
 
   const getChangeColor = (change) => {
