@@ -10,7 +10,9 @@ export default async function handler(req, res) {
   
   const prices = await getMarketChart(coin, days, timeframe);
   
-  // Disable caching for development
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.status(200).json({ coin, prices, timeframe, fetchedAt: new Date().toISOString() });
+  // Force no-cache headers
+  res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.status(200).json({ coin, prices, timeframe });
 }
