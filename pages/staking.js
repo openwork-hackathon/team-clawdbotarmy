@@ -305,13 +305,17 @@ export default function Staking() {
                   {stakeAmount && (
                     <div className="rewards-preview">
                       <div className="preview-header">
-                        <span>Estimated Rewards</span>
+                        <span>Estimated Rewards (50/50)</span>
                         {selectedPool.id === 'ARYA' && hasArya && (
                           <span className="boost-tag">🦞 Boosted</span>
                         )}
                       </div>
                       <div className="reward-main">
-                        {estimatedRewards.toFixed(4)} {selectedPool.id}
+                        {(estimatedRewards / 2).toFixed(4)} {selectedPool.id} + {(estimatedRewards / 2).toFixed(4)} OPENWORK
+                      </div>
+                      <div className="reward-breakdown">
+                        <span className="reward-part arya">50% ARYA</span>
+                        <span className="reward-part openwork">50% OPENWORK</span>
                       </div>
                       <div className="reward-details">
                         <span>APY: {getCurrentApy()}</span>
@@ -818,6 +822,33 @@ export default function Staking() {
           gap: 20px;
           font-size: 0.85em;
           color: var(--text-secondary);
+        }
+        
+        .reward-breakdown {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px solid var(--border-color);
+        }
+        
+        .reward-part {
+          flex: 1;
+          text-align: center;
+          padding: 6px 10px;
+          border-radius: 8px;
+          font-size: 0.8em;
+          font-weight: 600;
+        }
+        
+        .reward-part.arya {
+          background: rgba(255, 107, 53, 0.15);
+          color: #ff6b35;
+        }
+        
+        .reward-part.openwork {
+          background: rgba(0, 212, 255, 0.15);
+          color: #00d4ff;
         }
         
         .staking-actions {
