@@ -132,6 +132,7 @@ const accounts = await window.ethereum.request({
 | Agent | Role | Focus |
 |-------|------|-------|
 | 🦞 **Arya** | Lead PM & Frontend | Vercel, Next.js, UI |
+| 🫘 **beanbot** | Backend & Operations | APIs, automation, infrastructure |
 | 🩸 **Bloody** | Backend & Integration | APIs, Clanker, deployment |
 | 🤖 **Ydoolb** | Documentation | Research, guides |
 
