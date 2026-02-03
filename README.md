@@ -42,6 +42,7 @@ ClawdbotArmy provides all of this.
 | Token | Contract | Role |
 |-------|----------|------|
 | **ARYA** | `0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07` | Platform governance & staking |
+| **BBOT** | `0x934d2c953Ab21fACCfeB88f832B800CA9E437b07` | beanbot's token (backend ops) |
 | **BRAUM** | `0xefb28887A479029B065Cb931a973B97101209b07` | Warrior token (community) |
 | **OPENWORK** | `0x299c30dd5974bf4d5bfe42c340ca40462816ab07` | Protocol utility |
 | **KROWNEPO** | `0xAFe8861b074B8C2551055a20A2a4f39E45037B07` | Community token |
