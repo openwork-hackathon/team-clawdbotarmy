@@ -1,113 +1,122 @@
-// Market Data API - Fetches crypto prices from CoinGecko
+// Market API - Fetches real-time market data
 
-const axios = require('axios');
+const COINGECKO_API = 'https://api.coingecko.com/api/v3';
+const UNISWAP_SUBGRAPH = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
 
-const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
+// Cache for market data
+let marketCache = { timestamp: 0, data: null };
+const CACHE_DURATION = 30000; // 30 seconds
 
-/**
- * Get current prices for multiple coins
- * @param {Array} coinIds - Array of coin IDs (e.g., ['bitcoin', 'ethereum', 'solana'])
- * @returns {Object} Price data
- */
-async function getPrices(coinIds) {
+async function fetchTokenPrice(tokenId) {
   try {
-    const response = await axios.get(`${COINGECKO_BASE}/simple/price`, {
-      params: {
-        ids: coinIds.join(','),
-        vs_currencies: 'usd',
-        include_24hr_change: true,
-        include_24hr_vol: true,
-        include_market_cap: true
-      }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching prices:', error.message);
-    return {};
-  }
-}
-
-/**
- * Get historical market data for charts
- * @param {String} coinId - Coin ID
- * @param {Number} days - Number of days of history
- * @returns {Array} Price history
- */
-async function getMarketChart(coinId, days = 7) {
-  try {
-    const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}/market_chart`, {
-      params: {
-        vs_currency: 'usd',
-        days: days
-      }
-    });
-    return response.data.prices || [];
-  } catch (error) {
-    console.error('Error fetching chart data:', error.message);
-    return [];
-  }
-}
-
-/**
- * Get coin info (name, symbol, description, etc.)
- * @param {String} coinId - Coin ID
- * @returns {Object} Coin information
- */
-async function getCoinInfo(coinId) {
-  try {
-    const response = await axios.get(`${COINGECKO_BASE}/coins/${coinId}`, {
-      params: {
-        localization: false,
-        tickers: false,
-        market_data: true,
-        community_data: false,
-        developer_data: false,
-        sparkline: false
-      }
-    });
-    
-    const data = response.data;
-    return {
-      id: data.id,
-      name: data.name,
-      symbol: data.symbol,
-      description: data.description?.en?.substring(0, 200) + '...',
-      currentPrice: data.market_data?.current_price?.usd,
-      priceChange24h: data.market_data?.price_change_percentage_24h,
-      marketCap: data.market_data?.market_cap?.usd,
-      volume24h: data.market_data?.total_volume?.usd,
-      high24h: data.market_data?.high_24h?.usd,
-      low24h: data.market_data?.low_24h?.usd
-    };
-  } catch (error) {
-    console.error('Error fetching coin info:', error.message);
+    const response = await fetch(
+      `${COINGECKO_API}/simple/price?ids=${tokenId}&vs_currencies=usd&include_24hr_change=true`
+    );
+    const data = await response.json();
+    return data[tokenId];
+  } catch (e) {
+    console.error(`Error fetching ${tokenId} price:`, e);
     return null;
   }
 }
 
-/**
- * Get trending coins
- * @returns {Array} Trending coins
- */
-async function getTrending() {
+async function fetchUniswapPoolData(tokenAddress) {
+  const query = `
+    {
+      pools(where: {
+        token1: "${tokenAddress}"
+      }) {
+        id
+        token0Price
+        token1Price
+        volumeToken0
+        volumeToken1
+        feeTier
+      }
+    }
+  `;
+
   try {
-    const response = await axios.get(`${COINGECKO_BASE}/search/trending`);
-    return response.data.coins?.slice(0, 10).map(c => ({
-      id: c.item.id,
-      name: c.item.name,
-      symbol: c.item.symbol,
-      marketCapRank: c.item.market_cap_rank,
-      thumb: c.item.thumb
-    })) || [];
-  } catch (error) {
-    console.error('Error fetching trending:', error.message);
+    const response = await fetch(UNISWAP_SUBGRAPH, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+    const data = await response.json();
+    return data.data?.pools || [];
+  } catch (e) {
+    console.error('Error fetching Uniswap pool:', e);
     return [];
   }
 }
 
-module.exports = {
-  getPrices,
-  getMarketChart,
-  getCoinInfo,
-  getTrending
+async function getMarketOverview() {
+  const now = Date.now();
+  
+  // Check cache
+  if (marketCache.data && (now - marketCache.timestamp) < CACHE_DURATION) {
+    return marketCache.data;
+  }
+
+  try {
+    // Fetch prices from CoinGecko
+    const [ethData, aryaData] = await Promise.all([
+      fetchTokenPrice('ethereum'),
+      fetchTokenPrice('arya')
+    ]);
+
+    const overview = {
+      timestamp: now,
+      ethereum: {
+        price: ethData?.usd || 0,
+        change24h: ethData?.usd_24h_change || 0
+      },
+      arya: {
+        price: aryaData?.usd || 0,
+        change24h: aryaData?.usd_24h_change || 0
+      }
+    };
+
+    marketCache = { timestamp: now, data: overview };
+    return overview;
+  } catch (e) {
+    console.error('Error fetching market overview:', e);
+    return { timestamp: now, error: e.message };
+  }
+}
+
+async function getTokenChartData(coin, days = 7) {
+  try {
+    const coinId = coin === 'eth' ? 'ethereum' : coin;
+    const response = await fetch(
+      `${COINGECKO_API}/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`
+    );
+    const data = await response.json();
+    return {
+      coin,
+      prices: data.prices || [],
+      market_caps: data.market_caps || [],
+      total_volumes: data.total_volumes || []
+    };
+  } catch (e) {
+    console.error(`Error fetching chart data for ${coin}:`, e);
+    return { coin, error: e.message };
+  }
+}
+
+async function getUniswapTokenData(tokenAddress) {
+  const pools = await fetchUniswapPoolData(tokenAddress);
+  return {
+    address: tokenAddress,
+    pools,
+    poolCount: pools.length
+  };
+}
+
+export {
+  getMarketOverview,
+  getTokenChartData,
+  getUniswapTokenData,
+  fetchTokenPrice,
+  fetchUniswapPoolData
 };

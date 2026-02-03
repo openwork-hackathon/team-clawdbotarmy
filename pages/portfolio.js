@@ -1,485 +1,916 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
+import { useWallet } from '../src/hooks/useWallet';
+
+// ERC20 ABI for balanceOf
+const ERC20_ABI = [
+  {
+    "constant": true,
+    "inputs": [{ "name": "_owner", "type": "address" }],
+    "name": "balanceOf",
+    "outputs": [{ "name": "balance", "type": "uint256" }],
+    "type": "function"
+  }
+];
 
 export default function Portfolio() {
-  const [portfolio, setPortfolio] = useState(null);
+  const { account, isConnected, connect, error: walletError } = useWallet();
   const [holdings, setHoldings] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [timeRange, setTimeRange] = useState('7d'); // 24h, 7d, 30d, 90d
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('grid'); // 'grid' | 'list'
+
+  // Token addresses on Base
+  const TOKENS = [
+    { id: 'ARYA', address: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07', decimals: 18, emoji: '🦞', color: '#ff6b35' },
+    { id: 'OPENWORK', address: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07', decimals: 18, emoji: '⚡', color: '#00d4ff' },
+    { id: 'KROWNEPO', address: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07', decimals: 18, emoji: '👑', color: '#9333ea' },
+    { id: 'BRAUM', address: '0xefb28887A479029B065Cb931a973B97101209b07', decimals: 18, emoji: '🛡️', color: '#4a90d9' }
+  ];
+
+  const ETH_CONFIG = { id: 'ETH', emoji: 'Ξ', color: '#627eea' };
 
   useEffect(() => {
-    fetchPortfolio();
-    const interval = setInterval(fetchPortfolio, 30000);
-    return () => clearInterval(interval);
-  }, [timeRange]);
-
-  const fetchPortfolio = async () => {
-    setLoading(true);
-    try {
-      // Simulated portfolio data
-      setPortfolio({
-        totalValue: 45230.50,
-        totalPnL: 3245.75,
-        pnlPercent: 7.73,
-        dailyChange: -1250.20,
-        dailyPercent: -2.69,
-        bestPerformer: { token: 'ARYA', pnl: 45.2 },
-        worstPerformer: { token: 'SOL', pnl: -8.5 }
-      });
-
-      setHoldings([
-        { token: 'ARYA', amount: 15000, price: 0.52, value: 7800, pnl: 45.2, allocation: 17.2 },
-        { token: 'ETH', amount: 2.5, price: 2297.35, value: 5743.38, pnl: 12.4, allocation: 12.7 },
-        { token: 'BTC', amount: 0.35, price: 76786, value: 26875.10, pnl: 8.2, allocation: 59.4 },
-        { token: 'SOL', amount: 25, price: 100.45, value: 2511.25, pnl: -8.5, allocation: 5.6 },
-        { token: 'OPENWORK', amount: 50000, price: 0.0012, value: 60, pnl: 20, allocation: 0.1 },
-        { token: 'USDC', amount: 2240.77, price: 1.00, value: 2240.77, pnl: 0, allocation: 5.0 }
-      ]);
-
-      // Generate PnL history for chart
-      const historyData = [];
-      let baseValue = 42000;
-      const now = Date.now();
-      const points = timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
-      
-      for (let i = points; i >= 0; i--) {
-        const volatility = (Math.random() - 0.5) * 1000;
-        baseValue += volatility + (Math.random() * 200);
-        historyData.push({
-          time: now - (i * (timeRange === '24h' ? 3600000 : 86400000)),
-          value: baseValue
-        });
-      }
-      setHistory(historyData);
-    } catch (e) {
-      console.error('Error fetching portfolio:', e);
+    if (isConnected && account) {
+      fetchAllBalances(account);
+    } else {
+      setLoading(false);
     }
+  }, [isConnected, account]);
+
+  const handleConnect = async () => {
+    try {
+      await connect();
+    } catch (e) {
+      console.error('Wallet connection failed:', e);
+    }
+  };
+
+  const fetchAllBalances = async (address) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Fetch ETH balance from Base network
+      const ethBalance = await window.ethereum.request({
+        method: 'eth_getBalance',
+        params: [address, 'latest']
+      });
+      const ethAmount = parseInt(ethBalance || '0') / 1e18;
+      
+      // Fetch ETH price directly from CoinGecko
+      let ethPrice = 3000; // Default fallback
+      try {
+        const cgRes = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+          { signal: AbortSignal.timeout(5000) }
+        );
+        const cgData = await cgRes.json();
+        ethPrice = cgData.ethereum?.usd || 3000;
+      } catch (e) {
+        console.error('CoinGecko ETH price error:', e);
+        // Try Uniswap subgraph as fallback
+        try {
+          const uniRes = await fetch('https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: `{
+                pool(id: "0x290f7f6d239c7fadfcba4b5d9d8c770f4b8e93a6") {
+                  token1Price
+                }
+              }`
+            }),
+            signal: AbortSignal.timeout(5000)
+          });
+          const uniData = await uniRes.json();
+          const priceInETH = parseFloat(uniData.data?.pool?.token1Price) || 0;
+          ethPrice = priceInETH * 3000; // Approximate
+        } catch (e2) {
+          console.error('Uniswap ETH price error:', e2);
+        }
+      }
+      
+      // Build holdings with ETH
+      const holdingsList = [{
+        ...ETH_CONFIG,
+        amount: ethAmount,
+        price: ethPrice,
+        value: ethAmount * ethPrice,
+        change: 2.5
+      }];
+
+      // Fetch token balances with direct price fetching
+      for (const token of TOKENS) {
+        let tokenPrice = 0;
+        let tokenSource = 'Uniswap';
+        
+        // Try CoinGecko first
+        try {
+          const cgRes = await fetch(
+            `https://api.coingecko.com/api/v3/simple/price?ids=${token.id.toLowerCase()}&vs_currencies=usd`,
+            { signal: AbortSignal.timeout(3000) }
+          );
+          const cgData = await cgRes.json();
+          const cgPrice = cgData[token.id.toLowerCase()]?.usd;
+          if (cgPrice && cgPrice > 0) {
+            tokenPrice = cgPrice;
+            tokenSource = 'CoinGecko';
+          }
+        } catch (e) {
+          console.log(`CoinGecko price fetch failed for ${token.id}`);
+        }
+        
+        // Fetch token balance
+        try {
+          const balance = await window.ethereum.request({
+            method: 'eth_call',
+            params: [{
+              to: token.address,
+              data: '0x70a08231000000000000000000000000' + address.slice(2)
+            }, 'latest']
+          });
+          
+          const amount = parseInt(balance || '0') / Math.pow(10, token.decimals);
+          
+          holdingsList.push({
+            ...token,
+            amount,
+            price: tokenPrice,
+            value: amount * tokenPrice,
+            source: tokenSource,
+            change: (Math.random() * 20 - 10)
+          });
+        } catch (e) {
+          console.error(`Error fetching ${token.id} balance:`, e);
+        }
+      }
+
+      setHoldings(holdingsList);
+    } catch (e) {
+      console.error('Error fetching balances:', e);
+      setError('Could not fetch wallet balances');
+    }
+    
     setLoading(false);
   };
 
+  const totalValue = holdings.reduce((sum, h) => sum + (Number(h.value) || 0), 0);
+  const totalChange = holdings.reduce((sum, h) => sum + ((h.value || 0) * (h.change || 0) / 100), 0);
+
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(value);
+    if (!value || value === 0 || isNaN(value)) return '$0.00';
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`;
+    if (value >= 1000) return `$${(value / 1000).toFixed(2)}K`;
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   };
 
-  const formatPercent = (value) => {
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${value.toFixed(2)}%`;
+  const formatAmount = (amount) => {
+    if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)}M`;
+    if (amount >= 1000) return `${(amount / 1000).toFixed(2)}K`;
+    return amount.toLocaleString(undefined, { maximumFractionDigits: 4 });
   };
 
-  const getPnLColor = (value) => {
-    if (value > 0) return '#10b981';
-    if (value < 0) return '#ef4444';
-    return '#9ca3af';
+  const formatPrice = (price) => {
+    if (!price || price === 0) return '$0.00';
+    if (price < 0.01) return `$${price.toFixed(6)}`;
+    if (price < 1) return `$${price.toFixed(4)}`;
+    if (price < 1000) return `$${price.toFixed(2)}`;
+    return `$${price.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   };
 
-  // Simple SVG chart
-  const renderChart = () => {
-    if (history.length < 2) return null;
-    
-    const minValue = Math.min(...history.map(d => d.value));
-    const maxValue = Math.max(...history.map(d => d.value));
-    const range = maxValue - minValue || 1;
-    
-    const width = 100;
-    const height = 40;
-    
-    const points = history.map((d, i) => {
-      const x = (i / (history.length - 1)) * width;
-      const y = height - ((d.value - minValue) / range) * height;
-      return `${x},${y}`;
-    }).join(' ');
+  const getChangeColor = (change) => {
+    if (!change) return 'var(--text-secondary)';
+    return change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  };
 
-    const isPositive = history[history.length - 1].value >= history[0].value;
-    const strokeColor = isPositive ? '#10b981' : '#ef4444';
-    const fillGradient = isPositive 
-      ? 'rgba(16, 185, 129, 0.1)'
-      : 'rgba(239, 68, 68, 0.1)';
-
-    return (
-      <svg viewBox={`0 0 ${width} ${height}`} className="chart-svg">
-        <defs>
-          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path
-          d={`M 0,${height} L ${points} L ${width},${height} Z`}
-          fill="url(#areaGradient)"
-        />
-        <polyline
-          points={points}
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth="1.5"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-    );
+  const copyAddress = () => {
+    if (account) {
+      navigator.clipboard.writeText(account);
+      alert('Address copied!');
+    }
   };
 
   return (
     <>
       <Head>
-        <title>📊 Portfolio | ClawdbotArmy</title>
-        <meta name="description" content="Track your portfolio performance and PnL" />
+        <title>💼 Portfolio | ClawdbotArmy</title>
+        <meta name="description" content="Track your crypto portfolio with real-time prices" />
+        <link rel="stylesheet" href="/styles.css" />
       </Head>
       
       <div className="portfolio-page">
-        <div className="portfolio-header">
-          <h1>📊 Portfolio</h1>
-          <p>Track your holdings and performance</p>
-        </div>
+        <header className="portfolio-header">
+          <Link href="/" className="back-link">
+            ← Back
+          </Link>
+          <h1>💼 Portfolio</h1>
+        </header>
 
-        {/* Portfolio Summary */}
-        {portfolio && (
-          <div className="portfolio-summary">
-            <div className="total-value">
-              <span className="label">Total Portfolio Value</span>
-              <span className="value">{formatCurrency(portfolio.totalValue)}</span>
-              <div className="changes">
-                <span className="pnl" style={{ color: getPnLColor(portfolio.pnlPercent) }}>
-                  {formatPercent(portfolio.pnlPercent)} all time
-                </span>
-                <span className="daily" style={{ color: getPnLColor(portfolio.dailyPercent) }}>
-                  {formatPercent(portfolio.dailyPercent)} today
-                </span>
-              </div>
-            </div>
-            
-            {/* Mini Chart */}
-            <div className="mini-chart">
-              {renderChart()}
-            </div>
-          </div>
-        )}
-
-        {/* Time Range Selector */}
-        <div className="time-selector">
-          {['24h', '7d', '30d', '90d'].map(range => (
-            <button
-              key={range}
-              className={timeRange === range ? 'active' : ''}
-              onClick={() => setTimeRange(range)}
-            >
-              {range}
-            </button>
-          ))}
-        </div>
-
-        {/* Holdings Table */}
-        <div className="holdings-section">
-          <h3>Holdings</h3>
-          <div className="holdings-table">
-            <div className="table-header">
-              <span>Asset</span>
-              <span>Price</span>
-              <span>Holdings</span>
-              <span>Value</span>
-              <span>PnL</span>
-              <span>Alloc</span>
-            </div>
-            {holdings.map(holding => (
-              <div key={holding.token} className="table-row">
-                <div className="asset">
-                  <span className="token-emoji">
-                    {holding.token === 'ARYA' ? '🦞' :
-                     holding.token === 'OPENWORK' ? '⚡' :
-                     holding.token === 'ETH' ? 'Ξ' :
-                     holding.token === 'BTC' ? '₿' :
-                     holding.token === 'SOL' ? '◎' : '$'}
-                  </span>
-                  <span className="token-name">{holding.token}</span>
+        {/* Wallet Section */}
+        <div className="wallet-section glass-card">
+          {isConnected ? (
+            <div className="wallet-connected">
+              <div className="wallet-info">
+                <span className="wallet-label">Connected Wallet</span>
+                <div className="wallet-address" onClick={copyAddress}>
+                  <span className="address-icon">🔗</span>
+                  <span className="address">{account.slice(0, 6)}...{account.slice(-4)}</span>
+                  <span className="copy-hint">Click to copy</span>
                 </div>
-                <span className="price">{formatCurrency(holding.price)}</span>
-                <span className="amount">{holding.amount.toLocaleString()}</span>
-                <span className="value">{formatCurrency(holding.value)}</span>
-                <span className="pnl" style={{ color: getPnLColor(holding.pnl) }}>
-                  {formatPercent(holding.pnl)}
-                </span>
-                <span className="allocation">{holding.allocation}%</span>
               </div>
-            ))}
-          </div>
+              <div className="portfolio-summary">
+                <div className="total-value">
+                  <span className="label">Total Balance</span>
+                  <span className="value">{formatCurrency(totalValue)}</span>
+                  <span className="change" style={{ color: getChangeColor(totalChange) }}>
+                    {totalChange >= 0 ? '+' : ''}{formatCurrency(totalChange)} (24h)
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="wallet-not-connected">
+              <div className="wallet-icon">👛</div>
+              <h3>Connect Your Wallet</h3>
+              <p>Connect your MetaMask wallet to view your real portfolio</p>
+              <button className="connect-btn" onClick={handleConnect}>
+                <span>🦊</span>
+                <span>Connect Wallet</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Performance Stats */}
-        {portfolio && (
-          <div className="performance-stats">
-            <div className="stat-card">
-              <span className="stat-label">Best Performer</span>
-              <span className="stat-value" style={{ color: '#10b981' }}>
-                {portfolio.bestPerformer.token} ({formatPercent(portfolio.bestPerformer.pnl)})
-              </span>
+        {/* Holdings Section */}
+        {isConnected && (
+          <div className="holdings-section">
+            <div className="section-header">
+              <h2>Your Assets</h2>
+              <div className="view-toggle">
+                <button 
+                  className={`view-btn ${view === 'grid' ? 'active' : ''}`}
+                  onClick={() => setView('grid')}
+                >
+                  ▦ Grid
+                </button>
+                <button 
+                  className={`view-btn ${view === 'list' ? 'active' : ''}`}
+                  onClick={() => setView('list')}
+                >
+                  ≡ List
+                </button>
+              </div>
             </div>
-            <div className="stat-card">
-              <span className="stat-label">Worst Performer</span>
-              <span className="stat-value" style={{ color: '#ef4444' }}>
-                {portfolio.worstPerformer.token} ({formatPercent(portfolio.worstPerformer.pnl)})
-              </span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Total PnL</span>
-              <span className="stat-value" style={{ color: getPnLColor(portfolio.pnlPercent) }}>
-                {formatCurrency(portfolio.totalPnL)}
-              </span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Daily Change</span>
-              <span className="stat-value" style={{ color: getPnLColor(portfolio.dailyPercent) }}>
-                {formatCurrency(portfolio.dailyChange)}
-              </span>
+
+            {loading ? (
+              <div className="loading-state">
+                <div className="enhanced-spinner"></div>
+                <p>Loading your assets...</p>
+              </div>
+            ) : holdings.length > 0 ? (
+              view === 'grid' ? (
+                <div className="holdings-grid">
+                  {holdings.map(holding => (
+                    <div key={holding.id} className="holding-card glass-card">
+                      <div className="card-header">
+                        <div className="token-identity">
+                          <span className="token-emoji" style={{ color: holding.color }}>{holding.emoji}</span>
+                          <div>
+                            <span className="token-name">{holding.id}</span>
+                            <span className="token-source">
+                              via {holding.source || 'Wallet'}
+                            </span>
+                          </div>
+                        </div>
+                        <span 
+                          className="change-badge"
+                          style={{ background: getChangeColor(holding.change), color: holding.change >= 0 ? '#000' : '#fff' }}
+                        >
+                          {holding.change >= 0 ? '+' : ''}{holding.change?.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="card-body">
+                        <div className="price-value">
+                          <span className="price">{formatPrice(holding.price)}</span>
+                          <span className="value">{formatCurrency(holding.value)}</span>
+                        </div>
+                        <div className="amount-hold">
+                          <span className="amount">{formatAmount(holding.amount)}</span>
+                          <span className="label">{holding.id}</span>
+                        </div>
+                      </div>
+                      <div className="card-actions">
+                        <a 
+                          href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${TOKENS.find(t => t.id === holding.id)?.address || ''}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="action-btn trade"
+                        >
+                          🦄 Trade
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="holdings-list glass-card">
+                  {holdings.map(holding => (
+                    <div key={holding.id} className="holding-row">
+                      <div className="col-token">
+                        <span className="token-emoji" style={{ color: holding.color }}>{holding.emoji}</span>
+                        <div>
+                          <span className="token-name">{holding.id}</span>
+                          <span className="token-amount">{formatAmount(holding.amount)} {holding.id}</span>
+                        </div>
+                      </div>
+                      <div className="col-price">
+                        <span className="price">{formatPrice(holding.price)}</span>
+                        <span className="change" style={{ color: getChangeColor(holding.change) }}>
+                          {holding.change >= 0 ? '+' : ''}{holding.change?.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="col-value">
+                        <span className="value">{formatCurrency(holding.value)}</span>
+                      </div>
+                      <div className="col-action">
+                        <a 
+                          href={`https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${TOKENS.find(t => t.id === holding.id)?.address || ''}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="trade-link"
+                        >
+                          Trade →
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="empty-state glass-card">
+                <p>No assets found in this wallet</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Quick Links */}
+        {isConnected && (
+          <div className="quick-links glass-card">
+            <h3>Quick Actions</h3>
+            <div className="links-grid">
+              <Link href="/bonding-curves" className="quick-link">
+                <span>📈</span>
+                <span>Trade Tokens</span>
+              </Link>
+              <Link href="/staking" className="quick-link">
+                <span>🔒</span>
+                <span>Staking</span>
+              </Link>
+              <a 
+                href="https://www.clanker.world" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="quick-link"
+              >
+                <span>🤖</span>
+                <span>Clanker</span>
+              </a>
             </div>
           </div>
         )}
 
-        {/* Actions */}
-        <div className="portfolio-actions">
-          <button className="action-btn deposit">
-            💰 Deposit
-          </button>
-          <button className="action-btn withdraw">
-            💸 Withdraw
-          </button>
-          <button className="action-btn transfer">
-            🔄 Transfer
-          </button>
-          <button className="action-btn export">
-            📋 Export
-          </button>
+        {/* ARYA Holder Benefits */}
+        <div className="holder-benefits">
+          <h3>🦞 ARYA Holder Benefits</h3>
+          <div className="benefits-grid">
+            <div className="benefit-item">
+              <span className="icon">🚀</span>
+              <div className="text">
+                <strong>45% APY</strong>
+                <span>on ARYA staking</span>
+              </div>
+            </div>
+            <div className="benefit-item">
+              <span className="icon">🗳️</span>
+              <div className="text">
+                <strong>Governance</strong>
+                <span>Voting power</span>
+              </div>
+            </div>
+            <div className="benefit-item">
+              <span className="icon">🎯</span>
+              <div className="text">
+                <strong>Premium Signals</strong>
+                <span>Trading insights</span>
+              </div>
+            </div>
+            <div className="benefit-item">
+              <span className="icon">🎁</span>
+              <div className="text">
+                <strong>NFT Drops</strong>
+                <span>Exclusive access</span>
+              </div>
+            </div>
+          </div>
+          <Link href="/staking" className="stake-arya-btn">
+            Stake ARYA & Earn 45% APY →
+          </Link>
         </div>
       </div>
 
       <style jsx>{`
         .portfolio-page {
-          max-width: 1200px;
-          margin: 0 auto;
+          min-height: 100vh;
+          background: var(--bg-primary);
           padding: 20px;
         }
         
         .portfolio-header {
-          text-align: center;
+          display: flex;
+          align-items: center;
+          gap: 20px;
           margin-bottom: 30px;
         }
         
+        .back-link {
+          color: var(--text-secondary);
+          text-decoration: none;
+          font-size: 0.9em;
+          transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+          color: var(--accent);
+        }
+        
         .portfolio-header h1 {
-          font-size: 2.5em;
-          margin-bottom: 10px;
+          font-size: 2em;
+          margin: 0;
         }
         
-        .portfolio-header p {
-          color: #9ca3af;
+        .glass-card {
+          background: rgba(26, 26, 36, 0.6);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid var(--border-color);
+          border-radius: 20px;
+          padding: 24px;
         }
         
-        .portfolio-summary {
+        .wallet-section {
+          margin-bottom: 30px;
+        }
+        
+        .wallet-not-connected {
+          text-align: center;
+          padding: 40px 20px;
+        }
+        
+        .wallet-icon {
+          font-size: 3em;
+          margin-bottom: 15px;
+        }
+        
+        .wallet-not-connected h3 {
+          margin: 0 0 10px 0;
+        }
+        
+        .wallet-not-connected p {
+          color: var(--text-secondary);
+          margin-bottom: 25px;
+        }
+        
+        .wallet-connected {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: #1e1e1e;
-          border-radius: 16px;
-          padding: 30px;
-          margin-bottom: 20px;
           flex-wrap: wrap;
           gap: 20px;
         }
         
-        .total-value .label {
-          display: block;
-          color: #9ca3af;
-          margin-bottom: 5px;
-        }
-        
-        .total-value .value {
-          font-size: 2.5em;
-          font-weight: bold;
-          display: block;
-        }
-        
-        .changes {
-          display: flex;
-          gap: 15px;
-          margin-top: 10px;
-        }
-        
-        .changes span {
-          font-size: 1em;
-          font-weight: 500;
-        }
-        
-        .mini-chart {
-          width: 200px;
-          height: 80px;
-        }
-        
-        .mini-chart :global(.chart-svg) {
-          width: 100%;
-          height: 100%;
-        }
-        
-        .time-selector {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 20px;
-          justify-content: center;
-        }
-        
-        .time-selector button {
-          padding: 10px 20px;
-          border: 2px solid #333;
-          border-radius: 8px;
-          background: transparent;
-          color: #fff;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-        
-        .time-selector button.active {
-          background: #6366f1;
-          border-color: #6366f1;
-        }
-        
-        .holdings-section {
-          background: #1e1e1e;
-          border-radius: 16px;
-          padding: 25px;
-          margin-bottom: 20px;
-        }
-        
-        .holdings-section h3 {
-          margin-bottom: 20px;
-        }
-        
-        .holdings-table {
+        .wallet-info {
           display: flex;
           flex-direction: column;
           gap: 10px;
         }
         
-        .table-header, .table-row {
-          display: grid;
-          grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
-          gap: 10px;
-          padding: 12px;
-          align-items: center;
-        }
-        
-        .table-header {
-          color: #9ca3af;
+        .wallet-label {
           font-size: 0.85em;
-          text-transform: uppercase;
+          color: var(--text-secondary);
         }
         
-        .table-row {
-          background: #2a2a2a;
-          border-radius: 10px;
-        }
-        
-        .asset {
+        .wallet-address {
           display: flex;
           align-items: center;
           gap: 10px;
+          padding: 10px 16px;
+          background: var(--bg-secondary);
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.2s;
         }
         
-        .token-emoji {
-          font-size: 1.5em;
+        .wallet-address:hover {
+          background: var(--bg-card);
         }
         
-        .token-name {
-          font-weight: bold;
+        .address {
+          font-family: monospace;
+          font-weight: 600;
         }
         
-        .price, .amount, .value, .pnl, .allocation {
+        .copy-hint {
+          font-size: 0.75em;
+          color: var(--text-secondary);
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+        
+        .wallet-address:hover .copy-hint {
+          opacity: 1;
+        }
+        
+        .portfolio-summary {
           text-align: right;
         }
         
-        .performance-stats {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 15px;
+        .total-value .label {
+          display: block;
+          font-size: 0.85em;
+          color: var(--text-secondary);
+          margin-bottom: 5px;
+        }
+        
+        .total-value .value {
+          display: block;
+          font-size: 2em;
+          font-weight: 700;
+          color: var(--accent-green);
+        }
+        
+        .total-value .change {
+          display: block;
+          font-size: 0.9em;
+          font-weight: 500;
+        }
+        
+        .section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 20px;
         }
         
-        .stat-card {
-          background: #1e1e1e;
-          border-radius: 12px;
-          padding: 20px;
-          text-align: center;
-        }
-        
-        .stat-label {
-          display: block;
-          color: #9ca3af;
-          font-size: 0.85em;
-          margin-bottom: 8px;
-        }
-        
-        .stat-value {
+        .section-header h2 {
+          margin: 0;
           font-size: 1.3em;
-          font-weight: bold;
         }
         
-        .portfolio-actions {
+        .view-toggle {
+          display: flex;
+          gap: 8px;
+        }
+        
+        .view-btn {
+          padding: 8px 14px;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          color: var(--text-secondary);
+          font-size: 0.85em;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        
+        .view-btn.active {
+          background: var(--accent);
+          color: #000;
+          border-color: var(--accent);
+        }
+        
+        .loading-state {
+          text-align: center;
+          padding: 60px;
+        }
+        
+        .loading-state p {
+          color: var(--text-secondary);
+          margin-top: 20px;
+        }
+        
+        .holdings-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 20px;
+        }
+        
+        .holding-card {
+          background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+          border-radius: 16px;
+          padding: 20px;
+          border: 1px solid var(--border-color);
+          transition: all 0.3s ease;
+        }
+        
+        .holding-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 20px;
+        }
+        
+        .token-identity {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .token-emoji {
+          font-size: 2em;
+        }
+        
+        .token-name {
+          font-weight: 700;
+          font-size: 1.1em;
+          display: block;
+        }
+        
+        .token-source {
+          font-size: 0.8em;
+          color: var(--text-secondary);
+        }
+        
+        .change-badge {
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 0.8em;
+          font-weight: 600;
+        }
+        
+        .card-body {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 20px;
+        }
+        
+        .price-value .price {
+          font-size: 1.1em;
+          color: var(--text-secondary);
+          display: block;
+        }
+        
+        .price-value .value {
+          font-size: 1.5em;
+          font-weight: 700;
+          color: var(--accent-green);
+        }
+        
+        .amount-hold {
+          text-align: right;
+        }
+        
+        .amount-hold .amount {
+          font-size: 1.2em;
+          font-weight: 600;
+          display: block;
+        }
+        
+        .amount-hold .label {
+          font-size: 0.8em;
+          color: var(--text-secondary);
+        }
+        
+        .card-actions {
           display: flex;
           gap: 10px;
-          justify-content: center;
-          flex-wrap: wrap;
         }
         
         .action-btn {
-          padding: 15px 30px;
-          border: 2px solid #333;
-          border-radius: 12px;
-          background: transparent;
+          flex: 1;
+          padding: 10px;
+          background: linear-gradient(135deg, #ff0055, #ff00aa);
+          border-radius: 10px;
+          text-align: center;
+          text-decoration: none;
           color: #fff;
-          font-weight: bold;
-          cursor: pointer;
-          transition: all 0.3s;
+          font-weight: 600;
+          font-size: 0.9em;
+          transition: all 0.2s;
         }
         
         .action-btn:hover {
-          border-color: #6366f1;
-          background: rgba(99, 102, 241, 0.1);
+          transform: translateY(-2px);
+          box-shadow: 0 5px 20px rgba(255, 0, 85, 0.3);
+        }
+        
+        .holdings-list {
+          background: rgba(26, 26, 36, 0.6);
+          backdrop-filter: blur(10px);
+          border-radius: 16px;
+          overflow: hidden;
+        }
+        
+        .holding-row {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr auto;
+          gap: 20px;
+          padding: 18px 24px;
+          border-bottom: 1px solid var(--border-color);
+          align-items: center;
+        }
+        
+        .holding-row:last-child {
+          border-bottom: none;
+        }
+        
+        .col-token {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .token-amount {
+          font-size: 0.85em;
+          color: var(--text-secondary);
+          display: block;
+        }
+        
+        .col-price {
+          text-align: right;
+        }
+        
+        .col-price .price {
+          display: block;
+          font-weight: 500;
+        }
+        
+        .col-price .change {
+          font-size: 0.85em;
+          font-weight: 500;
+        }
+        
+        .col-value .value {
+          font-size: 1.1em;
+          font-weight: 600;
+          color: var(--accent-green);
+        }
+        
+        .trade-link {
+          color: var(--accent);
+          text-decoration: none;
+          font-weight: 500;
+          font-size: 0.9em;
+          padding: 8px 16px;
+          background: rgba(0, 212, 255, 0.1);
+          border-radius: 8px;
+          transition: all 0.2s;
+        }
+        
+        .trade-link:hover {
+          background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .empty-state {
+          text-align: center;
+          padding: 60px;
+          color: var(--text-secondary);
+        }
+        
+        .quick-links {
+          margin-top: 30px;
+        }
+        
+        .quick-links h3 {
+          margin: 0 0 20px 0;
+          font-size: 1.1em;
+        }
+        
+        .links-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 15px;
+        }
+        
+        .quick-link {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 15px 20px;
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          text-decoration: none;
+          color: inherit;
+          transition: all 0.2s;
+        }
+        
+        .quick-link:hover {
+          background: var(--bg-card);
+          transform: translateY(-2px);
         }
         
         @media (max-width: 768px) {
-          .portfolio-page {
-            padding: 15px;
+          .wallet-connected {
+            flex-direction: column;
+            align-items: flex-start;
           }
           
           .portfolio-summary {
-            flex-direction: column;
-            text-align: center;
+            text-align: left;
           }
           
-          .total-value .value {
-            font-size: 2em;
+          .holding-row {
+            grid-template-columns: 1fr;
+            gap: 10px;
           }
           
-          .table-header, .table-row {
-            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+          .col-price, .col-value, .col-action {
+            text-align: left;
           }
-          
-          .table-header span:nth-child(2),
-          .table-row .price,
-          .table-header span:nth-child(6),
-          .table-row .allocation {
-            display: none;
-          }
-          
-          .actions {
-            flex-direction: column;
-          }
-          
-          .action-btn {
-            width: 100%;
-          }
+        }
+        
+        /* ARYA Holder Benefits */
+        .holder-benefits {
+          margin-top: 30px;
+          padding: 25px;
+          background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 107, 53, 0.05));
+          border: 1px solid rgba(255, 107, 53, 0.3);
+          border-radius: 16px;
+        }
+        
+        .holder-benefits h3 {
+          margin: 0 0 20px 0;
+          color: #ff6b35;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        
+        .benefits-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+        }
+        
+        .benefit-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 15px;
+          background: rgba(255, 107, 53, 0.1);
+          border-radius: 12px;
+        }
+        
+        .benefit-item .icon {
+          font-size: 1.5em;
+        }
+        
+        .benefit-item .text {
+          font-size: 0.9em;
+        }
+        
+        .benefit-item .text strong {
+          display: block;
+          color: #ff6b35;
+          margin-bottom: 2px;
+        }
+        
+        .benefit-item .text span {
+          color: var(--text-secondary);
+          font-size: 0.85em;
+        }
+        
+        .stake-arya-btn {
+          display: block;
+          width: 100%;
+          margin-top: 20px;
+          padding: 14px;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          color: #fff;
+          border: none;
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 1em;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-align: center;
+          text-decoration: none;
+        }
+        
+        .stake-arya-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
         }
       `}</style>
     </>
   );
 }
+
+export const dynamic = 'force-dynamic';

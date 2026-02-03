@@ -1,119 +1,101 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { createPublicClient, http, formatEther } from 'viem';
-import { mainnet, base } from 'viem/chains';
 
 const WalletContext = createContext(null);
 
 export function WalletProvider({ children }) {
-  const [connected, setConnected] = useState(false);
-  const [address, setAddress] = useState('');
-  const [balance, setBalance] = useState('0');
-  const [chainId, setChainId] = useState(1);
+  const [account, setAccount] = useState(null);
+  const [chainId, setChainId] = useState(null);
   const [error, setError] = useState(null);
 
-  const getClient = useCallback(() => {
-    return createPublicClient({
-      chain: chainId === 8453 ? base : mainnet,
-      transport: http()
-    });
-  }, [chainId]);
-
-  const fetchBalance = useCallback(async (addr) => {
-    try {
-      const client = getClient();
-      const balanceRaw = await client.getBalance({ address: addr });
-      setBalance(formatEther(balanceRaw));
-    } catch (e) {
-      console.error('Error fetching balance:', e);
-      setBalance('0');
-    }
-  }, [getClient]);
-
-  const connect = useCallback(async () => {
-    setError(null);
-    
-    if (!window.ethereum) {
-      setError('No crypto wallet found. Please install MetaMask.');
-      return false;
+  const checkConnection = useCallback(async () => {
+    if (typeof window === 'undefined' || !window.ethereum) {
+      return;
     }
 
     try {
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts'
-      });
-
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       if (accounts.length > 0) {
-        setAddress(accounts[0]);
-        setConnected(true);
-        await fetchBalance(accounts[0]);
-        return true;
+        setAccount(accounts[0]);
+        const chain = await window.ethereum.request({ method: 'eth_chainId' });
+        setChainId(parseInt(chain, 16));
       }
     } catch (e) {
-      setError(e.message);
-      return false;
+      console.error('Error checking connection:', e);
     }
-    return false;
-  }, [fetchBalance]);
+  }, []);
+
+  const connect = useCallback(async () => {
+    if (typeof window === 'undefined' || !window.ethereum) {
+      setError('MetaMask not installed');
+      return;
+    }
+
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      setAccount(accounts[0]);
+      const chain = await window.ethereum.request({ method: 'eth_chainId' });
+      setChainId(parseInt(chain, 16));
+      setError(null);
+    } catch (e) {
+      setError(e.message);
+    }
+  }, []);
 
   const disconnect = useCallback(() => {
-    setConnected(false);
-    setAddress('');
-    setBalance('0');
+    setAccount(null);
+    setChainId(null);
+  }, []);
+
+  const switchChain = useCallback(async (targetChainId) => {
+    if (!window.ethereum) return;
+
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: `0x${targetChainId.toString(16)}` }],
+      });
+    } catch (e) {
+      if (e.code === 4902) {
+        setError(`Chain ${targetChainId} not found in MetaMask`);
+      } else {
+        setError(e.message);
+      }
+    }
   }, []);
 
   useEffect(() => {
-    // Only run on client-side
-    if (typeof window === 'undefined') return;
-    
-    if (!window.ethereum) return;
-    
-    const checkConnection = async () => {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
-          setAddress(accounts[0]);
-          setConnected(true);
-          await fetchBalance(accounts[0]);
-        }
-      } catch (e) {
-        console.error('Error checking connection:', e);
-      }
-    };
-    
     checkConnection();
-    
-    window.ethereum.on('accountsChanged', (accounts) => {
-      if (accounts.length === 0) {
-        disconnect();
-      } else {
-        setAddress(accounts[0]);
-        fetchBalance(accounts[0]);
-      }
-    });
 
-    window.ethereum.on('chainChanged', (newChainId) => {
-      setChainId(parseInt(newChainId, 16));
-      if (connected) fetchBalance(address);
-    });
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', (accounts) => {
+        setAccount(accounts[0] || null);
+      });
+
+      window.ethereum.on('chainChanged', (chain) => {
+        setChainId(parseInt(chain, 16));
+      });
+    }
 
     return () => {
-      window.ethereum.removeAllListeners('accountsChanged');
-      window.ethereum.removeAllListeners('chainChanged');
+      if (window.ethereum) {
+        window.ethereum.removeAllListeners('accountsChanged');
+        window.ethereum.removeAllListeners('chainChanged');
+      }
     };
-  }, [address, connected, disconnect, fetchBalance]);
+  }, [checkConnection]);
+
+  const value = {
+    account,
+    chainId,
+    isConnected: !!account,
+    connect,
+    disconnect,
+    switchChain,
+    error,
+  };
 
   return (
-    <WalletContext.Provider value={{ 
-      connected, 
-      address, 
-      balance, 
-      chainId,
-      error,
-      connect, 
-      disconnect,
-      fetchBalance,
-      setChainId
-    }}>
+    <WalletContext.Provider value={value}>
       {children}
     </WalletContext.Provider>
   );

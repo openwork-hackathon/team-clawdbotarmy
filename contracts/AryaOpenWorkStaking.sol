@@ -7,19 +7,18 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title AryaOpenWorkStaking
- * @dev Staking contract for ARYA and OPENWORK tokens with multi-pool support
+ * @dev Staking contract with 50/50 rewards in ARYA + OPENWORK tokens
  * 
  * Features:
  * - Multiple staking pools (ARYA, OPENWORK)
+ * - Rewards paid 50% ARYA + 50% OPENWORK
  * - Variable lock periods (30, 60, 90 days)
- * - Different APY rates per pool and lock period
- * - Rewards distributed from staking pool
+ * - Different APY rates per pool
  */
 contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
     
     IERC20 public aryaToken;
     IERC20 public openworkToken;
-    IERC20 public rewardToken;
     
     // Pool configuration
     struct Pool {
@@ -34,7 +33,8 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
     mapping(uint256 => Pool) public pools;
     mapping(uint256 => mapping(address => uint256)) public userStaked;
     mapping(uint256 => mapping(address => uint256)) public userRewardPerTokenPaid;
-    mapping(uint256 => mapping(address => uint256)) public rewards;
+    mapping(uint256 => mapping(address => uint256)) public rewardsArya;
+    mapping(uint256 => mapping(address => uint256)) public rewardsOpenwork;
     
     // Lock periods (in seconds)
     struct LockPeriod {
@@ -44,37 +44,32 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
     
     mapping(uint256 => LockPeriod[]) public lockPeriods;
     
-    // User lock info
+    // User stake info
     struct StakeInfo {
         uint256 amount;
         uint256 lockPeriod;
         uint256 stakeTime;
-        uint256 rewardDebt;
     }
     
     mapping(uint256 => mapping(address => StakeInfo)) public stakeInfo;
     
-    uint256 public constant TOTAL_POOLS = 2;
     uint256 public constant ARYA_POOL = 0;
     uint256 public constant OPENWORK_POOL = 1;
     
     // Events
     event Staked(uint256 indexed pool, address indexed user, uint256 amount, uint256 lockPeriod);
-    event Unstaked(uint256 indexed pool, address indexed user, uint256 amount, uint256 reward);
-    event RewardClaimed(uint256 indexed pool, address indexed user, uint256 reward);
+    event Unstaked(uint256 indexed pool, address indexed user, uint256 amount, uint256 rewardArya, uint256 rewardOpenwork);
+    event RewardClaimed(uint256 indexed pool, address indexed user, uint256 rewardArya, uint256 rewardOpenwork);
     event PoolUpdated(uint256 indexed pool, uint256 rewardRate);
-    event RewardTokenSet(address indexed token);
     
     constructor(
         address _aryaToken,
-        address _openworkToken,
-        address _rewardToken
+        address _openworkToken
     ) {
         aryaToken = IERC20(_aryaToken);
         openworkToken = IERC20(_openworkToken);
-        rewardToken = IERC20(_rewardToken);
         
-        // Initialize pools
+        // Initialize ARYA pool
         pools[ARYA_POOL] = Pool({
             stakeToken: _aryaToken,
             totalStaked: 0,
@@ -84,6 +79,7 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
             active: true
         });
         
+        // Initialize OPENWORK pool
         pools[OPENWORK_POOL] = Pool({
             stakeToken: _openworkToken,
             totalStaked: 0,
@@ -93,18 +89,18 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
             active: true
         });
         
-        // Lock periods (30, 60, 90 days)
-        // Multiplier: 10000 = 100%, so 12000 = 120%
+        // Lock periods with multipliers
+        // 10000 = 100%, so 15000 = 150% rewards
         lockPeriods[ARYA_POOL] = [
             LockPeriod({ duration: 30 days, multiplier: 10000 }),    // 30 days = 1x
-            LockPeriod({ duration: 60 days, multiplier: 12000 }),    // 60 days = 1.2x
-            LockPeriod({ duration: 90 days, multiplier: 15000 })     // 90 days = 1.5x
+            LockPeriod({ duration: 60 days, multiplier: 13000 }),    // 60 days = 1.3x
+            LockPeriod({ duration: 90 days, multiplier: 16000 })     // 90 days = 1.6x
         ];
         
         lockPeriods[OPENWORK_POOL] = [
             LockPeriod({ duration: 30 days, multiplier: 10000 }),
-            LockPeriod({ duration: 60 days, multiplier: 11000 }),
-            LockPeriod({ duration: 90 days, multiplier: 13000 })
+            LockPeriod({ duration: 60 days, multiplier: 12000 }),
+            LockPeriod({ duration: 90 days, multiplier: 14000 })
         ];
     }
     
@@ -127,22 +123,31 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
         );
     }
     
-    function getReward(uint256 poolId, address user) public view returns (uint256) {
+    function getRewards(uint256 poolId, address user) public view returns (uint256 rewardArya, uint256 rewardOpenwork) {
         Pool storage pool = pools[poolId];
         uint256 earned = (userStaked[poolId][user] * 
             (earnedPerToken(poolId) - userRewardPerTokenPaid[poolId][user]) / 1e18);
         
         // Apply lock period multiplier
         uint256 lockIndex = stakeInfo[poolId][user].lockPeriod;
+        uint256 multiplier = 10000;
         if (lockIndex < lockPeriods[poolId].length) {
-            uint256 multiplier = lockPeriods[poolId][lockIndex].multiplier;
-            earned = earned * multiplier / 10000;
+            multiplier = lockPeriods[poolId][lockIndex].multiplier;
         }
+        earned = earned * multiplier / 10000;
         
-        return earned + rewards[poolId][user];
+        // Split 50/50 between ARYA and OPENWORK
+        rewardArya = earned / 2;
+        rewardOpenwork = earned - rewardArya;
+        
+        return (rewardArya + rewardsArya[poolId][user], rewardOpenwork + rewardsOpenwork[poolId][user]);
     }
     
-    function stake(uint256 poolId, uint256 amount, uint256 lockPeriodIndex) external nonReentrant updatePool(poolId) {
+    function stake(uint256 poolId, uint256 amount, uint256 lockPeriodIndex) 
+        external 
+        nonReentrant 
+        updatePool(poolId) 
+    {
         require(amount > 0, "Cannot stake 0");
         require(pools[poolId].active, "Pool not active");
         require(lockPeriodIndex < lockPeriods[poolId].length, "Invalid lock period");
@@ -152,18 +157,23 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
         // Transfer tokens from user
         require(IERC20(pool.stakeToken).transferFrom(msg.sender, address(this), amount), "Transfer failed");
         
-        // Update rewards
+        // Claim pending rewards
         if (userStaked[poolId][msg.sender] > 0) {
-            rewards[poolId][msg.sender] += getReward(poolId, msg.sender);
+            (uint256 pendingArya, uint256 pendingOpenwork) = getRewards(poolId, msg.sender);
+            if (pendingArya > 0 || pendingOpenwork > 0) {
+                rewardsArya[poolId][msg.sender] = 0;
+                rewardsOpenwork[poolId][msg.sender] = 0;
+                if (pendingArya > 0) require(aryaToken.transfer(msg.sender, pendingArya), "ARYA reward transfer failed");
+                if (pendingOpenwork > 0) require(openworkToken.transfer(msg.sender, pendingOpenwork), "OPENWORK reward transfer failed");
+            }
         }
         
-        // Update stake info
+        // Update stake
         userStaked[poolId][msg.sender] += amount;
         stakeInfo[poolId][msg.sender] = StakeInfo({
             amount: amount,
             lockPeriod: lockPeriodIndex,
-            stakeTime: block.timestamp,
-            rewardDebt: 0
+            stakeTime: block.timestamp
         });
         
         pool.totalStaked += amount;
@@ -172,7 +182,11 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
         emit Staked(poolId, msg.sender, amount, lockPeriodIndex);
     }
     
-    function unstake(uint256 poolId, uint256 amount) external nonReentrant updatePool(poolId) {
+    function unstake(uint256 poolId, uint256 amount) 
+        external 
+        nonReentrant 
+        updatePool(poolId) 
+    {
         require(amount > 0, "Cannot unstake 0");
         require(userStaked[poolId][msg.sender] >= amount, "Insufficient stake");
         
@@ -183,9 +197,10 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
         uint256 lockDuration = lockPeriods[poolId][lockIndex].duration;
         require(block.timestamp >= stakeInfo[poolId][msg.sender].stakeTime + lockDuration, "Lock period not over");
         
-        // Calculate and claim rewards
-        uint256 reward = getReward(poolId, msg.sender);
-        rewards[poolId][msg.sender] = 0;
+        // Calculate rewards
+        (uint256 rewardArya, uint256 rewardOpenwork) = getRewards(poolId, msg.sender);
+        rewardsArya[poolId][msg.sender] = 0;
+        rewardsOpenwork[poolId][msg.sender] = 0;
         
         // Update state
         userStaked[poolId][msg.sender] -= amount;
@@ -195,24 +210,29 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
         // Transfer staked tokens
         require(IERC20(pool.stakeToken).transfer(msg.sender, amount), "Transfer failed");
         
-        // Transfer rewards
-        if (reward > 0) {
-            require(rewardToken.transfer(msg.sender, reward), "Reward transfer failed");
-        }
+        // Transfer rewards (50/50 split)
+        if (rewardArya > 0) require(aryaToken.transfer(msg.sender, rewardArya), "ARYA reward failed");
+        if (rewardOpenwork > 0) require(openworkToken.transfer(msg.sender, rewardOpenwork), "OPENWORK reward failed");
         
-        emit Unstaked(poolId, msg.sender, amount, reward);
+        emit Unstaked(poolId, msg.sender, amount, rewardArya, rewardOpenwork);
     }
     
-    function claimReward(uint256 poolId) external nonReentrant updatePool(poolId) {
-        uint256 reward = getReward(poolId, msg.sender);
-        require(reward > 0, "No reward to claim");
+    function claimReward(uint256 poolId) 
+        external 
+        nonReentrant 
+        updatePool(poolId) 
+    {
+        (uint256 rewardArya, uint256 rewardOpenwork) = getRewards(poolId, msg.sender);
+        require(rewardArya > 0 || rewardOpenwork > 0, "No rewards to claim");
         
-        rewards[poolId][msg.sender] = 0;
+        rewardsArya[poolId][msg.sender] = 0;
+        rewardsOpenwork[poolId][msg.sender] = 0;
         userRewardPerTokenPaid[poolId][msg.sender] = pools[poolId].rewardPerTokenStored;
         
-        require(rewardToken.transfer(msg.sender, reward), "Reward transfer failed");
+        if (rewardArya > 0) require(aryaToken.transfer(msg.sender, rewardArya), "ARYA transfer failed");
+        if (rewardOpenwork > 0) require(openworkToken.transfer(msg.sender, rewardOpenwork), "OPENWORK transfer failed");
         
-        emit RewardClaimed(poolId, msg.sender, reward);
+        emit RewardClaimed(poolId, msg.sender, rewardArya, rewardOpenwork);
     }
     
     function setPoolRewardRate(uint256 poolId, uint256 rewardRate) external onlyOwner {
@@ -222,17 +242,9 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
         emit PoolUpdated(poolId, rewardRate);
     }
     
-    function setRewardToken(address _rewardToken) external onlyOwner {
-        rewardToken = IERC20(_rewardToken);
-        emit RewardTokenSet(_rewardToken);
-    }
-    
     function getAPY(uint256 poolId, uint256 lockPeriodIndex) external view returns (uint256) {
         if (lockPeriodIndex >= lockPeriods[poolId].length) return 0;
-        
         uint256 multiplier = lockPeriods[poolId][lockPeriodIndex].multiplier;
-        // APY = rewardRate * 365 days * multiplier
-        // Returns basis points (10000 = 100%)
         return pools[poolId].rewardRate * 365 days * multiplier / 1e18;
     }
     
@@ -255,9 +267,9 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
     
     function getUserInfo(uint256 poolId, address user) external view returns (
         uint256 stakedAmount,
-        uint256 rewardEarned,
-        uint256 lockTimeRemaining,
-        uint256 lockPeriodIndex
+        uint256 rewardArya,
+        uint256 rewardOpenwork,
+        uint256 lockTimeRemaining
     ) {
         uint256 lockIdx = stakeInfo[poolId][user].lockPeriod;
         uint256 lockDuration = lockIdx < lockPeriods[poolId].length 
@@ -269,12 +281,19 @@ contract AryaOpenWorkStaking is ReentrancyGuard, Ownable {
             ? stakeTime + lockDuration - block.timestamp
             : 0;
             
+        (uint256 rArya, uint256 rOpenwork) = getRewards(poolId, user);
+        
         return (
             userStaked[poolId][user],
-            getReward(poolId, user),
-            timeRemaining,
-            lockIdx
+            rArya,
+            rOpenwork,
+            timeRemaining
         );
+    }
+    
+    function fundRewards(uint256 aryaAmount, uint256 openworkAmount) external onlyOwner {
+        require(aryaToken.transferFrom(msg.sender, address(this), aryaAmount), "ARYA funding failed");
+        require(openworkToken.transferFrom(msg.sender, address(this), openworkAmount), "OPENWORK funding failed");
     }
     
     receive() external payable {}

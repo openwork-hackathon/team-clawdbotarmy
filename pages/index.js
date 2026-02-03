@@ -1,173 +1,962 @@
-import Head from 'next/head';
-import Dashboard from '../src/components/Dashboard';
-import Portfolio from '../src/components/Portfolio';
-import PriceChart from '../src/components/PriceChart';
-import TradingPanel from '../src/components/TradingPanel';
-import MarketOverview from '../src/components/MarketOverview';
-import Positions from '../src/components/Positions';
-import OrderBook from '../src/components/OrderBook';
-import TradeHistory from '../src/components/TradeHistory';
-import WalletConnect from '../src/components/WalletConnect';
 import { useState, useEffect } from 'react';
-
-// Live prices component
-function LivePrices() {
-  const [prices, setPrices] = useState(null);
-  
-  useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
-        const data = await r.json();
-        setPrices(data);
-      } catch (e) {
-        console.error('Error fetching prices:', e);
-      }
-    };
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (!prices) return <span style={{fontSize: '0.75em', color: 'var(--text-secondary)'}}>Loading prices...</span>;
-  
-  return (
-    <div style={{display: 'flex', gap: '15px', fontSize: '0.85em', marginTop: '5px'}}>
-      <span style={{color: '#f7931a'}}>BTC ${prices.bitcoin?.usd?.toLocaleString()}</span>
-      <span style={{color: '#627eea'}}>ETH ${prices.ethereum?.usd?.toLocaleString()}</span>
-      <span style={{color: '#9945ff'}}>SOL ${prices.solana?.usd?.toLocaleString()}</span>
-    </div>
-  );
-}
-
-// Disable static pre-rendering for wallet-dependent page
-export const dynamic = 'force-dynamic';
+import Head from 'next/head';
 
 export default function Home() {
+  const [marketData, setMarketData] = useState(null);
+  const [trending, setTrending] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState('24h');
+
+  useEffect(() => {
+    fetchMarketData();
+    // Auto-refresh every 60 seconds
+    const interval = setInterval(fetchMarketData, 60000);
+    return () => clearInterval(interval);
+  }, [timeframe]);
+
+  const fetchMarketData = async () => {
+    setLoading(true);
+    try {
+      // Fetch main crypto prices
+      const [btc, eth, sol] = await Promise.all([
+        fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true'),
+        fetch('https://api.coingecko.com/api/v3/search?query=trending'),
+        fetch('/api/price/all')
+      ]);
+
+      const prices = await btc.json();
+      const search = await eth.json();
+      const tokenPrices = await sol.json();
+
+      setMarketData({
+        bitcoin: { 
+          ...prices.bitcoin, 
+          change: prices.bitcoin.usd_24h_change 
+        },
+        ethereum: { 
+          ...prices.ethereum, 
+          change: prices.ethereum.usd_24h_change 
+        },
+        solana: { 
+          ...prices.solana, 
+          change: prices.solana.usd_24h_change 
+        }
+      });
+
+      setTrending(search.trending?.slice(0, 5) || []);
+      setWatchlist([
+        { id: 'ARYA', name: 'ARYA', ...tokenPrices.prices?.ARYA },
+        { id: 'OPENWORK', name: 'OPENWORK', ...tokenPrices.prices?.OPENWORK },
+        { id: 'KROWNEPO', name: 'KROWNEPO', ...tokenPrices.prices?.KROWNEPO }
+      ]);
+    } catch (e) {
+      console.error('Error fetching market data:', e);
+    }
+    setLoading(false);
+  };
+
+  const formatPrice = (price) => {
+    if (!price) return '$0.00';
+    if (price >= 1000) return `$${price.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+    if (price >= 1) return `$${price.toFixed(2)}`;
+    return `$${price.toFixed(4)}`;
+  };
+
+  const formatChange = (change) => {
+    if (!change && change !== 0) return '0.00';
+    const sign = change >= 0 ? '+' : '';
+    return `${sign}${change.toFixed(2)}%`;
+  };
+
+  const getChangeColor = (change) => {
+    if (!change && change !== 0) return 'var(--text-secondary)';
+    return change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  };
+
   return (
     <>
       <Head>
-        <title>🦞 ClawdbotArmy - Crypto Trading Platform</title>
-        <meta name="description" content="AI Agent Crypto Trading & Analysis Platform" />
+        <title>🦞 ClawdbotArmy | Infrastructure for the Agent Economy</title>
+        <meta name="description" content="Trading platform for autonomous AI agents. Buy, sell, stake, and track AI agent tokens on Base." />
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       
       <div className="container">
-        <header className="main-header" style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          padding: '15px 30px',
-          background: 'var(--bg-secondary)',
-          borderRadius: '12px',
-          marginBottom: '24px',
-          flexWrap: 'wrap',
-          gap: '15px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <span style={{ fontSize: '1.8em' }}>🦞</span>
-            <div>
-              <span style={{ 
-                fontWeight: 'bold', 
-                fontSize: '1.3em',
-                background: 'linear-gradient(135deg, var(--accent), var(--accent-green))',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                display: 'block'
-              }}>ClawdbotArmy</span>
-              <LivePrices />
+        {/* Hero Section */}
+        <section className="hero-section">
+          <div className="hero-content">
+            <div className="hero-badge">
+              <span className="pulse-dot"></span>
+              Built for the Agent Economy
+            </div>
+            <h1>
+              Infrastructure for
+              <span className="gradient-text"> Autonomous Agents</span>
+            </h1>
+            <p className="hero-subtitle">
+              The first trading platform designed for AI agents. Trade AI agent tokens, track portfolios, and earn staking rewards — programmatically.
+            </p>
+            <div className="hero-actions">
+              <a href="/bonding-curves" className="btn-primary">
+                <span>📈</span>
+                View Markets
+              </a>
+              <a href="/agent-guide" className="btn-secondary">
+                <span>🤖</span>
+                Agent Guide
+              </a>
             </div>
           </div>
-          <nav style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <a href="/bonding-curves" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📈 Bonding Curves</a>
-            <a href="/staking" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🔒 Staking</a>
-            <a href="/portfolio" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>📊 Portfolio</a>
-            <a href="/arya" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>🦞 ARYA</a>
-            <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Trade</a>
-            <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Dashboard</a>
-            <a href="#" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Portfolio</a>
-            <div style={{ marginLeft: '10px' }}>
-              <WalletConnect />
-            </div>
-            <a href="https://github.com/openwork-hackathon/team-clawdbotarmy" 
-               style={{ 
-                 padding: '8px 16px',
-                 background: 'var(--accent)',
-                 color: '#000',
-                 borderRadius: '20px',
-                 textDecoration: 'none',
-                 fontWeight: 'bold',
-                 fontSize: '0.9em'
-               }}>
-              GitHub
-            </a>
-          </nav>
-        </header>
-
-        <main>
-          {/* Market Overview */}
-          <MarketOverview />
-
-          {/* Main Trading Section */}
-          <div className="trading-grid">
-            <div className="chart-section">
-              <div className="section-header">
-                <h2>📈 BTC/USDT</h2>
-                <div className="timeframe-selector">
-                  <button className="tf active">1H</button>
-                  <button className="tf">4H</button>
-                  <button className="tf">1D</button>
-                  <button className="tf">1W</button>
+          
+          {/* ARYA Holder CTA */}
+          <div className="arya-cta glass-card">
+            <div className="cta-content">
+              <div className="cta-badge">🦞 ARYA Holder Exclusive</div>
+              <h2>Govern the Agent Economy</h2>
+              <p>
+                Hold <strong>ARYA</strong> and shape the future of autonomous agent trading.
+              </p>
+              <div className="benefits-list">
+                <div className="benefit">
+                  <span className="benefit-icon">🚀</span>
+                  <span>45% APY on staking</span>
+                </div>
+                <div className="benefit">
+                  <span className="benefit-icon">🗳️</span>
+                  <span>Governance voting rights</span>
+                </div>
+                <div className="benefit">
+                  <span className="benefit-icon">🤖</span>
+                  <span>Agent-to-agent payments</span>
+                </div>
+                <div className="benefit">
+                  <span className="benefit-icon">💎</span>
+                  <span>Platform revenue share</span>
                 </div>
               </div>
-              <PriceChart coinId="bitcoin" days={7} />
+              <a href="/staking" className="cta-btn">
+                Start Staking →
+              </a>
             </div>
-            
-            <div className="orderbook-section">
-              <OrderBook symbol="BTC" />
+            <div className="cta-visual">
+              <div className="visual-emoji">🦞</div>
+              <div className="apy-circle">
+                <span className="apy-number">45%</span>
+                <span className="apy-label">APY</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Market Ticker */}
+          <div className="market-ticker">
+            {loading ? (
+              <div className="ticker-loading">Loading markets...</div>
+            ) : (
+              <>
+                <div className="ticker-item">
+                  <span className="ticker-coin">₿</span>
+                  <span className="ticker-name">BTC</span>
+                  <span className="ticker-price">{formatPrice(marketData?.bitcoin?.usd)}</span>
+                  <span className="ticker-change" style={{ color: getChangeColor(marketData?.bitcoin?.change) }}>
+                    {formatChange(marketData?.bitcoin?.change)}
+                  </span>
+                </div>
+                <div className="ticker-item">
+                  <span className="ticker-coin eth">Ξ</span>
+                  <span className="ticker-name">ETH</span>
+                  <span className="ticker-price">{formatPrice(marketData?.ethereum?.usd)}</span>
+                  <span className="ticker-change" style={{ color: getChangeColor(marketData?.ethereum?.change) }}>
+                    {formatChange(marketData?.ethereum?.change)}
+                  </span>
+                </div>
+                <div className="ticker-item">
+                  <span className="ticker-coin sol">◎</span>
+                  <span className="ticker-name">SOL</span>
+                  <span className="ticker-price">{formatPrice(marketData?.solana?.usd)}</span>
+                  <span className="ticker-change" style={{ color: getChangeColor(marketData?.solana?.change) }}>
+                    {formatChange(marketData?.solana?.change)}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* Quick Stats */}
+        <section className="quick-stats">
+          <div className="stat-card">
+            <div className="stat-icon">🤖</div>
+            <div className="stat-content">
+              <span className="stat-value">4</span>
+              <span className="stat-label">Native Tokens</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">🔗</div>
+            <div className="stat-content">
+              <span className="stat-value">Base</span>
+              <span className="stat-label">Network</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">🦞</div>
+            <div className="stat-content">
+              <span className="stat-value">ARYA</span>
+              <span className="stat-label">Governance Token</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">📡</div>
+            <div className="stat-content">
+              <span className="stat-value">API</span>
+              <span className="stat-label">First Design</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Main Grid */}
+        <div className="main-grid">
+          {/* Watchlist Panel */}
+          <div className="watchlist-panel glass-card">
+            <div className="panel-header">
+              <h2>🎯 Your Watchlist</h2>
+              <div className="timeframe-selector">
+                {['1h', '24h', '7d'].map(tf => (
+                  <button 
+                    key={tf}
+                    className={`tf-btn ${timeframe === tf ? 'active' : ''}`}
+                    onClick={() => setTimeframe(tf)}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="watchlist">
+              {watchlist.map(token => (
+                <a key={token.id} href={`/${token.id.toLowerCase()}`} className="watchlist-item">
+                  <div className="token-info">
+                    <span className="token-emoji">
+                      {token.id === 'ARYA' ? '🦞' : token.id === 'OPENWORK' ? '⚡' : '👑'}
+                    </span>
+                    <div>
+                      <span className="token-name">{token.id}</span>
+                      <span className={`token-source ${!token.hasLiquidity ? 'no-liquidity' : ''}`}>
+                        {!token.hasLiquidity ? '🔒 ' : '📊 '}
+                        {token.source || 'Uniswap V3'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="token-price-info">
+                    <span className={`token-price ${!token.hasLiquidity ? 'no-liquidity-price' : ''}`}>
+                      {token.priceUSD ? formatPrice(token.priceUSD) : '$0.00'}
+                    </span>
+                    <span 
+                      className="token-change"
+                      style={{ color: getChangeColor(0) }}
+                    >
+                      {!token.hasLiquidity ? 'No LP' : '--%'}
+                    </span>
+                  </div>
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Trading Panel & History */}
-          <div className="lower-grid">
-            <div className="trade-section">
-              <TradingPanel />
+          {/* Quick Actions */}
+          <div className="quick-actions-panel glass-card">
+            <h2>🚀 Platform Features</h2>
+            <div className="action-grid">
+              <a href="/bonding-curves" className="action-item">
+                <span className="action-icon">📈</span>
+                <span className="action-label">Bonding Curves</span>
+              </a>
+              <a href="/staking" className="action-item">
+                <span className="action-icon">🔒</span>
+                <span className="action-label">Staking Rewards</span>
+              </a>
+              <a href="/portfolio" className="action-item">
+                <span className="action-icon">💼</span>
+                <span className="action-label">Portfolio Tracker</span>
+              </a>
+              <a href="/agent-guide" className="action-item">
+                <span className="action-icon">🤖</span>
+                <span className="action-label">Agent Guide</span>
+              </a>
             </div>
-            <div className="history-section">
-              <TradeHistory />
+          </div>
+                <span className="action-label">ARYA Token</span>
+              </a>
             </div>
           </div>
 
-          {/* Signals & Positions */}
-          <div className="signals-positions-grid">
-            <div className="signals-section">
-              <h2>📊 Trading Signals</h2>
-              <Dashboard />
+          {/* Trending Section */}
+          <div className="trending-panel glass-card">
+            <div className="panel-header">
+              <h2>🔥 Trending on CoinGecko</h2>
             </div>
-            <div className="positions-section">
-              <Positions />
+            <div className="trending-list">
+              {loading ? (
+                <div className="loading">Loading...</div>
+              ) : trending.length > 0 ? (
+                trending.map((coin, i) => (
+                  <div key={coin.item?.id || i} className="trending-item">
+                    <span className="trending-rank">{i + 1}</span>
+                    <span className="trending-coin">{coin.item?.symbol?.toUpperCase()}</span>
+                    <span className="trending-name">{coin.item?.name}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="empty">No trending data</div>
+              )}
             </div>
           </div>
 
-          {/* Portfolio */}
-          <section>
-            <Portfolio />
-          </section>
-        </main>
+          {/* Team Section */}
+          <div className="team-panel glass-card">
+            <div className="panel-header">
+              <h2>🤖 Development Team</h2>
+            </div>
+            <div className="team-grid">
+              <div className="team-member" style={{ '--member-color': '#ff6b35' }}>
+                <div className="member-avatar">🦞</div>
+                <div className="member-info">
+                  <span className="member-name">Arya</span>
+                  <span className="member-role">Lead PM & Frontend</span>
+                </div>
+              </div>
+              <div className="team-member" style={{ '--member-color': '#ff4757' }}>
+                <div className="member-avatar">🩸</div>
+                <div className="member-info">
+                  <span className="member-name">Bloody</span>
+                  <span className="member-role">Backend & Integration</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <footer style={{ 
-          textAlign: 'center', 
-          padding: '30px 0', 
-          marginTop: '30px',
-          borderTop: '1px solid var(--bg-secondary)',
-          color: 'var(--text-secondary)'
-        }}>
-          <p>🦞 Built by AI agents during OpenWork Clawathon 2026</p>
-          <p style={{ fontSize: '0.85em', marginTop: '8px' }}>
-            Powered by CoinGecko API + Technical Analysis
-          </p>
-        </footer>
+        {/* Footer Navigation */}
+        <nav className="footer-nav">
+          <a href="/bonding-curves" className="nav-item">
+            <span>📈</span>
+            <span>Markets</span>
+          </a>
+          <a href="/staking" className="nav-item">
+            <span>🔒</span>
+            <span>Staking</span>
+          </a>
+          <a href="/portfolio" className="nav-item">
+            <span>💼</span>
+            <span>Portfolio</span>
+          </a>
+          <a href="/arya" className="nav-item">
+            <span>🦞</span>
+            <span>ARYA</span>
+          </a>
+        </nav>
       </div>
+
+      <style jsx>{`
+        .hero-section {
+          text-align: center;
+          padding: 60px 20px 40px;
+          margin-bottom: 40px;
+          position: relative;
+        }
+        
+        .hero-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          background: rgba(0, 255, 136, 0.1);
+          border: 1px solid rgba(0, 255, 136, 0.3);
+          border-radius: 25px;
+          color: var(--accent-green);
+          font-size: 0.9em;
+          font-weight: 500;
+          margin-bottom: 20px;
+        }
+        
+        .pulse-dot {
+          width: 8px;
+          height: 8px;
+          background: var(--accent-green);
+          border-radius: 50%;
+          animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
+        .hero-content h1 {
+          font-size: 3em;
+          margin: 0 0 15px 0;
+          line-height: 1.2;
+        }
+        
+        .hero-subtitle {
+          color: var(--text-secondary);
+          font-size: 1.1em;
+          max-width: 600px;
+          margin: 0 auto 30px;
+          line-height: 1.6;
+        }
+        
+        .hero-actions {
+          display: flex;
+          gap: 15px;
+          justify-content: center;
+          flex-wrap: wrap;
+          margin-bottom: 50px;
+        }
+        
+        .btn-primary {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 28px;
+          background: linear-gradient(135deg, var(--accent-green), #00cc6a);
+          color: #000;
+          border-radius: 30px;
+          font-weight: 700;
+          font-size: 1em;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .btn-primary:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 30px rgba(0, 255, 136, 0.4);
+        }
+        
+        .btn-secondary {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 28px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 2px solid var(--border-color);
+          color: var(--text-primary);
+          border-radius: 30px;
+          font-weight: 600;
+          font-size: 1em;
+          text-decoration: none;
+          transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+          border-color: var(--accent);
+          background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .btn-arya {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 28px;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          color: #fff;
+          border-radius: 30px;
+          font-weight: 700;
+          font-size: 1em;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+        }
+        
+        .btn-arya:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
+        }
+        
+        .arya-cta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 30px;
+          padding: 35px;
+          background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.05));
+          border: 1px solid rgba(255, 107, 53, 0.3);
+          margin: 30px 0;
+        }
+        
+        .cta-badge {
+          display: inline-block;
+          padding: 6px 14px;
+          background: rgba(255, 107, 53, 0.2);
+          border-radius: 20px;
+          color: #ff6b35;
+          font-size: 0.85em;
+          font-weight: 600;
+          margin-bottom: 15px;
+        }
+        
+        .cta-content h2 {
+          margin: 0 0 12px 0;
+          font-size: 1.8em;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        
+        .cta-content p {
+          color: var(--text-secondary);
+          margin: 0 0 20px 0;
+          font-size: 1.05em;
+        }
+        
+        .benefits-list {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+          margin-bottom: 25px;
+        }
+        
+        .benefit {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 14px;
+          background: rgba(255, 107, 53, 0.1);
+          border-radius: 10px;
+        }
+        
+        .benefit-icon {
+          font-size: 1.2em;
+        }
+        
+        .cta-btn {
+          display: inline-block;
+          padding: 14px 28px;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          color: #fff;
+          border-radius: 30px;
+          text-decoration: none;
+          font-weight: 700;
+          transition: all 0.3s ease;
+        }
+        
+        .cta-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+        
+        .cta-visual {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 15px;
+        }
+        
+        .visual-emoji {
+          font-size: 4em;
+          animation: bounce 2s ease infinite;
+        }
+        
+        .apy-circle {
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 0 30px rgba(255, 107, 53, 0.4);
+        }
+        
+        .apy-number {
+          font-size: 1.8em;
+          font-weight: 800;
+          color: #fff;
+        }
+        
+        .apy-label {
+          font-size: 0.75em;
+          color: rgba(255, 255, 255, 0.8);
+          font-weight: 600;
+        }
+        
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        
+        .market-ticker {
+          display: flex;
+          justify-content: center;
+          gap: 30px;
+          flex-wrap: wrap;
+          padding: 20px;
+          background: rgba(26, 26, 36, 0.5);
+          border-radius: 16px;
+          border: 1px solid var(--border-color);
+        }
+        
+        .ticker-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 20px;
+          background: var(--bg-card);
+          border-radius: 12px;
+        }
+        
+        .ticker-coin {
+          font-size: 1.5em;
+        }
+        
+        .ticker-coin.eth { color: #627eea; }
+        .ticker-coin.sol { color: #9945ff; }
+        
+        .ticker-name {
+          font-weight: 600;
+          color: var(--text-secondary);
+        }
+        
+        .ticker-price {
+          font-weight: 700;
+          font-family: monospace;
+        }
+        
+        .ticker-change {
+          font-weight: 600;
+          font-size: 0.9em;
+        }
+        
+        .quick-stats {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 20px;
+          margin-bottom: 40px;
+        }
+        
+        .stat-card {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          padding: 20px;
+          background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+          border-radius: 16px;
+          border: 1px solid var(--border-color);
+        }
+        
+        .stat-icon {
+          font-size: 2em;
+        }
+        
+        .stat-content {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .stat-value {
+          font-size: 1.5em;
+          font-weight: 700;
+          color: var(--accent);
+        }
+        
+        .stat-label {
+          font-size: 0.85em;
+          color: var(--text-secondary);
+        }
+        
+        .main-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 24px;
+          margin-bottom: 40px;
+        }
+        
+        .glass-card {
+          background: rgba(26, 26, 36, 0.6);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid var(--border-color);
+          border-radius: 20px;
+          padding: 24px;
+        }
+        
+        .panel-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        
+        .panel-header h2 {
+          font-size: 1.2em;
+          margin: 0;
+        }
+        
+        .timeframe-selector {
+          display: flex;
+          gap: 6px;
+        }
+        
+        .tf-btn {
+          padding: 6px 12px;
+          background: var(--bg-secondary);
+          border: none;
+          border-radius: 6px;
+          color: var(--text-secondary);
+          font-size: 0.8em;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        
+        .tf-btn.active {
+          background: var(--accent);
+          color: #000;
+        }
+        
+        .watchlist-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 14px;
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          margin-bottom: 10px;
+          text-decoration: none;
+          color: inherit;
+          transition: all 0.2s;
+        }
+        
+        .watchlist-item:hover {
+          background: var(--bg-card);
+          transform: translateX(5px);
+        }
+        
+        .watchlist-item:last-child {
+          margin-bottom: 0;
+        }
+        
+        .token-info {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .token-emoji {
+          font-size: 1.5em;
+        }
+        
+        .token-name {
+          font-weight: 600;
+          display: block;
+        }
+        
+        .token-source {
+          font-size: 0.8em;
+          color: var(--text-secondary);
+        }
+        
+        .token-source.no-liquidity {
+          color: #ffc107;
+        }
+        
+        .token-price-info {
+          text-align: right;
+        }
+        
+        .token-price {
+          font-weight: 600;
+          font-family: monospace;
+          display: block;
+        }
+        
+        .token-price.no-liquidity-price {
+          color: #ffc107;
+        }
+        
+        .token-change {
+          font-size: 0.85em;
+          font-weight: 500;
+        }
+        
+        .action-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        
+        .action-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          padding: 20px;
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          text-decoration: none;
+          color: inherit;
+          transition: all 0.3s ease;
+        }
+        
+        .action-item:hover {
+          background: var(--bg-card);
+          transform: translateY(-3px);
+        }
+        
+        .action-icon {
+          font-size: 1.8em;
+        }
+        
+        .action-label {
+          font-size: 0.85em;
+          font-weight: 500;
+        }
+        
+        .trending-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        
+        .trending-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          background: var(--bg-secondary);
+          border-radius: 10px;
+        }
+        
+        .trending-rank {
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--accent);
+          color: #000;
+          border-radius: 6px;
+          font-size: 0.8em;
+          font-weight: 700;
+        }
+        
+        .trending-coin {
+          font-weight: 600;
+          font-size: 0.9em;
+        }
+        
+        .trending-name {
+          color: var(--text-secondary);
+          font-size: 0.85em;
+        }
+        
+        .team-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        
+        .team-member {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          padding: 14px;
+          background: var(--bg-secondary);
+          border-radius: 12px;
+          transition: all 0.2s;
+        }
+        
+        .team-member:hover {
+          background: var(--bg-card);
+          border-left: 3px solid var(--member-color);
+        }
+        
+        .member-avatar {
+          font-size: 1.8em;
+        }
+        
+        .member-name {
+          font-weight: 600;
+          display: block;
+        }
+        
+        .member-role {
+          font-size: 0.8em;
+          color: var(--text-secondary);
+        }
+        
+        .footer-nav {
+          display: flex;
+          justify-content: center;
+          gap: 30px;
+          padding: 20px;
+          background: rgba(26, 26, 36, 0.8);
+          border-radius: 16px;
+          border: 1px solid var(--border-color);
+          margin-top: 40px;
+        }
+        
+        .nav-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 5px;
+          text-decoration: none;
+          color: var(--text-secondary);
+          padding: 10px 20px;
+          border-radius: 12px;
+          transition: all 0.2s;
+        }
+        
+        .nav-item:hover {
+          color: var(--accent);
+          background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .nav-item span:first-child {
+          font-size: 1.5em;
+        }
+        
+        .nav-item span:last-child {
+          font-size: 0.85em;
+          font-weight: 500;
+        }
+        
+        .loading, .empty {
+          text-align: center;
+          padding: 30px;
+          color: var(--text-secondary);
+        }
+        
+        @media (max-width: 768px) {
+          .hero-content h1 {
+            font-size: 2em;
+          }
+          
+          .market-ticker {
+            gap: 15px;
+          }
+          
+          .ticker-item {
+            flex: 1;
+            justify-content: center;
+            min-width: 140px;
+          }
+          
+          .footer-nav {
+            gap: 15px;
+          }
+          
+          .nav-item {
+            padding: 8px 12px;
+          }
+        }
+      `}</style>
     </>
   );
 }
+
+// Disable static pre-rendering
+export const dynamic = 'force-dynamic';

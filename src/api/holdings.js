@@ -1,62 +1,177 @@
-// Advanced Holdings API - Real wallet integration
+// Holdings API - Manage token holdings and transactions
 
-const axios = require('axios');
-
-const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
-
-// Common token addresses on Base
-const BASE_TOKENS = {
-  'ETH': '0x4200000000000000000000000000000000000006',
-  'WBTC': '0xcbB7e0000d1F07089cEe3faDcDa0eD23B11dB3A4',
-  'USDC': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-  'OPENWORK': '0x299c30DD5974BF4D5bFE42C340CA40462816AB07'
+const TOKENS = {
+  ARYA: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
+  OPENWORK: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
+  KROWNEPO: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07',
+  BRAUM: '0xefb28887A479029B065Cb931a973B97101209b07',
+  ETH: '0x4200000000000000000000000000000000000006'
 };
 
-async function getTokenPrice(tokenId) {
-  try {
-    const response = await axios.get(`${COINGECKO_BASE}/simple/price`, {
-      params: { ids: tokenId, vs_currencies: 'usd' }
-    });
-    return response.data[tokenId]?.usd || 0;
-  } catch (error) {
-    console.error(`Error fetching ${tokenId}:`, error.message);
-    return 0;
-  }
+// In-memory holdings storage (would use database in production)
+const holdingsDb = new Map();
+
+function formatAddress(address) {
+  return address.toLowerCase();
 }
 
-async function getHoldingsFromWallet(address) {
-  // Mock implementation - in production, query indexer/graph
-  const prices = {
-    bitcoin: await getTokenPrice('bitcoin'),
-    ethereum: await getTokenPrice('ethereum'),
-    solana: await getTokenPrice('solana'),
-    'openwork': 0.00001
+async function getHoldings(address) {
+  const normalizedAddress = formatAddress(address);
+  const holdings = holdingsDb.get(normalizedAddress) || {
+    address: normalizedAddress,
+    tokens: {},
+    totalValueUSD: 0,
+    lastUpdated: Date.now()
   };
 
+  return holdings;
+}
+
+async function getTokenHoldings(address, symbol) {
+  const holdings = await getHoldings(address);
+  const normalizedSymbol = symbol.toUpperCase();
+  
   return {
-    address,
-    lastUpdated: new Date().toISOString(),
-    holdings: [
-      { token: 'BTC', amount: 0.05, price: prices.bitcoin, value: 0.05 * prices.bitcoin },
-      { token: 'ETH', amount: 0.5, price: prices.ethereum, value: 0.5 * prices.ethereum },
-      { token: 'SOL', amount: 10, price: prices.solana, value: 10 * prices.solana },
-      { token: 'OPENWORK', amount: 100000, price: prices.openwork, value: 100000 * prices.openwork }
-    ],
-    totalValue: (0.05 * prices.bitcoin) + (0.5 * prices.ethereum) + (10 * prices.solana) + (100000 * prices.openwork)
+    symbol: normalizedSymbol,
+    address: TOKENS[normalizedSymbol],
+    balance: holdings.tokens[normalizedSymbol]?.balance || 0,
+    valueUSD: holdings.tokens[normalizedSymbol]?.valueUSD || 0
   };
 }
 
-async function getPnLHistory(address) {
-  // Mock PnL history
-  return [
-    { date: '2026-01-26', value: 4500 },
-    { date: '2026-01-27', value: 4720 },
-    { date: '2026-01-28', value: 4650 },
-    { date: '2026-01-29', value: 4890 },
-    { date: '2026-01-30', value: 5100 },
-    { date: '2026-01-31', value: 5050 },
-    { date: '2026-02-01', value: 5200 }
-  ];
+async function addHolding(address, symbol, amount, priceUSD) {
+  const normalizedAddress = formatAddress(address);
+  const normalizedSymbol = symbol.toUpperCase();
+  
+  let holdings = holdingsDb.get(normalizedAddress) || {
+    address: normalizedAddress,
+    tokens: {},
+    totalValueUSD: 0,
+    lastUpdated: Date.now()
+  };
+
+  const valueUSD = amount * priceUSD;
+  
+  if (!holdings.tokens[normalizedSymbol]) {
+    holdings.tokens[normalizedSymbol] = {
+      balance: 0,
+      valueUSD: 0,
+      transactions: []
+    };
+  }
+
+  holdings.tokens[normalizedSymbol].balance += amount;
+  holdings.tokens[normalizedSymbol].valueUSD += valueUSD;
+  holdings.tokens[normalizedSymbol].transactions.push({
+    type: 'buy',
+    amount,
+    priceUSD,
+    valueUSD,
+    timestamp: Date.now()
+  });
+
+  // Recalculate total
+  holdings.totalValueUSD = Object.values(holdings.tokens)
+    .reduce((sum, token) => sum + token.valueUSD, 0);
+  
+  holdings.lastUpdated = Date.now();
+  holdingsDb.set(normalizedAddress, holdings);
+
+  return holdings.tokens[normalizedSymbol];
 }
 
-module.exports = { getHoldingsFromWallet, getPnLHistory };
+async function removeHolding(address, symbol, amount, priceUSD) {
+  const normalizedAddress = formatAddress(address);
+  const normalizedSymbol = symbol.toUpperCase();
+  
+  const holdings = holdingsDb.get(normalizedAddress);
+  if (!holdings || !holdings.tokens[normalizedSymbol]) {
+    throw new Error(`No holdings found for ${symbol}`);
+  }
+
+  const valueUSD = amount * priceUSD;
+  
+  holdings.tokens[normalizedSymbol].balance -= amount;
+  holdings.tokens[normalizedSymbol].valueUSD -= valueUSD;
+  holdings.tokens[normalizedSymbol].transactions.push({
+    type: 'sell',
+    amount,
+    priceUSD,
+    valueUSD,
+    timestamp: Date.now()
+  });
+
+  // Recalculate total
+  holdings.totalValueUSD = Object.values(holdings.tokens)
+    .reduce((sum, token) => sum + token.valueUSD, 0);
+  
+  holdings.lastUpdated = Date.now();
+  holdingsDb.set(normalizedAddress, holdings);
+
+  return holdings.tokens[normalizedSymbol];
+}
+
+async function getTransactionHistory(address, symbol = null) {
+  const normalizedAddress = formatAddress(address);
+  const holdings = holdingsDb.get(normalizedAddress);
+  
+  if (!holdings) {
+    return [];
+  }
+
+  let allTransactions = [];
+  
+  for (const [tokenSymbol, tokenData] of Object.entries(holdings.tokens)) {
+    if (symbol && tokenSymbol !== symbol.toUpperCase()) continue;
+    
+    allTransactions = allTransactions.concat(
+      tokenData.transactions.map(tx => ({
+        ...tx,
+        symbol: tokenSymbol
+      }))
+    );
+  }
+
+  return allTransactions.sort((a, b) => b.timestamp - a.timestamp);
+}
+
+async function getPortfolioSummary(address) {
+  const holdings = await getHoldings(address);
+  
+  const summary = {
+    address: holdings.address,
+    totalValueUSD: holdings.totalValueUSD,
+    tokenCount: Object.keys(holdings.tokens).length,
+    lastUpdated: holdings.lastUpdated,
+    tokens: []
+  };
+
+  for (const [symbol, tokenData] of Object.entries(holdings.tokens)) {
+    summary.tokens.push({
+      symbol,
+      balance: tokenData.balance,
+      valueUSD: tokenData.valueUSD,
+      transactionCount: tokenData.transactions.length
+    });
+  }
+
+  // Calculate allocation percentages
+  if (summary.totalValueUSD > 0) {
+    summary.allocation = summary.tokens.map(token => ({
+      symbol: token.symbol,
+      percentage: (token.valueUSD / summary.totalValueUSD) * 100
+    }));
+  }
+
+  return summary;
+}
+
+export {
+  getHoldings,
+  getTokenHoldings,
+  addHolding,
+  removeHolding,
+  getTransactionHistory,
+  getPortfolioSummary,
+  TOKENS
+};

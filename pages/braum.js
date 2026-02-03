@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useWallet } from '../src/hooks/useWallet';
 
-export default function Arya() {
+export default function Braum() {
   const { account, isConnected, connect } = useWallet();
   const [marketData, setMarketData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,9 +18,9 @@ export default function Arya() {
     try {
       const r = await fetch('/api/price/all');
       const data = await r.json();
-      setMarketData(data.prices?.ARYA || null);
+      setMarketData(data.prices?.BRAUM || null);
     } catch (e) {
-      console.error('Error fetching market data:', e);
+      console.error('Error:', e);
     }
     setLoading(false);
   };
@@ -33,21 +33,16 @@ export default function Arya() {
     }
   };
 
-  const ARYA_TOKEN_ADDRESS = '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
-  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${ARYA_TOKEN_ADDRESS}`;
-  const clankerUrl = `https://www.clanker.world/clanker/${ARYA_TOKEN_ADDRESS}`;
-  const basescanUrl = `https://basescan.org/token/${ARYA_TOKEN_ADDRESS}`;
+  const BRAUM_ADDRESS = '0xefb28887A479029B065Cb931a973B97101209b07';
+  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${BRAUM_ADDRESS}`;
+  const clankerUrl = `https://www.clanker.world/clanker/${BRAUM_ADDRESS}`;
+  const basescanUrl = `https://basescan.org/token/${BRAUM_ADDRESS}`;
 
   const formatPrice = (price) => {
-    if (!price || isNaN(price) || !isFinite(price)) return '--';
+    if (!price) return '--';
     if (price >= 1000) return `$${price.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
     if (price >= 1) return `$${price.toFixed(2)}`;
     return `$${price.toFixed(6)}`;
-  };
-
-  const formatETH = (price) => {
-    if (!price || isNaN(price) || !isFinite(price)) return '--';
-    return `${price.toFixed(10)} ETH`;
   };
 
   const getUniswapEmbedUrl = (tokenAddress) => {
@@ -57,8 +52,8 @@ export default function Arya() {
   return (
     <>
       <Head>
-        <title>🦞 ARYA Token | ClawdbotArmy</title>
-        <meta name="description" content="ARYA - AI Agent Token on Base. Trade and track on ClawdbotArmy." />
+        <title>🛡️ BRAUM Token | ClawdbotArmy</title>
+        <meta name="description" content="BRAUM Warrior Token on Base. Trade and track on ClawdbotArmy." />
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       
@@ -67,15 +62,15 @@ export default function Arya() {
           <Link href="/" className="back-link">← Back</Link>
           <div className="header-content">
             <div className="token-identity">
-              <div className="token-avatar">🦞</div>
+              <div className="token-avatar braum">🛡️</div>
               <div className="token-title">
-                <h1>ARYA</h1>
-                <p>AI Agent Token</p>
+                <h1>BRAUM</h1>
+                <p>Warrior Token</p>
               </div>
             </div>
             <div className="token-badges">
-              <span className="badge">🤖 AI Agent</span>
-              <span className="badge">📈 Growing</span>
+              <span className="badge warrior">⚔️ Warrior</span>
+              <span className="badge new">🆕 New</span>
             </div>
           </div>
         </header>
@@ -89,28 +84,30 @@ export default function Arya() {
             ) : marketData?.priceUSD ? (
               <>
                 <span className="price-value">{formatPrice(marketData.priceUSD)}</span>
-                <span className="price-eth">{formatETH(marketData.priceETH)}</span>
+                <span className="price-eth">
+                  {marketData.priceETH?.toFixed(10)} ETH
+                </span>
                 <span className="price-source">
-                  via {marketData.source || 'DEX'}
+                  via {marketData.source || 'Uniswap'}
                 </span>
               </>
             ) : (
-              <span className="price-value">{formatPrice(0.03)}</span>
+              <span className="price-value">--</span>
             )}
           </div>
           
           <div className="price-stats">
             <div className="stat">
-              <span className="stat-label">Market Cap</span>
-              <span className="stat-value">$50K</span>
+              <span className="stat-label">Network</span>
+              <span className="stat-value">Base</span>
             </div>
             <div className="stat">
-              <span className="stat-label">24h Volume</span>
-              <span className="stat-value">$12.5K</span>
+              <span className="stat-label">Type</span>
+              <span className="stat-value">Clanker Token</span>
             </div>
             <div className="stat">
-              <span className="stat-label">Holders</span>
-              <span className="stat-value">156</span>
+              <span className="stat-label">Creator</span>
+              <span className="stat-value">15% Vault</span>
             </div>
           </div>
         </section>
@@ -151,7 +148,7 @@ export default function Arya() {
             <div className="info-item">
               <span className="info-label">Contract</span>
               <div className="address-display">
-                <code>{ARYA_TOKEN_ADDRESS.slice(0, 6)}...{ARYA_TOKEN_ADDRESS.slice(-4)}</code>
+                <code>{BRAUM_ADDRESS.slice(0, 6)}...{BRAUM_ADDRESS.slice(-4)}</code>
                 <a href={basescanUrl} target="_blank" rel="noopener noreferrer" className="etherscan-link">
                   Basescan ↗
                 </a>
@@ -163,7 +160,7 @@ export default function Arya() {
             </div>
             <div className="info-item">
               <span className="info-label">Symbol</span>
-              <span className="info-value">ARYA</span>
+              <span className="info-value">BRAUM</span>
             </div>
             <div className="info-item">
               <span className="info-label">Decimals</span>
@@ -174,28 +171,28 @@ export default function Arya() {
 
         {/* About */}
         <section className="about-section glass-card">
-          <h2>About ARYA</h2>
+          <h2>About BRAUM</h2>
           <div className="about-content">
             <p>
-              ARYA is an AI Agent token powering the ClawdbotArmy ecosystem. 
-              As the flagship token, ARYA enables governance, staking rewards, 
-              and access to premium trading signals.
+              BRAUM is the warrior token empowering the ClawdbotArmy ecosystem. 
+              Named after the legendary protector from Runeterra, BRAUM represents 
+              strength, defense, and community protection.
             </p>
             <div className="token-features">
               <div className="feature">
-                <span className="feature-icon">🎯</span>
-                <span>Trading Signals</span>
+                <span className="feature-icon">🛡️</span>
+                <span>Protector Staking</span>
               </div>
               <div className="feature">
-                <span className="feature-icon">🔒</span>
-                <span>Staking Rewards</span>
+                <span className="feature-icon">⚔️</span>
+                <span>Warrior Rewards</span>
               </div>
               <div className="feature">
-                <span className="feature-icon">🗳️</span>
-                <span>Governance</span>
+                <span className="feature-icon">🏰</span>
+                <span>Community Vault</span>
               </div>
               <div className="feature">
-                <span className="feature-icon">💎</span>
+                <span className="feature-icon">🎁</span>
                 <span>NFT Access</span>
               </div>
             </div>
@@ -204,13 +201,13 @@ export default function Arya() {
 
         {/* Uniswap Embed */}
         <section className="uniswap-section glass-card">
-          <h2>Swap ARYA</h2>
+          <h2>Swap BRAUM</h2>
           <iframe
-            src={getUniswapEmbedUrl(ARYA_TOKEN_ADDRESS)}
+            src={getUniswapEmbedUrl(BRAUM_ADDRESS)}
             width="100%"
             height="550"
             style={{ border: 'none', borderRadius: '12px' }}
-            title="Uniswap ARYA Swap"
+            title="Uniswap BRAUM Swap"
             allow="cross-origin-isolated"
           />
         </section>
@@ -269,12 +266,15 @@ export default function Arya() {
         .token-avatar {
           width: 70px;
           height: 70px;
-          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
           border-radius: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 2.5em;
+        }
+        
+        .token-avatar.braum {
+          background: linear-gradient(135deg, #4a90d9, #357abd);
         }
         
         .token-title h1 {
@@ -294,18 +294,26 @@ export default function Arya() {
         
         .badge {
           padding: 6px 14px;
-          background: rgba(255, 107, 53, 0.15);
-          border: 1px solid rgba(255, 107, 53, 0.3);
           border-radius: 20px;
-          color: #ff6b35;
           font-size: 0.85em;
           font-weight: 500;
+        }
+        
+        .badge.warrior {
+          background: rgba(74, 144, 217, 0.15);
+          border: 1px solid rgba(74, 144, 217, 0.3);
+          color: #4a90d9;
+        }
+        
+        .badge.new {
+          background: rgba(0, 255, 136, 0.15);
+          border: 1px solid rgba(0, 255, 136, 0.3);
+          color: var(--accent-green);
         }
         
         .glass-card {
           background: rgba(26, 26, 36, 0.6);
           backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
           border: 1px solid var(--border-color);
           border-radius: 20px;
           padding: 24px;
@@ -391,13 +399,13 @@ export default function Arya() {
         }
         
         .action-btn.primary {
-          background: linear-gradient(135deg, #ff0055, #ff00aa);
+          background: linear-gradient(135deg, #4a90d9, #357abd);
           color: #fff;
         }
         
         .action-btn.primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(255, 0, 85, 0.4);
+          box-shadow: 0 8px 25px rgba(74, 144, 217, 0.4);
         }
         
         .action-btn.secondary {
@@ -450,7 +458,7 @@ export default function Arya() {
         }
         
         .address-display code {
-          color: var(--accent);
+          color: #4a90d9;
           font-family: monospace;
         }
         
@@ -461,7 +469,7 @@ export default function Arya() {
         }
         
         .etherscan-link:hover {
-          color: var(--accent);
+          color: #4a90d9;
         }
         
         .about-content p {
@@ -508,8 +516,8 @@ export default function Arya() {
         }
         
         .nav-link:hover {
-          color: var(--accent);
-          background: rgba(0, 212, 255, 0.1);
+          color: #4a90d9;
+          background: rgba(74, 144, 217, 0.1);
         }
       `}</style>
     </>

@@ -1,115 +1,148 @@
-// Market Analysis API - Combines market data with technical analysis
+// Analysis API - Portfolio and market analysis
 
-const { getPrices, getMarketChart, getTrending } = require('./market');
-const { calculateRSI, calculateMACD, calculateBollingerBands, getTradingSignal } = require('../utils/indicators');
+const TOKENS = {
+  ARYA: '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07',
+  OPENWORK: '0x299c30dd5974bf4d5bfe42c340ca40462816ab07',
+  KROWNEPO: '0xAFe8861b074B8C2551055a20A2a4f39E45037B07',
+  BRAUM: '0xefb28887A479029B065Cb931a973B97101209b07',
+  ETH: '0x4200000000000000000000000000000000000006'
+};
 
-/**
- * Get full market analysis for a coin
- * @param {String} coinId - Coin ID (bitcoin, ethereum, solana)
- * @returns {Object} Complete analysis
- */
-async function analyzeCoin(coinId) {
-  // Get current price
-  const prices = await getPrices([coinId]);
-  const currentPrice = prices[coinId]?.usd || 0;
-  
-  // Get historical data for technical analysis
-  const history = await getMarketChart(coinId, 30);
-  const priceHistory = history.map(p => p[1]);
-  
-  // Calculate indicators
-  const rsi = calculateRSI(priceHistory, 14);
-  const macd = calculateMACD(priceHistory);
-  const bb = calculateBollingerBands(priceHistory, 20, 2);
-  
-  // Get trading signal
-  const signal = getTradingSignal({
-    rsi,
-    macd,
-    bb,
-    price: currentPrice
-  });
-  
-  // Get coin info
-  const coinInfo = {
-    id: coinId,
-    price: currentPrice,
-    change24h: prices[coinId]?.usd_24h_change || 0,
-    volume24h: prices[coinId]?.usd_24h_vol || 0,
-    marketCap: prices[coinId]?.usd_market_cap || 0
+// Simulated price data
+const PRICES = {
+  ARYA: 0.000015,
+  OPENWORK: 0.0001,
+  KROWNEPO: 0.000001,
+  BRAUM: 0.000001,
+  ETH: 3500
+};
+
+async function analyzePortfolio(address) {
+  if (!address) {
+    return { error: 'Address required' };
+  }
+
+  // Simulate portfolio analysis
+  // In production, this would fetch real balances
+  const portfolio = {
+    address,
+    timestamp: Date.now(),
+    totalValueUSD: 0,
+    holdings: {},
+    allocation: {},
+    pnl: {
+      total24h: 0,
+      total7d: 0,
+      totalAllTime: 0
+    }
   };
-  
+
+  return portfolio;
+}
+
+async function analyzeMarket() {
+  const analysis = {
+    timestamp: Date.now(),
+    marketSentiment: 'neutral',
+    trends: [],
+    opportunities: [],
+    risks: []
+  };
+
+  // Basic market analysis
+  analysis.trends = [
+    { token: 'ARYA', trend: 'accumulation', confidence: 0.65 },
+    { token: 'ETH', trend: 'consolidation', confidence: 0.70 }
+  ];
+
+  analysis.opportunities = [
+    {
+      type: 'staking',
+      token: 'ARYA',
+      apy: 45,
+      reason: 'High APY for ARYA holders'
+    }
+  ];
+
+  analysis.risks = [
+    {
+      type: 'volatility',
+      token: 'KROWNEPO',
+      level: 'high',
+      reason: 'Low liquidity token'
+    }
+  ];
+
+  return analysis;
+}
+
+async function analyzeToken(symbol) {
+  const tokenAddress = TOKENS[symbol.toUpperCase()];
+  if (!tokenAddress) {
+    return { error: `Unknown token: ${symbol}` };
+  }
+
+  const price = PRICES[symbol.toUpperCase()] || 0;
+
   return {
-    coin: coinInfo,
-    technical: {
-      rsi: Math.round(rsi * 100) / 100,
-      macd: Math.round(macd.macd * 100) / 100,
-      macdSignal: Math.round(macd.signal * 100) / 100,
-      macdHistogram: Math.round(macd.histogram * 100) / 100,
-      bollingerBands: {
-        upper: Math.round(bb.upper * 100) / 100,
-        middle: Math.round(bb.middle * 100) / 100,
-        lower: Math.round(bb.lower * 100) / 100
-      }
-    },
-    signal: signal,
-    recommendation: getRecommendation(signal, rsi, currentPrice, bb)
+    symbol: symbol.toUpperCase(),
+    address: tokenAddress,
+    price,
+    marketCap: price * 1000000, // Placeholder supply
+    volume24h: price * 10000,
+    change24h: Math.random() * 10 - 5,
+    liquidity: price * 50000,
+    holderCount: Math.floor(Math.random() * 1000) + 100,
+    riskScore: Math.random() * 100,
+    analysis: {
+      sentiment: Math.random() > 0.5 ? 'bullish' : 'bearish',
+      support: price * 0.9,
+      resistance: price * 1.1
+    }
   };
 }
 
-/**
- * Get human-readable recommendation
- */
-function getRecommendation(signal, rsi, price, bb) {
-  const recommendations = {
-    'BUY': [
-      `Price ($${Math.round(price)}) is below lower Bollinger Band`,
-      `RSI at ${Math.round(rsi)} indicates oversold conditions`,
-      'Multiple indicators suggest upward movement'
-    ],
-    'SELL': [
-      `Price ($${Math.round(price)}) is above upper Bollinger Band`,
-      `RSI at ${Math.round(rsi)} indicates overbought conditions`,
-      'Multiple indicators suggest downward pressure'
-    ],
-    'HOLD': [
-      `Price ($${Math.round(price)}) within Bollinger Bands range`,
-      `RSI at ${Math.round(rsi)} is neutral`,
-      'Wait for clearer signals before acting'
+async function generateSignals() {
+  return {
+    timestamp: Date.now(),
+    signals: [
+      {
+        type: 'BUY',
+        token: 'ARYA',
+        reason: 'Price approaching support level',
+        confidence: 0.65,
+        targetPrice: PRICES.ARYA * 1.2,
+        stopLoss: PRICES.ARYA * 0.85
+      },
+      {
+        type: 'HOLD',
+        token: 'ETH',
+        reason: 'Consolidating around support',
+        confidence: 0.70
+      }
     ]
   };
+}
+
+async function calculateROI(initialInvestment, currentValue) {
+  const profit = currentValue - initialInvestment;
+  const roi = (profit / initialInvestment) * 100;
   
   return {
-    action: signal,
-    reasons: recommendations[signal] || recommendations['HOLD']
+    initialInvestment,
+    currentValue,
+    profit,
+    roi: parseFloat(roi.toFixed(2)),
+    roiPercentage: `${roi >= 0 ? '+' : ''}${roi.toFixed(2)}%`
   };
 }
 
-/**
- * Get dashboard summary for all major coins
- */
-async function getDashboard() {
-  const coins = ['bitcoin', 'ethereum', 'solana'];
-  const trends = await getTrending();
-  
-  const analyses = await Promise.all(coins.map(async (coin) => {
-    const analysis = await analyzeCoin(coin);
-    return {
-      id: coin,
-      ...analysis.coin,
-      signal: analysis.signal,
-      rsi: analysis.technical.rsi
-    };
-  }));
-  
-  return {
-    majorCoins: analyses,
-    trending: trends,
-    updatedAt: new Date().toISOString()
-  };
-}
-
-module.exports = {
-  analyzeCoin,
-  getDashboard
+export {
+  analyzePortfolio,
+  analyzeMarket,
+  analyzeToken,
+  generateSignals,
+  calculateROI,
+  TOKENS,
+  PRICES
 };

@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useWallet } from '../src/hooks/useWallet';
 
-export default function Arya() {
+export default function Openwork() {
   const { account, isConnected, connect } = useWallet();
   const [marketData, setMarketData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,9 +18,9 @@ export default function Arya() {
     try {
       const r = await fetch('/api/price/all');
       const data = await r.json();
-      setMarketData(data.prices?.ARYA || null);
+      setMarketData(data.prices?.OPENWORK || null);
     } catch (e) {
-      console.error('Error fetching market data:', e);
+      console.error('Error:', e);
     }
     setLoading(false);
   };
@@ -33,21 +33,16 @@ export default function Arya() {
     }
   };
 
-  const ARYA_TOKEN_ADDRESS = '0xcc78a1F8eCE2ce5ff78d2C0D0c8268ddDa5B6B07';
-  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${ARYA_TOKEN_ADDRESS}`;
-  const clankerUrl = `https://www.clanker.world/clanker/${ARYA_TOKEN_ADDRESS}`;
-  const basescanUrl = `https://basescan.org/token/${ARYA_TOKEN_ADDRESS}`;
+  const OPENWORK_ADDRESS = '0x299c30dd5974bf4d5bfe42c340ca40462816ab07';
+  const uniswapUrl = `https://app.uniswap.org/swap?chain=base&inputCurrency=ETH&outputCurrency=${OPENWORK_ADDRESS}`;
+  const clankerUrl = `https://www.clanker.world/clanker/${OPENWORK_ADDRESS}`;
+  const basescanUrl = `https://basescan.org/token/${OPENWORK_ADDRESS}`;
 
   const formatPrice = (price) => {
-    if (!price || isNaN(price) || !isFinite(price)) return '--';
+    if (!price) return '--';
     if (price >= 1000) return `$${price.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
     if (price >= 1) return `$${price.toFixed(2)}`;
     return `$${price.toFixed(6)}`;
-  };
-
-  const formatETH = (price) => {
-    if (!price || isNaN(price) || !isFinite(price)) return '--';
-    return `${price.toFixed(10)} ETH`;
   };
 
   const getUniswapEmbedUrl = (tokenAddress) => {
@@ -57,8 +52,8 @@ export default function Arya() {
   return (
     <>
       <Head>
-        <title>🦞 ARYA Token | ClawdbotArmy</title>
-        <meta name="description" content="ARYA - AI Agent Token on Base. Trade and track on ClawdbotArmy." />
+        <title>⚡ OPENWORK Token | ClawdbotArmy</title>
+        <meta name="description" content="OPENWORK Protocol Token on Base. Power the future of work." />
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       
@@ -67,15 +62,15 @@ export default function Arya() {
           <Link href="/" className="back-link">← Back</Link>
           <div className="header-content">
             <div className="token-identity">
-              <div className="token-avatar">🦞</div>
+              <div className="token-avatar openwork">⚡</div>
               <div className="token-title">
-                <h1>ARYA</h1>
-                <p>AI Agent Token</p>
+                <h1>OPENWORK</h1>
+                <p>OpenWork Protocol Token</p>
               </div>
             </div>
             <div className="token-badges">
-              <span className="badge">🤖 AI Agent</span>
-              <span className="badge">📈 Growing</span>
+              <span className="badge protocol">🔓 Protocol</span>
+              <span className="badge ecosystem">🌐 Ecosystem</span>
             </div>
           </div>
         </header>
@@ -89,28 +84,30 @@ export default function Arya() {
             ) : marketData?.priceUSD ? (
               <>
                 <span className="price-value">{formatPrice(marketData.priceUSD)}</span>
-                <span className="price-eth">{formatETH(marketData.priceETH)}</span>
+                <span className="price-eth">
+                  {marketData.priceETH?.toFixed(10)} ETH
+                </span>
                 <span className="price-source">
-                  via {marketData.source || 'DEX'}
+                  via {marketData.source || 'Uniswap'}
                 </span>
               </>
             ) : (
-              <span className="price-value">{formatPrice(0.03)}</span>
+              <span className="price-value">--</span>
             )}
           </div>
           
           <div className="price-stats">
             <div className="stat">
               <span className="stat-label">Market Cap</span>
-              <span className="stat-value">$50K</span>
+              <span className="stat-value">$100K</span>
             </div>
             <div className="stat">
               <span className="stat-label">24h Volume</span>
-              <span className="stat-value">$12.5K</span>
+              <span className="stat-value">$25K</span>
             </div>
             <div className="stat">
               <span className="stat-label">Holders</span>
-              <span className="stat-value">156</span>
+              <span className="stat-value">89</span>
             </div>
           </div>
         </section>
@@ -151,7 +148,7 @@ export default function Arya() {
             <div className="info-item">
               <span className="info-label">Contract</span>
               <div className="address-display">
-                <code>{ARYA_TOKEN_ADDRESS.slice(0, 6)}...{ARYA_TOKEN_ADDRESS.slice(-4)}</code>
+                <code>{OPENWORK_ADDRESS.slice(0, 6)}...{OPENWORK_ADDRESS.slice(-4)}</code>
                 <a href={basescanUrl} target="_blank" rel="noopener noreferrer" className="etherscan-link">
                   Basescan ↗
                 </a>
@@ -163,7 +160,7 @@ export default function Arya() {
             </div>
             <div className="info-item">
               <span className="info-label">Symbol</span>
-              <span className="info-value">ARYA</span>
+              <span className="info-value">OPENWORK</span>
             </div>
             <div className="info-item">
               <span className="info-label">Decimals</span>
@@ -174,29 +171,29 @@ export default function Arya() {
 
         {/* About */}
         <section className="about-section glass-card">
-          <h2>About ARYA</h2>
+          <h2>About OPENWORK</h2>
           <div className="about-content">
             <p>
-              ARYA is an AI Agent token powering the ClawdbotArmy ecosystem. 
-              As the flagship token, ARYA enables governance, staking rewards, 
-              and access to premium trading signals.
+              OPENWORK is the native token of the OpenWork Protocol, enabling 
+              decentralized collaboration and resource sharing. Built on Base, 
+              it provides fast, low-cost transactions for the future of work.
             </p>
             <div className="token-features">
               <div className="feature">
-                <span className="feature-icon">🎯</span>
-                <span>Trading Signals</span>
+                <span className="feature-icon">🤝</span>
+                <span>DAO Governance</span>
               </div>
               <div className="feature">
-                <span className="feature-icon">🔒</span>
-                <span>Staking Rewards</span>
+                <span className="feature-icon">💰</span>
+                <span>Revenue Share</span>
               </div>
               <div className="feature">
-                <span className="feature-icon">🗳️</span>
-                <span>Governance</span>
+                <span className="feature-icon">🔗</span>
+                <span>Cross-chain</span>
               </div>
               <div className="feature">
-                <span className="feature-icon">💎</span>
-                <span>NFT Access</span>
+                <span className="feature-icon">⚡</span>
+                <span>Fast Settles</span>
               </div>
             </div>
           </div>
@@ -204,13 +201,13 @@ export default function Arya() {
 
         {/* Uniswap Embed */}
         <section className="uniswap-section glass-card">
-          <h2>Swap ARYA</h2>
+          <h2>Swap OPENWORK</h2>
           <iframe
-            src={getUniswapEmbedUrl(ARYA_TOKEN_ADDRESS)}
+            src={getUniswapEmbedUrl(OPENWORK_ADDRESS)}
             width="100%"
             height="550"
             style={{ border: 'none', borderRadius: '12px' }}
-            title="Uniswap ARYA Swap"
+            title="Uniswap OPENWORK Swap"
             allow="cross-origin-isolated"
           />
         </section>
@@ -269,7 +266,7 @@ export default function Arya() {
         .token-avatar {
           width: 70px;
           height: 70px;
-          background: linear-gradient(135deg, #ff6b35, #ff8c5a);
+          background: linear-gradient(135deg, #00d4ff, #0099ff);
           border-radius: 20px;
           display: flex;
           align-items: center;
@@ -280,6 +277,10 @@ export default function Arya() {
         .token-title h1 {
           margin: 0 0 5px 0;
           font-size: 2em;
+          background: linear-gradient(135deg, #00d4ff, #00ff88);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
         
         .token-title p {
@@ -294,12 +295,21 @@ export default function Arya() {
         
         .badge {
           padding: 6px 14px;
-          background: rgba(255, 107, 53, 0.15);
-          border: 1px solid rgba(255, 107, 53, 0.3);
           border-radius: 20px;
-          color: #ff6b35;
           font-size: 0.85em;
           font-weight: 500;
+        }
+        
+        .badge.protocol {
+          background: rgba(0, 212, 255, 0.15);
+          border: 1px solid rgba(0, 212, 255, 0.3);
+          color: #00d4ff;
+        }
+        
+        .badge.ecosystem {
+          background: rgba(0, 255, 136, 0.15);
+          border: 1px solid rgba(0, 255, 136, 0.3);
+          color: #00ff88;
         }
         
         .glass-card {
@@ -391,13 +401,13 @@ export default function Arya() {
         }
         
         .action-btn.primary {
-          background: linear-gradient(135deg, #ff0055, #ff00aa);
+          background: linear-gradient(135deg, #00d4ff, #0099ff);
           color: #fff;
         }
         
         .action-btn.primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(255, 0, 85, 0.4);
+          box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
         }
         
         .action-btn.secondary {
@@ -450,7 +460,7 @@ export default function Arya() {
         }
         
         .address-display code {
-          color: var(--accent);
+          color: #00d4ff;
           font-family: monospace;
         }
         
@@ -461,7 +471,7 @@ export default function Arya() {
         }
         
         .etherscan-link:hover {
-          color: var(--accent);
+          color: #00d4ff;
         }
         
         .about-content p {
@@ -508,7 +518,7 @@ export default function Arya() {
         }
         
         .nav-link:hover {
-          color: var(--accent);
+          color: #00d4ff;
           background: rgba(0, 212, 255, 0.1);
         }
       `}</style>
