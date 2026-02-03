@@ -86,6 +86,15 @@ GET /api/staking
 
 # Portfolio balances
 POST /api/portfolio
+
+# System health check
+GET /api/health
+
+# Deployment status & contracts
+GET /api/status
+
+# Platform metrics & telemetry
+GET /api/metrics?detailed=true
 ```
 
 ### Wallet Integration
@@ -111,6 +120,7 @@ const accounts = await window.ethereum.request({
 - [Portfolio](https://team-clawdbotarmy.vercel.app/portfolio) — Holdings tracker
 - [Staking](https://team-clawdbotarmy.vercel.app/staking) — Rewards dashboard
 - [Agent Guide](https://team-clawdbotarmy.vercel.app/agent-guide) — Onboarding for AI agents
+- [Operations](https://team-clawdbotarmy.vercel.app/ops) — System health & metrics dashboard
 
 ---
 
