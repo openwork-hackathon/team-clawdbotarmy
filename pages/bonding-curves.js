@@ -162,7 +162,10 @@ export default function BondingCurves() {
 
             <div className="token-price-section">
               {loading ? (
-                <div className="price-loading">Loading...</div>
+                <>
+                  <div className="skeleton-price"></div>
+                  <div className="skeleton-price" style={{width: '80px', height: '20px'}}></div>
+                </>
               ) : prices[selectedToken.id]?.priceUSD ? (
                 <>
                   <div className="price-main">{formatPrice(prices[selectedToken.id])}</div>
@@ -515,6 +518,52 @@ export default function BondingCurves() {
           color: var(--text-secondary);
         }
         
+        /* Skeleton loading animation */
+        .skeleton-price {
+          width: 120px;
+          height: 40px;
+          margin: 0 auto 10px;
+          background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-secondary) 50%, var(--bg-card) 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+          border-radius: 8px;
+        }
+        
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        
+        /* Token selection animation */
+        .token-tab {
+          transform: scale(1);
+        }
+        
+        .token-tab.active {
+          animation: selectPop 0.3s ease;
+        }
+        
+        @keyframes selectPop {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.03); }
+          100% { transform: scale(1); }
+        }
+        
+        /* Price update flash */
+        .price-main {
+          transition: color 0.3s ease, transform 0.2s ease;
+        }
+        
+        .price-update {
+          animation: priceFlash 0.5s ease;
+        }
+        
+        @keyframes priceFlash {
+          0% { transform: scale(1); }
+          25% { transform: scale(1.05); color: var(--accent); }
+          100% { transform: scale(1); }
+        }
+        
         .trading-actions {
           display: flex;
           flex-direction: column;
@@ -702,19 +751,83 @@ export default function BondingCurves() {
           
           .token-tabs {
             flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+          }
+          
+          .token-tabs::-webkit-scrollbar {
+            display: none;
+          }
+          
+          .uniswap-section {
+            order: -1;
           }
         }
         
         @media (max-width: 600px) {
+          .tokens-page {
+            padding: 15px;
+          }
+          
           .tokens-header {
             flex-direction: column;
             align-items: flex-start;
+            gap: 10px;
+          }
+          
+          .tokens-header h1 {
+            font-size: 1.6em;
           }
           
           .token-tab {
-            min-width: 150px;
-            padding: 12px 16px;
+            min-width: 140px;
+            padding: 12px 14px;
           }
+          
+          .token-emoji {
+            font-size: 1.4em;
+          }
+          
+          .price-main {
+            font-size: 2em;
+          }
+          
+          .glass-card {
+            padding: 18px;
+            border-radius: 16px;
+          }
+          
+          .token-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.6em;
+          }
+          
+          .trade-btn {
+            padding: 14px;
+          }
+          
+          .iframe-container iframe {
+            height: 480px;
+          }
+          
+          .tokens-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+          
+          .mini-token-card {
+            padding: 12px;
+          }
+        }
+        
+        /* Smooth page transitions */
+        .tokens-page {
+          animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
       `}</style>
     </>
